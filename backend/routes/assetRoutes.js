@@ -1,0 +1,42 @@
+const express = require("express");
+const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const assetController = require("../controllers/assetController");
+
+// Konfigurasi Multer untuk upload gambar
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "..", "public", "uploads"));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, `asset-${uniqueSuffix}${ext}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Hanya file JPG, JPEG, dan PNG yang diperbolehkan"), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 2 * 1024 * 1024 }, // Max 2MB
+});
+
+// Routes
+router.get("/search", assetController.search);    // GET  /api/assets/search?q=keyword
+router.get("/", assetController.getAll);           // GET  /api/assets
+router.get("/:id", assetController.getById);       // GET  /api/assets/:id
+router.post("/", upload.single("gambar"), assetController.create);    // POST /api/assets
+router.put("/:id", upload.single("gambar"), assetController.update);  // PUT  /api/assets/:id
+router.delete("/:id", assetController.delete);     // DELETE /api/assets/:id
+
+module.exports = router;
