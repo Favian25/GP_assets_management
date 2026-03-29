@@ -1,0 +1,559 @@
+"use client";
+
+import { useState, useEffect, useCallback, useRef } from "react";
+import { getAllAssets, createAsset, updateAsset, deleteAsset, searchAssets } from "../../lib/assetService";
+
+const BACKEND_URL = "http://localhost:5000";
+
+const kategoriOptions = ["Kamera", "Microphone", "Webcam", "Rigging", "Monitor", "Lighting", "Audio", "Lensa", "Aksesoris", "Storage", "Komputer", "Lainnya"];
+const merekOptions = ["Sony", "Canon", "Rode", "Logitech", "Manfrotto", "DJI", "Atomos", "Sennheiser", "Godox", "Focusrite", "Zeapon", "Blackmagic", "Tilta", "SmallRig", "Elgato", "Yamaha", "Sigma", "Nanlite", "Aputure", "Audio-Technica", "Apple", "Wacom", "WD", "GoPro", "Neewer", "BenQ", "HyperX", "Hollyland", "Sachtler", "X-Rite"];
+const modelOptions = ["A7III", "A7IV", "NT1", "C920", "055XPRO3", "RS3", "Ninja V", "SL60W", "EF 50mm f/1.8", "Scarlett 2i2", "Micro 2", "MDR-7506", "Mini 3 Pro", "EOS R6", "Pocket Cinema 6K", "Hero 12 Black"];
+const kondisiOptions = ["Siap Digunakan", "Rusak", "Maintenance", "Diarsipkan"];
+const unitOptions = ["Production", "Audio", "Streaming", "Lighting", "Post-Production"];
+
+const ITEMS_PER_PAGE = 10;
+
+const emptyForm = {
+  kodeAset: "", namaAset: "", pengguna: "", kategori: "", merek: "", model: "",
+  noSN: "", spesifikasi: "", lokasiAset: "", kondisi: "", unit: "", keterangan: "",
+};
+
+// =====================================================
+// Helper components defined OUTSIDE to prevent re-mount
+// =====================================================
+
+function InputField({ label, required, value, onChange, placeholder, type = "text", className = "" }) {
+  return (
+    <div className={className}>
+      <label className="mb-1.5 block text-sm font-medium text-slate-700">
+        {label} {required && <span className="text-rose-500">*</span>}
+      </label>
+      <input type={type} placeholder={placeholder} value={value} onChange={onChange}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options, placeholder = "Pilih...", className = "" }) {
+  return (
+    <div className={className}>
+      <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+      <select value={value} onChange={onChange}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+        <option value="">{placeholder}</option>
+        {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+      </select>
+    </div>
+  );
+}
+
+function TextAreaField({ label, value, onChange, placeholder, rows = 2, className = "" }) {
+  return (
+    <div className={className}>
+      <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+      <textarea rows={rows} placeholder={placeholder} value={value} onChange={onChange}
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+    </div>
+  );
+}
+
+function ImageUploadField({ onFileChange, previewUrl, onClear }) {
+  const fileRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+
+  const handleDrag = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDragIn = (e) => { handleDrag(e); setDragging(true); };
+  const handleDragOut = (e) => { handleDrag(e); setDragging(false); };
+  const handleDrop = (e) => {
+    handleDrag(e);
+    setDragging(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file && ["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
+      // Buat synthetic event agar handler yang sama bisa dipakai
+      const syntheticEvent = { target: { files: [file] } };
+      onFileChange(syntheticEvent);
+    }
+  };
+
+  return (
+    <div className="sm:col-span-2">
+      <label className="mb-1.5 block text-sm font-medium text-slate-700">Upload Gambar</label>
+      <div
+        onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
+        className={`rounded-lg border-2 border-dashed px-6 py-6 transition-colors ${
+          dragging ? "border-primary bg-primary/5" : "border-slate-200 hover:border-primary/50"
+        }`}
+      >
+        <div className="flex flex-col items-center text-center">
+          {previewUrl ? (
+            <div className="relative mb-3">
+              <img src={previewUrl} alt="Preview" className="max-h-40 rounded-lg object-contain border border-slate-200" />
+              <button type="button" onClick={onClear}
+                className="absolute -top-2 -right-2 cursor-pointer rounded-full bg-rose-500 p-1 text-white shadow-md transition-colors hover:bg-rose-600">
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          ) : (
+            <svg className="h-8 w-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          )}
+          <input ref={fileRef} type="file" accept="image/jpeg,image/jpg,image/png" onChange={onFileChange} className="hidden" />
+          <button type="button" onClick={() => fileRef.current?.click()}
+            className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover">
+            Pilih Gambar
+          </button>
+          <p className="mt-2 text-xs text-slate-400">Seret gambar ke sini atau klik tombol · PNG, JPG, JPEG (Max. 2MB)</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SortIcon({ columnKey, sortConfig }) {
+  const isActive = sortConfig.key === columnKey;
+  return (
+    <span className="ml-1.5 inline-flex flex-col -space-y-1.5">
+      <svg className={`h-3.5 w-3.5 ${isActive && sortConfig.direction === "asc" ? "text-primary" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20">
+        <path d="M5 12l5-5 5 5H5z" />
+      </svg>
+      <svg className={`h-3.5 w-3.5 ${isActive && sortConfig.direction === "desc" ? "text-primary" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20">
+        <path d="M5 8l5 5 5-5H5z" />
+      </svg>
+    </span>
+  );
+}
+
+// =====================================================
+// Main Page Component
+// =====================================================
+
+export default function DaftarAsetPage() {
+  const [assets, setAssets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [showDetail, setShowDetail] = useState(null);
+  const [showEdit, setShowEdit] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [lightboxImg, setLightboxImg] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
+  const [formData, setFormData] = useState(emptyForm);
+  const [editFormData, setEditFormData] = useState(emptyForm);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [editImageFile, setEditImageFile] = useState(null);
+  const [editImagePreview, setEditImagePreview] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); }
+  }, [toast]);
+
+  const showToast = (message, type = "success") => setToast({ message, type });
+
+  const fetchAssets = useCallback(async () => {
+    try { setLoading(true); setError(null); setAssets(await getAllAssets()); }
+    catch { setError("Gagal memuat data aset. Pastikan backend berjalan."); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchAssets(); }, [fetchAssets]);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (search.trim()) {
+        try { setAssets(await searchAssets(search.trim())); setCurrentPage(1); } catch { }
+      } else { fetchAssets(); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search, fetchAssets]);
+
+  // Image preview helpers
+  const handleImageSelect = (e, setFile, setPreview) => {
+    const file = e.target.files[0] || null;
+    setFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreview(ev.target.result);
+      reader.readAsDataURL(file);
+    } else { setPreview(null); }
+  };
+
+  const getImageUrl = (gambar) => {
+    if (!gambar) return null;
+    if (gambar.startsWith("http")) return gambar;
+    return `${BACKEND_URL}${gambar}`;
+  };
+
+  // Sorting & Pagination
+  const sorted = [...assets].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    const aVal = (a[sortConfig.key] || "").toString().toLowerCase();
+    const bVal = (b[sortConfig.key] || "").toString().toLowerCase();
+    if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedData = sorted.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const handleSort = (key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        if (prev.direction === "asc") return { key, direction: "desc" };
+        if (prev.direction === "desc") return { key: null, direction: null };
+      }
+      return { key, direction: "asc" };
+    });
+    setCurrentPage(1);
+  };
+
+  // CRUD handlers
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!formData.kodeAset || !formData.namaAset) { showToast("Kode Aset dan Nama Aset wajib diisi", "error"); return; }
+    try {
+      setSubmitting(true);
+      await createAsset(formData, imageFile);
+      showToast("Aset berhasil ditambahkan!");
+      setShowModal(false); setFormData(emptyForm); setImageFile(null); setImagePreview(null);
+      await fetchAssets();
+    } catch (err) { showToast(err.response?.data?.message || "Gagal menambahkan aset", "error"); }
+    finally { setSubmitting(false); }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!editFormData.kodeAset || !editFormData.namaAset) { showToast("Kode Aset dan Nama Aset wajib diisi", "error"); return; }
+    try {
+      setSubmitting(true);
+      await updateAsset(showEdit.id, editFormData, editImageFile);
+      showToast("Aset berhasil diperbarui!");
+      setShowEdit(null); setEditFormData(emptyForm); setEditImageFile(null); setEditImagePreview(null);
+      await fetchAssets();
+    } catch (err) { showToast(err.response?.data?.message || "Gagal memperbarui aset", "error"); }
+    finally { setSubmitting(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!showDeleteConfirm) return;
+    try {
+      setSubmitting(true);
+      await deleteAsset(showDeleteConfirm.id);
+      showToast("Aset berhasil dihapus!");
+      setShowDeleteConfirm(null);
+      await fetchAssets();
+    } catch (err) { showToast(err.response?.data?.message || "Gagal menghapus aset", "error"); }
+    finally { setSubmitting(false); }
+  };
+
+  const openEdit = (item) => {
+    setEditFormData({
+      kodeAset: item.kodeAset || "", namaAset: item.namaAset || "", pengguna: item.pengguna || "",
+      kategori: item.kategori || "", merek: item.merek || "", model: item.model || "",
+      noSN: item.noSN || "", spesifikasi: item.spesifikasi || "", lokasiAset: item.lokasiAset || "",
+      kondisi: item.kondisi || "", unit: item.unit || "", keterangan: item.keterangan || "",
+    });
+    setEditImageFile(null);
+    setEditImagePreview(getImageUrl(item.gambar));
+    setShowEdit(item);
+  };
+
+  const getKondisiBadge = (kondisi) => {
+    const s = { "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-200", "Rusak": "bg-red-50 text-red-700 border-red-200", "Maintenance": "bg-amber-50 text-amber-700 border-amber-200", "Diarsipkan": "bg-slate-100 text-slate-600 border-slate-200" };
+    return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200";
+  };
+
+  const getPageNumbers = () => {
+    const p = [];
+    if (totalPages <= 4) { for (let i = 1; i <= totalPages; i++) p.push(i); }
+    else if (currentPage <= 3) { for (let i = 1; i <= 3; i++) p.push(i); p.push("..."); p.push(totalPages); }
+    else if (currentPage >= totalPages - 2) { p.push(1); p.push("..."); for (let i = totalPages - 2; i <= totalPages; i++) p.push(i); }
+    else { p.push(1); p.push("..."); p.push(currentPage); p.push("..."); p.push(totalPages); }
+    return p;
+  };
+
+  const Pagination = () => (
+    <div className="flex items-center justify-between px-5 py-3">
+      <p className="text-sm text-slate-500">
+        Menampilkan {sorted.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, sorted.length)} dari{" "}
+        <span className="font-semibold text-slate-700">{sorted.length}</span> aset
+      </p>
+      <div className="flex items-center gap-1">
+        <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Pertama"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" /></svg></button>
+        <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Sebelumnya"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+        {getPageNumbers().map((page, idx) =>
+          page === "..." ? (
+            <span key={`e-${idx}`} className="min-w-[32px] px-1 py-1.5 text-center text-sm text-slate-400">...</span>
+          ) : (
+            <button key={page} onClick={() => setCurrentPage(page)} className={`cursor-pointer min-w-[32px] rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${currentPage === page ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-100"}`}>{page}</button>
+          )
+        )}
+        <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Berikutnya"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
+        <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Terakhir"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7" /></svg></button>
+      </div>
+    </div>
+  );
+
+  // --- Form section builder (reused for Create & Edit) ---
+  const renderFormFields = (data, setData, onImageChange, imgPreview, onImageClear) => (
+    <div className="p-6 space-y-6">
+      {/* Section 1: Daftar Inventori */}
+      <div>
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-800 uppercase tracking-wide">
+          <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+          Daftar Inventori
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <InputField label="Kode Aset" required placeholder="Contoh: GP-CAM-001" value={data.kodeAset} onChange={(e) => setData(d => ({...d, kodeAset: e.target.value}))} />
+          <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: e.target.value}))} />
+          <InputField label="Pengguna" placeholder="Nama pengguna" value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} className="sm:col-span-2" />
+          <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriOptions} placeholder="Pilih Kategori" />
+          <SelectField label="Merek" value={data.merek} onChange={(e) => setData(d => ({...d, merek: e.target.value}))} options={merekOptions} placeholder="Pilih Merek" />
+          <SelectField label="Model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} options={modelOptions} placeholder="Pilih Model" />
+          <InputField label="No. SN" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} />
+          <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: e.target.value}))} rows={3} className="sm:col-span-2" />
+        </div>
+      </div>
+      <hr className="border-slate-200" />
+      {/* Section 2: Lokasi Aset */}
+      <div>
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-800 uppercase tracking-wide">
+          <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          Lokasi Aset
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <InputField label="Lokasi Aset" placeholder="Contoh: Studio A, Gudang" value={data.lokasiAset} onChange={(e) => setData(d => ({...d, lokasiAset: e.target.value}))} className="sm:col-span-2" />
+          <SelectField label="Kondisi Aset" value={data.kondisi} onChange={(e) => setData(d => ({...d, kondisi: e.target.value}))} options={kondisiOptions} placeholder="Pilih Kondisi" />
+          <SelectField label="Unit" value={data.unit} onChange={(e) => setData(d => ({...d, unit: e.target.value}))} options={unitOptions} placeholder="Pilih Unit" />
+          <ImageUploadField onFileChange={onImageChange} previewUrl={imgPreview} onClear={onImageClear} />
+          <TextAreaField label="Keterangan" placeholder="Keterangan tambahan" value={data.keterangan} onChange={(e) => setData(d => ({...d, keterangan: e.target.value}))} className="sm:col-span-2" />
+        </div>
+      </div>
+    </div>
+  );
+
+  // Loading
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1><p className="text-sm text-slate-500">Kelola data aset Galeria Production</p></div>
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="p-8 space-y-3 animate-pulse">
+            {[1,2,3,4,5].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/><div className="h-4 w-20 rounded bg-slate-200"/></div>))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error
+  if (error) {
+    return (
+      <div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1><p className="text-sm text-slate-500">Kelola data aset Galeria Production</p></div>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-10">
+          <svg className="h-12 w-12 text-rose-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.732c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+          <p className="text-sm font-medium text-rose-700 mb-1">Koneksi Gagal</p>
+          <p className="text-xs text-rose-500 mb-4 text-center">{error}</p>
+          <button onClick={fetchAssets} className="cursor-pointer rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-600">Coba Lagi</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-20 right-6 z-[100] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {toast.type === "error" ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />}
+          </svg>
+          {toast.message}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxImg && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxImg(null)}>
+          <img src={lightboxImg} alt="Preview" onClick={(e) => e.stopPropagation()} className="max-h-[85vh] max-w-[85vw] rounded-xl object-contain shadow-2xl cursor-default" />
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1><p className="text-sm text-slate-500">Kelola data aset Galeria Production</p></div>
+
+      {/* Toolbar */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" placeholder="Cari aset..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              className="rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text" />
+          </div>
+          <button onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
+            className="cursor-pointer flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Tambah Aset
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
+        <Pagination />
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm table-fixed">
+            <thead>
+              <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
+                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[60px] px-3 py-3 font-bold text-slate-700 text-center">Gambar</th>
+                <th className="w-[200px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
+                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
+                <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("unit")} className="cursor-pointer flex items-center">Unit <SortIcon columnKey="unit" sortConfig={sortConfig} /></button></th>
+                <th className="w-[130px] px-5 py-3 font-bold text-slate-700">Kondisi</th>
+                <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedData.map((item, index) => (
+                <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
+                  <td className="w-[130px] px-5 py-3 font-mono text-xs font-medium text-primary truncate">{item.kodeAset}</td>
+                  <td className="w-[60px] px-3 py-2 text-center">
+                    {item.gambar ? (
+                      <img src={getImageUrl(item.gambar)} alt="" onClick={() => setLightboxImg(getImageUrl(item.gambar))}
+                        className="mx-auto h-9 w-9 rounded-md object-cover border border-slate-200 cursor-pointer hover:ring-2 hover:ring-primary transition-all" />
+                    ) : (
+                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-300">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      </div>
+                    )}
+                  </td>
+                  <td className="w-[200px] px-5 py-3 text-slate-600 truncate">{item.namaAset}</td>
+                  <td className="w-[120px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
+                  <td className="w-[140px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
+                  <td className="w-[120px] px-5 py-3 text-slate-600 truncate">{item.unit}</td>
+                  <td className="w-[130px] px-5 py-3"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
+                  <td className="w-[110px] px-5 py-3">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button>
+                      <button onClick={() => openEdit(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                      <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {assets.length === 0 && (<tr><td colSpan={8} className="px-5 py-10 text-center text-slate-400">Tidak ada data aset ditemukan.</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-slate-200"><Pagination /></div>
+      </div>
+
+      {/* Modal Tambah */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={handleCreate} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-emerald-50 px-6 py-4 rounded-t-2xl">
+              <h2 className="text-lg font-bold text-emerald-800">Tambah Aset Baru</h2>
+              <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            {renderFormFields(formData, setFormData, (e) => handleImageSelect(e, setImageFile, setImagePreview), imagePreview, () => { setImageFile(null); setImagePreview(null); })}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+              <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Aset"}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal Detail */}
+      {showDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4">
+              <h2 className="text-lg font-bold text-blue-800">Detail Aset</h2>
+              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-6 space-y-5">
+              {getImageUrl(showDetail.gambar) && (
+                <div className="flex justify-center">
+                  <img src={getImageUrl(showDetail.gambar)} alt={showDetail.namaAset} onClick={() => setLightboxImg(getImageUrl(showDetail.gambar))}
+                    className="max-h-48 rounded-xl object-contain border border-slate-200 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all" />
+                </div>
+              )}
+              <div>
+                <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Inventori</h4>
+                <div className="space-y-2.5">
+                  {[["Kode Aset", showDetail.kodeAset], ["Nama Aset", showDetail.namaAset], ["Pengguna", showDetail.pengguna], ["Kategori", showDetail.kategori], ["Merek", showDetail.merek], ["Model", showDetail.model], ["No. SN", showDetail.noSN], ["Spesifikasi", showDetail.spesifikasi]].map(([l, v]) => (
+                    <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
+                  ))}
+                </div>
+              </div>
+              <hr className="border-slate-300" />
+              <div>
+                <h4 className="mb-3 text-sm font-bold text-slate-800">Lokasi Aset</h4>
+                <div className="space-y-2.5">
+                  {[["Lokasi", showDetail.lokasiAset], ["Kondisi", showDetail.kondisi], ["Unit", showDetail.unit], ["Keterangan", showDetail.keterangan]].map(([l, v]) => (
+                    <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4">
+              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600">Tutup</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit */}
+      {showEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={handleUpdate} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-amber-50 px-6 py-4 rounded-t-2xl">
+              <h2 className="text-lg font-bold text-amber-800">Edit Aset</h2>
+              <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            {renderFormFields(editFormData, setEditFormData, (e) => handleImageSelect(e, setEditImageFile, setEditImagePreview), editImagePreview, () => { setEditImageFile(null); setEditImagePreview(null); })}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+              <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal Hapus */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-rose-500">
+            <div className="p-6 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100">
+                <svg className="h-7 w-7 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Aset?</h3>
+              <p className="text-sm text-slate-500 mb-1">Anda akan menghapus:</p>
+              <p className="text-sm font-semibold text-slate-700 mb-1">{showDeleteConfirm.namaAset}</p>
+              <p className="text-xs text-slate-400 font-mono">{showDeleteConfirm.kodeAset}</p>
+              <p className="text-xs text-rose-500 mt-3">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+            <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4">
+              <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+              <button onClick={handleDelete} disabled={submitting} className="cursor-pointer rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-600 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
