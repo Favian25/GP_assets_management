@@ -4,22 +4,19 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getAllAssets, createAsset, updateAsset, deleteAsset, searchAssets } from "../../lib/assetService";
 
 const BACKEND_URL = "http://localhost:5000";
-
-const kategoriOptions = ["Kamera", "Microphone", "Webcam", "Rigging", "Monitor", "Lighting", "Audio", "Lensa", "Aksesoris", "Storage", "Komputer", "Lainnya"];
-const merekOptions = ["Sony", "Canon", "Rode", "Logitech", "Manfrotto", "DJI", "Atomos", "Sennheiser", "Godox", "Focusrite", "Zeapon", "Blackmagic", "Tilta", "SmallRig", "Elgato", "Yamaha", "Sigma", "Nanlite", "Aputure", "Audio-Technica", "Apple", "Wacom", "WD", "GoPro", "Neewer", "BenQ", "HyperX", "Hollyland", "Sachtler", "X-Rite"];
-const modelOptions = ["A7III", "A7IV", "NT1", "C920", "055XPRO3", "RS3", "Ninja V", "SL60W", "EF 50mm f/1.8", "Scarlett 2i2", "Micro 2", "MDR-7506", "Mini 3 Pro", "EOS R6", "Pocket Cinema 6K", "Hero 12 Black"];
+const defaultKategoriOptions = ["Kamera", "Microphone", "Webcam"];
+const defaultMerekOptions = ["Sony", "Apple", "Epson"];
 const kondisiOptions = ["Siap Digunakan", "Rusak", "Maintenance", "Diarsipkan"];
-const unitOptions = ["Production", "Audio", "Streaming", "Lighting", "Post-Production"];
-
 const ITEMS_PER_PAGE = 10;
 
 const emptyForm = {
   kodeAset: "", namaAset: "", pengguna: "", kategori: "", merek: "", model: "",
-  noSN: "", spesifikasi: "", lokasiAset: "", kondisi: "", unit: "", keterangan: "",
+  noSN: "", spesifikasi: "", lokasiAset: "", kondisi: "", keterangan: "",
+  jumlah: "", hargaAset: "",
 };
 
 // =====================================================
-// Helper components defined OUTSIDE to prevent re-mount
+// Helper components (outside to prevent re-mount)
 // =====================================================
 
 function InputField({ label, required, value, onChange, placeholder, type = "text", className = "" }) {
@@ -47,6 +44,58 @@ function SelectField({ label, value, onChange, options, placeholder = "Pilih..."
   );
 }
 
+function SelectWithAdd({ label, value, onChange, options, onAddOption, placeholder = "Pilih...", className = "" }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [newVal, setNewVal] = useState("");
+  const inputRef = useRef(null);
+
+  useEffect(() => { if (showAdd && inputRef.current) inputRef.current.focus(); }, [showAdd]);
+
+  const handleAdd = () => {
+    const trimmed = newVal.trim();
+    if (trimmed && !options.includes(trimmed)) {
+      onAddOption(trimmed);
+      onChange({ target: { value: trimmed } });
+    }
+    setNewVal("");
+    setShowAdd(false);
+  };
+
+  return (
+    <div className={className}>
+      <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+      {showAdd ? (
+        <div className="flex gap-1.5">
+          <input ref={inputRef} type="text" value={newVal} onChange={(e) => setNewVal(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAdd(); } }}
+            placeholder={`Tambah ${label.toLowerCase()}...`}
+            className="flex-1 rounded-lg border border-primary px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary" />
+          <button type="button" onClick={handleAdd}
+            className="cursor-pointer rounded-lg bg-emerald-500 px-2.5 py-2 text-white transition-colors hover:bg-emerald-600">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+          </button>
+          <button type="button" onClick={() => { setShowAdd(false); setNewVal(""); }}
+            className="cursor-pointer rounded-lg bg-slate-200 px-2.5 py-2 text-slate-600 transition-colors hover:bg-slate-300">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-1.5">
+          <select value={value} onChange={onChange}
+            className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+            <option value="">{placeholder}</option>
+            {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+          </select>
+          <button type="button" onClick={() => setShowAdd(true)} title={`Tambah ${label}`}
+            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-primary transition-colors hover:bg-primary hover:text-white">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TextAreaField({ label, value, onChange, placeholder, rows = 2, className = "" }) {
   return (
     <div className={className}>
@@ -60,30 +109,21 @@ function TextAreaField({ label, value, onChange, placeholder, rows = 2, classNam
 function ImageUploadField({ onFileChange, previewUrl, onClear }) {
   const fileRef = useRef(null);
   const [dragging, setDragging] = useState(false);
-
   const handleDrag = (e) => { e.preventDefault(); e.stopPropagation(); };
   const handleDragIn = (e) => { handleDrag(e); setDragging(true); };
   const handleDragOut = (e) => { handleDrag(e); setDragging(false); };
   const handleDrop = (e) => {
-    handleDrag(e);
-    setDragging(false);
+    handleDrag(e); setDragging(false);
     const file = e.dataTransfer?.files?.[0];
     if (file && ["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
-      // Buat synthetic event agar handler yang sama bisa dipakai
-      const syntheticEvent = { target: { files: [file] } };
-      onFileChange(syntheticEvent);
+      onFileChange({ target: { files: [file] } });
     }
   };
-
   return (
     <div className="sm:col-span-2">
       <label className="mb-1.5 block text-sm font-medium text-slate-700">Upload Gambar</label>
-      <div
-        onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
-        className={`rounded-lg border-2 border-dashed px-6 py-6 transition-colors ${
-          dragging ? "border-primary bg-primary/5" : "border-slate-200 hover:border-primary/50"
-        }`}
-      >
+      <div onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
+        className={`rounded-lg border-2 border-dashed px-6 py-6 transition-colors ${dragging ? "border-primary bg-primary/5" : "border-slate-200 hover:border-primary/50"}`}>
         <div className="flex flex-col items-center text-center">
           {previewUrl ? (
             <div className="relative mb-3">
@@ -95,8 +135,7 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
             </div>
           ) : (
             <svg className="h-8 w-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           )}
           <input ref={fileRef} type="file" accept="image/jpeg,image/jpg,image/png" onChange={onFileChange} className="hidden" />
@@ -115,12 +154,8 @@ function SortIcon({ columnKey, sortConfig }) {
   const isActive = sortConfig.key === columnKey;
   return (
     <span className="ml-1.5 inline-flex flex-col -space-y-1.5">
-      <svg className={`h-3.5 w-3.5 ${isActive && sortConfig.direction === "asc" ? "text-primary" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20">
-        <path d="M5 12l5-5 5 5H5z" />
-      </svg>
-      <svg className={`h-3.5 w-3.5 ${isActive && sortConfig.direction === "desc" ? "text-primary" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20">
-        <path d="M5 8l5 5 5-5H5z" />
-      </svg>
+      <svg className={`h-3.5 w-3.5 ${isActive && sortConfig.direction === "asc" ? "text-primary" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20"><path d="M5 12l5-5 5 5H5z" /></svg>
+      <svg className={`h-3.5 w-3.5 ${isActive && sortConfig.direction === "desc" ? "text-primary" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z" /></svg>
     </span>
   );
 }
@@ -149,16 +184,28 @@ export default function DaftarAsetPage() {
   const [editImagePreview, setEditImagePreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [kategoriList, setKategoriList] = useState(defaultKategoriOptions);
+  const [merekList, setMerekList] = useState(defaultMerekOptions);
 
-  useEffect(() => {
-    if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); }
-  }, [toast]);
-
+  useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
 
   const fetchAssets = useCallback(async () => {
-    try { setLoading(true); setError(null); setAssets(await getAllAssets()); }
-    catch { setError("Gagal memuat data aset. Pastikan backend berjalan."); }
+    try { 
+      setLoading(true); 
+      setError(null); 
+      const data = await getAllAssets();
+      setAssets(data || []); 
+
+      if (data && data.length > 0) {
+        const uniqueKategori = [...new Set([...defaultKategoriOptions, ...data.map(item => item.kategori).filter(Boolean)])];
+        setKategoriList(uniqueKategori);
+        
+        const uniqueMerek = [...new Set([...defaultMerekOptions, ...data.map(item => item.merek).filter(Boolean)])];
+        setMerekList(uniqueMerek);
+      }
+    }
+    catch { setError("Gagal memuat data aset."); }
     finally { setLoading(false); }
   }, []);
 
@@ -166,29 +213,19 @@ export default function DaftarAsetPage() {
 
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (search.trim()) {
-        try { setAssets(await searchAssets(search.trim())); setCurrentPage(1); } catch { }
-      } else { fetchAssets(); }
+      if (search.trim()) { try { setAssets(await searchAssets(search.trim())); setCurrentPage(1); } catch { } }
+      else { fetchAssets(); }
     }, 400);
     return () => clearTimeout(timer);
   }, [search, fetchAssets]);
 
-  // Image preview helpers
   const handleImageSelect = (e, setFile, setPreview) => {
     const file = e.target.files[0] || null;
     setFile(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target.result);
-      reader.readAsDataURL(file);
-    } else { setPreview(null); }
+    if (file) { const r = new FileReader(); r.onload = (ev) => setPreview(ev.target.result); r.readAsDataURL(file); }
+    else { setPreview(null); }
   };
-
-  const getImageUrl = (gambar) => {
-    if (!gambar) return null;
-    if (gambar.startsWith("http")) return gambar;
-    return `${BACKEND_URL}${gambar}`;
-  };
+  const getImageUrl = (gambar) => { if (!gambar) return null; if (gambar.startsWith("http")) return gambar; return `${BACKEND_URL}${gambar}`; };
 
   // Sorting & Pagination
   const sorted = [...assets].sort((a, b) => {
@@ -205,61 +242,44 @@ export default function DaftarAsetPage() {
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
-      if (prev.key === key) {
-        if (prev.direction === "asc") return { key, direction: "desc" };
-        if (prev.direction === "desc") return { key: null, direction: null };
-      }
+      if (prev.key === key) { if (prev.direction === "asc") return { key, direction: "desc" }; if (prev.direction === "desc") return { key: null, direction: null }; }
       return { key, direction: "asc" };
     });
     setCurrentPage(1);
   };
 
-  // CRUD handlers
+  // CRUD
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!formData.kodeAset || !formData.namaAset) { showToast("Kode Aset dan Nama Aset wajib diisi", "error"); return; }
-    try {
-      setSubmitting(true);
-      await createAsset(formData, imageFile);
-      showToast("Aset berhasil ditambahkan!");
-      setShowModal(false); setFormData(emptyForm); setImageFile(null); setImagePreview(null);
-      await fetchAssets();
-    } catch (err) { showToast(err.response?.data?.message || "Gagal menambahkan aset", "error"); }
+    try { setSubmitting(true); await createAsset(formData, imageFile); showToast("Aset berhasil ditambahkan!"); setShowModal(false); setFormData(emptyForm); setImageFile(null); setImagePreview(null); await fetchAssets(); }
+    catch (err) { showToast(err.response?.data?.message || "Gagal menambahkan aset", "error"); }
     finally { setSubmitting(false); }
   };
-
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editFormData.kodeAset || !editFormData.namaAset) { showToast("Kode Aset dan Nama Aset wajib diisi", "error"); return; }
-    try {
-      setSubmitting(true);
-      await updateAsset(showEdit.id, editFormData, editImageFile);
-      showToast("Aset berhasil diperbarui!");
-      setShowEdit(null); setEditFormData(emptyForm); setEditImageFile(null); setEditImagePreview(null);
-      await fetchAssets();
-    } catch (err) { showToast(err.response?.data?.message || "Gagal memperbarui aset", "error"); }
+    try { setSubmitting(true); await updateAsset(showEdit.id, editFormData, editImageFile); showToast("Aset berhasil diperbarui!"); setShowEdit(null); setEditFormData(emptyForm); setEditImageFile(null); setEditImagePreview(null); await fetchAssets(); }
+    catch (err) { showToast(err.response?.data?.message || "Gagal memperbarui aset", "error"); }
     finally { setSubmitting(false); }
   };
-
   const handleDelete = async () => {
     if (!showDeleteConfirm) return;
-    try {
-      setSubmitting(true);
-      await deleteAsset(showDeleteConfirm.id);
-      showToast("Aset berhasil dihapus!");
-      setShowDeleteConfirm(null);
-      await fetchAssets();
-    } catch (err) { showToast(err.response?.data?.message || "Gagal menghapus aset", "error"); }
+    try { setSubmitting(true); await deleteAsset(showDeleteConfirm.id); showToast("Aset berhasil dihapus!"); setShowDeleteConfirm(null); await fetchAssets(); }
+    catch (err) { showToast(err.response?.data?.message || "Gagal menghapus aset", "error"); }
     finally { setSubmitting(false); }
   };
-
   const openEdit = (item) => {
     setEditFormData({
       kodeAset: item.kodeAset || "", namaAset: item.namaAset || "", pengguna: item.pengguna || "",
       kategori: item.kategori || "", merek: item.merek || "", model: item.model || "",
       noSN: item.noSN || "", spesifikasi: item.spesifikasi || "", lokasiAset: item.lokasiAset || "",
-      kondisi: item.kondisi || "", unit: item.unit || "", keterangan: item.keterangan || "",
+      kondisi: item.kondisi || "", keterangan: item.keterangan || "",
+      jumlah: item.jumlah || "", hargaAset: item.hargaAset || "",
     });
+    // Ensure existing values are in dropdown lists
+    if (item.kategori && !kategoriList.includes(item.kategori)) setKategoriList(prev => [...prev, item.kategori]);
+    if (item.merek && !merekList.includes(item.merek)) setMerekList(prev => [...prev, item.merek]);
     setEditImageFile(null);
     setEditImagePreview(getImageUrl(item.gambar));
     setShowEdit(item);
@@ -281,57 +301,47 @@ export default function DaftarAsetPage() {
 
   const Pagination = () => (
     <div className="flex items-center justify-between px-5 py-3">
-      <p className="text-sm text-slate-500">
-        Menampilkan {sorted.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, sorted.length)} dari{" "}
-        <span className="font-semibold text-slate-700">{sorted.length}</span> aset
-      </p>
+      <p className="text-sm text-slate-500">Menampilkan {sorted.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, sorted.length)} dari <span className="font-semibold text-slate-700">{sorted.length}</span> aset</p>
       <div className="flex items-center gap-1">
         <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Pertama"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" /></svg></button>
         <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Sebelumnya"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
-        {getPageNumbers().map((page, idx) =>
-          page === "..." ? (
-            <span key={`e-${idx}`} className="min-w-[32px] px-1 py-1.5 text-center text-sm text-slate-400">...</span>
-          ) : (
-            <button key={page} onClick={() => setCurrentPage(page)} className={`cursor-pointer min-w-[32px] rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${currentPage === page ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-100"}`}>{page}</button>
-          )
-        )}
+        {getPageNumbers().map((page, idx) => page === "..." ? (<span key={`e-${idx}`} className="min-w-[32px] px-1 py-1.5 text-center text-sm text-slate-400">...</span>) : (<button key={page} onClick={() => setCurrentPage(page)} className={`cursor-pointer min-w-[32px] rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${currentPage === page ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-100"}`}>{page}</button>))}
         <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Berikutnya"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
         <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Terakhir"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7" /></svg></button>
       </div>
     </div>
   );
 
-  // --- Form section builder (reused for Create & Edit) ---
+  // --- Form section builder ---
   const renderFormFields = (data, setData, onImageChange, imgPreview, onImageClear) => (
     <div className="p-6 space-y-6">
-      {/* Section 1: Daftar Inventori */}
       <div>
         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-800 uppercase tracking-wide">
           <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
           Daftar Inventori
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <InputField label="Kode Aset" required placeholder="Contoh: GP-CAM-001" value={data.kodeAset} onChange={(e) => setData(d => ({...d, kodeAset: e.target.value}))} />
+          <InputField label="Kode Aset" required placeholder="Masukkan kode aset" value={data.kodeAset} onChange={(e) => setData(d => ({...d, kodeAset: e.target.value}))} />
           <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: e.target.value}))} />
           <InputField label="Pengguna" placeholder="Nama pengguna" value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} className="sm:col-span-2" />
-          <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriOptions} placeholder="Pilih Kategori" />
-          <SelectField label="Merek" value={data.merek} onChange={(e) => setData(d => ({...d, merek: e.target.value}))} options={merekOptions} placeholder="Pilih Merek" />
-          <SelectField label="Model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} options={modelOptions} placeholder="Pilih Model" />
-          <InputField label="No. SN" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} />
+          <SelectWithAdd label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriList} onAddOption={(v) => setKategoriList(prev => [...prev, v])} placeholder="Pilih Kategori" />
+          <SelectWithAdd label="Merek" value={data.merek} onChange={(e) => setData(d => ({...d, merek: e.target.value}))} options={merekList} onAddOption={(v) => setMerekList(prev => [...prev, v])} placeholder="Pilih Merek" />
+          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} />
+          <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} />
+          <InputField label="Harga Aset (Rp)" placeholder="Harga aset" type="number" value={data.hargaAset} onChange={(e) => setData(d => ({...d, hargaAset: e.target.value}))} />
+          <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} />
           <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: e.target.value}))} rows={3} className="sm:col-span-2" />
         </div>
       </div>
       <hr className="border-slate-200" />
-      {/* Section 2: Lokasi Aset */}
       <div>
         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-800 uppercase tracking-wide">
           <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           Lokasi Aset
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <InputField label="Lokasi Aset" placeholder="Contoh: Studio A, Gudang" value={data.lokasiAset} onChange={(e) => setData(d => ({...d, lokasiAset: e.target.value}))} className="sm:col-span-2" />
+          <InputField label="Lokasi Aset" placeholder="Masukkan lokasi aset" value={data.lokasiAset} onChange={(e) => setData(d => ({...d, lokasiAset: e.target.value}))} />
           <SelectField label="Kondisi Aset" value={data.kondisi} onChange={(e) => setData(d => ({...d, kondisi: e.target.value}))} options={kondisiOptions} placeholder="Pilih Kondisi" />
-          <SelectField label="Unit" value={data.unit} onChange={(e) => setData(d => ({...d, unit: e.target.value}))} options={unitOptions} placeholder="Pilih Unit" />
           <ImageUploadField onFileChange={onImageChange} previewUrl={imgPreview} onClear={onImageClear} />
           <TextAreaField label="Keterangan" placeholder="Keterangan tambahan" value={data.keterangan} onChange={(e) => setData(d => ({...d, keterangan: e.target.value}))} className="sm:col-span-2" />
         </div>
@@ -345,14 +355,11 @@ export default function DaftarAsetPage() {
       <div>
         <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1><p className="text-sm text-slate-500">Kelola data aset Galeria Production</p></div>
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="p-8 space-y-3 animate-pulse">
-            {[1,2,3,4,5].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/><div className="h-4 w-20 rounded bg-slate-200"/></div>))}
-          </div>
+          <div className="p-8 space-y-3 animate-pulse">{[1,2,3,4,5].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/><div className="h-4 w-20 rounded bg-slate-200"/></div>))}</div>
         </div>
       </div>
     );
   }
-
   // Error
   if (error) {
     return (
@@ -367,6 +374,11 @@ export default function DaftarAsetPage() {
       </div>
     );
   }
+
+  const formatRupiah = (val) => {
+    if (!val) return "-";
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(val);
+  };
 
   return (
     <div>
@@ -416,10 +428,10 @@ export default function DaftarAsetPage() {
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
                 <th className="w-[60px] px-3 py-3 font-bold text-slate-700 text-center">Gambar</th>
-                <th className="w-[200px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[190px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("pengguna")} className="cursor-pointer flex items-center">Pengguna <SortIcon columnKey="pengguna" sortConfig={sortConfig} /></button></th>
                 <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
                 <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
-                <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("unit")} className="cursor-pointer flex items-center">Unit <SortIcon columnKey="unit" sortConfig={sortConfig} /></button></th>
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700">Kondisi</th>
                 <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center">Aksi</th>
               </tr>
@@ -438,10 +450,10 @@ export default function DaftarAsetPage() {
                       </div>
                     )}
                   </td>
-                  <td className="w-[200px] px-5 py-3 text-slate-600 truncate">{item.namaAset}</td>
+                  <td className="w-[190px] px-5 py-3 text-slate-600 truncate">{item.namaAset}</td>
+                  <td className="w-[140px] px-5 py-3 text-slate-600 truncate">{item.pengguna || "-"}</td>
                   <td className="w-[120px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
                   <td className="w-[140px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
-                  <td className="w-[120px] px-5 py-3 text-slate-600 truncate">{item.unit}</td>
                   <td className="w-[130px] px-5 py-3"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
                   <td className="w-[110px] px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
@@ -494,7 +506,7 @@ export default function DaftarAsetPage() {
               <div>
                 <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Inventori</h4>
                 <div className="space-y-2.5">
-                  {[["Kode Aset", showDetail.kodeAset], ["Nama Aset", showDetail.namaAset], ["Pengguna", showDetail.pengguna], ["Kategori", showDetail.kategori], ["Merek", showDetail.merek], ["Model", showDetail.model], ["No. SN", showDetail.noSN], ["Spesifikasi", showDetail.spesifikasi]].map(([l, v]) => (
+                  {[["Kode Aset", showDetail.kodeAset], ["Nama Aset", showDetail.namaAset], ["Pengguna", showDetail.pengguna], ["Kategori", showDetail.kategori], ["Merek", showDetail.merek], ["Model", showDetail.model], ["Jumlah", showDetail.jumlah], ["Harga Aset", formatRupiah(showDetail.hargaAset)], ["Serial Number", showDetail.noSN], ["Spesifikasi", showDetail.spesifikasi]].map(([l, v]) => (
                     <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
                   ))}
                 </div>
@@ -503,7 +515,7 @@ export default function DaftarAsetPage() {
               <div>
                 <h4 className="mb-3 text-sm font-bold text-slate-800">Lokasi Aset</h4>
                 <div className="space-y-2.5">
-                  {[["Lokasi", showDetail.lokasiAset], ["Kondisi", showDetail.kondisi], ["Unit", showDetail.unit], ["Keterangan", showDetail.keterangan]].map(([l, v]) => (
+                  {[["Lokasi", showDetail.lokasiAset], ["Kondisi", showDetail.kondisi], ["Keterangan", showDetail.keterangan]].map(([l, v]) => (
                     <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
                   ))}
                 </div>

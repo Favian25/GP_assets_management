@@ -8,8 +8,8 @@
   --sidebar-active: #3b82f6;
   --card-bg: #ffffff;
   --border: #e2e8f0;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
+  --primary: #005AF5;
+  --primary-hover: #0045BF;
   --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;
@@ -43,6 +43,7 @@ body {
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #f1f5f9;

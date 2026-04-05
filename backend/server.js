@@ -4,6 +4,9 @@ const path = require("path");
 require("dotenv").config();
 
 const assetRoutes = require("./routes/assetRoutes");
+const peminjamanRoutes = require("./routes/peminjamanRoutes");
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,7 +27,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/assets", assetRoutes);
+app.use("/api/peminjaman", peminjamanRoutes);
+app.use("/api/users", userRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

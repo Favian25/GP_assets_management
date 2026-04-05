@@ -15,7 +15,7 @@ const api = axios.create({
 // Frontend pakai camelCase, Backend pakai snake_case
 // ============================================================
 
-// Mapping: Frontend key → Backend key
+// Mapping: Frontend key → Backend key (ASET)
 const fieldMapToBackend = {
   kodeAset: "kode_aset",
   namaAset: "nama_aset",
@@ -30,6 +30,8 @@ const fieldMapToBackend = {
   unit: "unit",
   gambar: "gambar",
   keterangan: "keterangan",
+  jumlah: "jumlah",
+  hargaAset: "harga_aset",
 };
 
 // Mapping: Backend key → Frontend key (reverse)
@@ -83,6 +85,66 @@ export function mapAssetToBackend(frontendAsset) {
 export function mapAssetsToFrontend(backendAssets) {
   if (!Array.isArray(backendAssets)) return [];
   return backendAssets.map(mapAssetToFrontend);
+}
+
+// ============================================================
+// Utility mapping untuk Peminjaman (Header)
+// ============================================================
+
+export function mapPeminjamanToFrontend(backendData) {
+  if (!backendData) return null;
+  return {
+    id: backendData.id,
+    kodePinjam: backendData.kode_pinjam,
+    namaPeminjam: backendData.nama_peminjam,
+    penerimaAset: backendData.penerima_aset,
+    alasanPeminjaman: backendData.alasan_peminjaman,
+    tanggalPeminjaman: backendData.tanggal_peminjaman,
+    tanggalPengembalian: backendData.tanggal_pengembalian,
+    status: backendData.status,
+    yangMenyerahkan: backendData.yang_menyerahkan,
+    approvedBy: backendData.approved_by,
+    totalItems: backendData.total_items,
+    daftarAset: backendData.daftar_aset,
+    createdAt: backendData.created_at,
+    // Items (jika ada dari getById)
+    items: backendData.items
+      ? backendData.items.map((item) => ({
+          id: item.id,
+          assetId: item.asset_id,
+          namaAset: item.nama_aset,
+          kodeAset: item.kode_aset,
+          jumlah: item.jumlah,
+          stokTersedia: item.stok_tersedia,
+        }))
+      : undefined,
+  };
+}
+
+export function mapPeminjamanToBackend(frontendData) {
+  if (!frontendData) return null;
+  const mapped = {};
+  if (frontendData.namaPeminjam !== undefined) mapped.nama_peminjam = frontendData.namaPeminjam;
+  if (frontendData.penerimaAset !== undefined) mapped.penerima_aset = frontendData.penerimaAset;
+  if (frontendData.alasanPeminjaman !== undefined) mapped.alasan_peminjaman = frontendData.alasanPeminjaman;
+  if (frontendData.tanggalPeminjaman !== undefined) mapped.tanggal_peminjaman = frontendData.tanggalPeminjaman;
+  if (frontendData.tanggalPengembalian !== undefined) mapped.tanggal_pengembalian = frontendData.tanggalPengembalian;
+  if (frontendData.status !== undefined) mapped.status = frontendData.status;
+  if (frontendData.yangMenyerahkan !== undefined) mapped.yang_menyerahkan = frontendData.yangMenyerahkan;
+  if (frontendData.approvedBy !== undefined) mapped.approved_by = frontendData.approvedBy;
+  // Items
+  if (frontendData.items) {
+    mapped.items = frontendData.items.map((item) => ({
+      asset_id: item.assetId,
+      jumlah: item.jumlah,
+    }));
+  }
+  return mapped;
+}
+
+export function mapPeminjamanArrayToFrontend(backendArray) {
+  if (!Array.isArray(backendArray)) return [];
+  return backendArray.map(mapPeminjamanToFrontend);
 }
 
 export default api;

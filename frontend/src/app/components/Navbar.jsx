@@ -1,12 +1,32 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { logoutUser, getUserContext } from "../lib/authService";
 
 export default function Navbar() {
+  const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const notifRef = useRef(null);
   const profileRef = useRef(null);
+  const [userName, setUserName] = useState("");
+  const [userInitial, setUserInitial] = useState("U");
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+    const ctx = getUserContext();
+    if (ctx) {
+      setUserName(ctx.namaLengkap || ctx.email || "");
+      setUserInitial((ctx.namaLengkap || ctx.email || "U").charAt(0).toUpperCase());
+      setUserRole(ctx.role || "user");
+    }
+  }, []);
+
+  const handleLogout = () => {
+    logoutUser();
+    router.replace("/auth");
+  };
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -91,7 +111,7 @@ export default function Navbar() {
             className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-slate-100"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-              A
+              {userInitial}
             </div>
             <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -99,9 +119,13 @@ export default function Navbar() {
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-100 bg-white shadow-lg">
+            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-100 bg-white shadow-lg">
+              <div className="px-4 py-3 border-b border-slate-100">
+                <p className="text-sm font-semibold text-slate-800 truncate">{userName}</p>
+                <p className="text-xs text-slate-400 capitalize">{userRole}</p>
+              </div>
               <div className="p-1.5">
-                <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50">
+                <button className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50">
                   <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -111,7 +135,7 @@ export default function Navbar() {
               </div>
               <div className="mx-1.5 border-t border-slate-100" />
               <div className="p-1.5">
-                <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-50">
+                <button onClick={handleLogout} className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-50">
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

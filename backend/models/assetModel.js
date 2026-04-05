@@ -31,12 +31,14 @@ const Asset = {
       unit,
       gambar,
       keterangan,
+      jumlah,
+      harga_aset,
     } = data;
 
     const [result] = await db.query(
       `INSERT INTO assets 
-        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         kode_aset,
         nama_aset,
@@ -51,6 +53,8 @@ const Asset = {
         unit || null,
         gambar || null,
         keterangan || null,
+        jumlah || null,
+        harga_aset || null,
       ]
     );
 
@@ -73,13 +77,16 @@ const Asset = {
       unit,
       gambar,
       keterangan,
+      jumlah,
+      harga_aset,
     } = data;
 
     const [result] = await db.query(
       `UPDATE assets SET
         kode_aset = ?, nama_aset = ?, pengguna = ?, kategori = ?,
         merek = ?, model = ?, no_sn = ?, spesifikasi = ?,
-        lokasi_aset = ?, kondisi = ?, unit = ?, gambar = ?, keterangan = ?
+        lokasi_aset = ?, kondisi = ?, unit = ?, gambar = ?, keterangan = ?,
+        jumlah = ?, harga_aset = ?
        WHERE id = ?`,
       [
         kode_aset,
@@ -95,6 +102,8 @@ const Asset = {
         unit || null,
         gambar || null,
         keterangan || null,
+        jumlah || null,
+        harga_aset || null,
         id,
       ]
     );
