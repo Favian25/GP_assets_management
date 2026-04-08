@@ -7,6 +7,7 @@ const assetRoutes = require("./routes/assetRoutes");
 const peminjamanRoutes = require("./routes/peminjamanRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/peminjaman", peminjamanRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

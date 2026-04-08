@@ -10,6 +10,17 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Interceptor: inject JWT token ke setiap request
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 // ============================================================
 // Utility: Mapping field names antara Frontend ↔ Backend
 // Frontend pakai camelCase, Backend pakai snake_case

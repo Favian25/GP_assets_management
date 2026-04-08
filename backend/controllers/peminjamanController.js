@@ -1,4 +1,6 @@
 const Peminjaman = require("../models/peminjamanModel");
+const Notification = require("../models/notificationModel");
+const db = require("../config/db");
 
 const peminjamanController = {
   // GET semua data
@@ -65,6 +67,27 @@ const peminjamanController = {
         items
       );
 
+      // Notifikasi: peminjaman baru
+      await Notification.create({
+        type: 'peminjaman_baru',
+        message: `${nama_peminjam} membuat peminjaman baru (${kode_pinjam})`,
+        referenceId: result.insertId,
+        targetRoles: 'super admin,admin,supervisor',
+      });
+
+      // Cek stok rendah (≤ 3) untuk setiap item
+      for (const item of items) {
+        const [assetRows] = await db.query('SELECT nama_aset, jumlah FROM assets WHERE id = ?', [item.asset_id]);
+        if (assetRows[0] && assetRows[0].jumlah <= 3) {
+          await Notification.create({
+            type: 'stok_rendah',
+            message: `Stok ${assetRows[0].nama_aset} tersisa ${assetRows[0].jumlah} unit`,
+            referenceId: item.asset_id,
+            targetRoles: 'super admin,admin',
+          });
+        }
+      }
+
       res.status(201).json({ success: true, message: "Peminjaman berhasil ditambahkan", data: result });
     } catch (error) {
       console.error("Error create peminjaman:", error);
@@ -86,6 +109,17 @@ const peminjamanController = {
       const { tanggal_pengembalian, status, penerima_aset } = req.body;
 
       await Peminjaman.updateReturn(id, { tanggal_pengembalian, status, penerima_aset });
+
+      // Notifikasi: pengembalian
+      if (status === 'Dikembalikan') {
+        await Notification.create({
+          type: 'dikembalikan',
+          message: `Peminjaman ${checkData.kode_pinjam} telah dikembalikan oleh ${checkData.nama_peminjam}`,
+          referenceId: id,
+          targetRoles: 'super admin,admin,supervisor',
+        });
+      }
+
       res.status(200).json({ success: true, message: "Data peminjaman berhasil diperbarui" });
     } catch (error) {
       console.error("Error update peminjaman:", error);
@@ -109,6 +143,15 @@ const peminjamanController = {
       }
 
       await Peminjaman.approve(id, approved_by || "System");
+
+      // Notifikasi: approved
+      await Notification.create({
+        type: 'approved',
+        message: `Peminjaman ${checkData.kode_pinjam} telah di-approve oleh ${approved_by || 'System'}`,
+        referenceId: id,
+        targetRoles: 'super admin,admin,supervisor,user',
+      });
+
       res.status(200).json({ success: true, message: "Peminjaman berhasil di-approve" });
     } catch (error) {
       console.error("Error approve peminjaman:", error);

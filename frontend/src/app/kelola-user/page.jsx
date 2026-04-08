@@ -140,26 +140,41 @@ export default function KelolaUserPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Total User", count: users.length, color: "bg-primary", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" },
-          { label: "Admin", count: users.filter(u => u.role === "admin").length, color: "bg-blue-500", icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
-          { label: "Supervisor", count: users.filter(u => u.role === "supervisor").length, color: "bg-amber-500", icon: "M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
-          { label: "User", count: users.filter(u => u.role === "user").length, color: "bg-slate-500", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
-        ].map(stat => (
-          <div key={stat.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.color} text-white`}>
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} /></svg>
+      {(() => {
+        const managedUsers = users.filter(u => u.role !== "super admin");
+         return (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            {[
+              { label: "Total User", count: managedUsers.length, color: "bg-primary", customIcon: (
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12.75c1.63 0 3.07.39 4.24.9 1.08.48 1.76 1.56 1.76 2.73V18H6v-1.61c0-1.18.68-2.26 1.76-2.73A9.93 9.93 0 0112 12.75zM4 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm1.13 1.1A6.73 6.73 0 004 14c-.99 0-1.93.21-2.78.58A2.01 2.01 0 000 16.43V18h4.5v-1.61c0-.83.23-1.61.63-2.29zM20 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm4 3.43c0-.81-.48-1.53-1.22-1.85A6.95 6.95 0 0020 14c-.37 0-.74.04-1.13.1.4.68.63 1.46.63 2.29V18H24v-1.57zM12 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3z" />
+                </svg>
+              )},
+              { label: "Admin", count: managedUsers.filter(u => u.role === "admin").length, color: "bg-blue-500", customIcon: (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              )},
+              { label: "Supervisor", count: managedUsers.filter(u => u.role === "supervisor").length, color: "bg-amber-500", customIcon: (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+              )},
+              { label: "User", count: managedUsers.filter(u => u.role === "user").length, color: "bg-slate-500", customIcon: (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              )},
+            ].map(stat => (
+              <div key={stat.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.color} text-white`}>
+                    {stat.customIcon}
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-slate-800">{stat.count}</p>
+                    <p className="text-xs text-slate-500 font-medium">{stat.label}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-800">{stat.count}</p>
-                <p className="text-xs text-slate-500 font-medium">{stat.label}</p>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-violet-500">
@@ -167,7 +182,7 @@ export default function KelolaUserPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-300 bg-slate-50">
-                <th className="px-5 py-3 font-bold text-slate-700 w-12">#</th>
+                <th className="px-5 py-3 font-bold text-slate-700 w-12 text-center">No</th>
                 <th className="px-5 py-3 font-bold text-slate-700">Nama Lengkap</th>
                 <th className="px-5 py-3 font-bold text-slate-700">Email</th>
                 <th className="px-5 py-3 font-bold text-slate-700">Role</th>
@@ -176,16 +191,15 @@ export default function KelolaUserPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user, index) => (
+              {users.filter(u => u.role !== "super admin").map((user, index) => (
                 <tr key={user.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-50/50" : "bg-white"}`}>
-                  <td className="px-5 py-3 text-slate-400 font-medium">{index + 1}</td>
+                  <td className="px-5 py-3 text-slate-400 font-medium text-center">{index + 1}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ${user.role === "super admin" ? "bg-violet-500" : user.role === "admin" ? "bg-blue-500" : user.role === "supervisor" ? "bg-amber-500" : "bg-slate-400"}`}>
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ${user.role === "admin" ? "bg-blue-500" : user.role === "supervisor" ? "bg-amber-500" : "bg-slate-400"}`}>
                         {(user.namaLengkap || "U").charAt(0).toUpperCase()}
                       </div>
                       <span className="font-semibold text-slate-800">{user.namaLengkap}</span>
-                      {user.id === currentUserId && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">Anda</span>}
                     </div>
                   </td>
                   <td className="px-5 py-3 text-slate-600">{user.email}</td>
@@ -195,28 +209,21 @@ export default function KelolaUserPage() {
                   <td className="px-5 py-3 text-slate-500 text-sm">{formatDate(user.createdAt)}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
-                      {user.role !== "super admin" && (
-                        <>
-                          {/* Change Role */}
-                          <button onClick={() => { setShowRoleModal(user); setSelectedRole(user.role); }}
-                            className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Ubah Role">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                          </button>
-                          {/* Delete */}
-                          <button onClick={() => setShowDeleteConfirm(user)}
-                            className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
-                        </>
-                      )}
-                      {user.role === "super admin" && (
-                        <span className="text-xs text-violet-400 font-medium italic">Protected</span>
-                      )}
+                      {/* Change Role */}
+                      <button onClick={() => { setShowRoleModal(user); setSelectedRole(user.role); }}
+                        className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Ubah Role">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      </button>
+                      {/* Delete */}
+                      <button onClick={() => setShowDeleteConfirm(user)}
+                        className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {users.length === 0 && (<tr><td colSpan={6} className="px-5 py-10 text-center text-slate-400">Belum ada user terdaftar.</td></tr>)}
+              {users.filter(u => u.role !== "super admin").length === 0 && (<tr><td colSpan={6} className="px-5 py-10 text-center text-slate-400">Belum ada user terdaftar.</td></tr>)}
             </tbody>
           </table>
         </div>

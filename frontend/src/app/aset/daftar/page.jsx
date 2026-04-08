@@ -429,7 +429,7 @@ export default function DaftarAsetPage() {
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
                 <th className="w-[60px] px-3 py-3 font-bold text-slate-700 text-center">Gambar</th>
                 <th className="w-[190px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
-                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("pengguna")} className="cursor-pointer flex items-center">Pengguna <SortIcon columnKey="pengguna" sortConfig={sortConfig} /></button></th>
+                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlah")} className="cursor-pointer flex items-center">Jumlah <SortIcon columnKey="jumlah" sortConfig={sortConfig} /></button></th>
                 <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
                 <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700">Kondisi</th>
@@ -451,7 +451,7 @@ export default function DaftarAsetPage() {
                     )}
                   </td>
                   <td className="w-[190px] px-5 py-3 text-slate-600 truncate">{item.namaAset}</td>
-                  <td className="w-[140px] px-5 py-3 text-slate-600 truncate">{item.pengguna || "-"}</td>
+                  <td className="w-[140px] px-5 py-3 text-slate-600 truncate">{item.jumlah ?? "-"}</td>
                   <td className="w-[120px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
                   <td className="w-[140px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
                   <td className="w-[130px] px-5 py-3"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
