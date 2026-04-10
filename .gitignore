@@ -68,6 +68,8 @@ frontend/next-env.d.ts
 # Uploads (gambar aset yang di-upload user)
 backend/public/images/*
 !backend/public/images/.gitkeep
+backend/public/uploads/*
+!backend/public/uploads/.gitkeep
 
 # Build / dist
 backend/dist/

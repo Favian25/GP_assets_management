@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getAllAssets, createAsset, updateAsset, deleteAsset, searchAssets } from "../../lib/assetService";
+import { getAllAssets, createAsset, updateAsset, deleteAsset, searchAssets, updateAssetKondisi } from "../../lib/assetService";
+import { getAllCategories, createCategory } from "../../lib/categoryService";
+import { getAllBrands, createBrand } from "../../lib/brandService";
 
 const BACKEND_URL = "http://localhost:5000";
-const defaultKategoriOptions = ["Kamera", "Microphone", "Webcam"];
-const defaultMerekOptions = ["Sony", "Apple", "Epson"];
-const kondisiOptions = ["Siap Digunakan", "Rusak", "Maintenance", "Diarsipkan"];
+const kondisiOptions = ["Siap Digunakan", "Rusak", "Maintenance", "Dijual"];
 const ITEMS_PER_PAGE = 10;
 
 const emptyForm = {
@@ -40,58 +40,6 @@ function SelectField({ label, value, onChange, options, placeholder = "Pilih..."
         <option value="">{placeholder}</option>
         {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
       </select>
-    </div>
-  );
-}
-
-function SelectWithAdd({ label, value, onChange, options, onAddOption, placeholder = "Pilih...", className = "" }) {
-  const [showAdd, setShowAdd] = useState(false);
-  const [newVal, setNewVal] = useState("");
-  const inputRef = useRef(null);
-
-  useEffect(() => { if (showAdd && inputRef.current) inputRef.current.focus(); }, [showAdd]);
-
-  const handleAdd = () => {
-    const trimmed = newVal.trim();
-    if (trimmed && !options.includes(trimmed)) {
-      onAddOption(trimmed);
-      onChange({ target: { value: trimmed } });
-    }
-    setNewVal("");
-    setShowAdd(false);
-  };
-
-  return (
-    <div className={className}>
-      <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
-      {showAdd ? (
-        <div className="flex gap-1.5">
-          <input ref={inputRef} type="text" value={newVal} onChange={(e) => setNewVal(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAdd(); } }}
-            placeholder={`Tambah ${label.toLowerCase()}...`}
-            className="flex-1 rounded-lg border border-primary px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary" />
-          <button type="button" onClick={handleAdd}
-            className="cursor-pointer rounded-lg bg-emerald-500 px-2.5 py-2 text-white transition-colors hover:bg-emerald-600">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-          </button>
-          <button type="button" onClick={() => { setShowAdd(false); setNewVal(""); }}
-            className="cursor-pointer rounded-lg bg-slate-200 px-2.5 py-2 text-slate-600 transition-colors hover:bg-slate-300">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-      ) : (
-        <div className="flex gap-1.5">
-          <select value={value} onChange={onChange}
-            className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-            <option value="">{placeholder}</option>
-            {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-          </select>
-          <button type="button" onClick={() => setShowAdd(true)} title={`Tambah ${label}`}
-            className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-primary transition-colors hover:bg-primary hover:text-white">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -184,11 +132,29 @@ export default function DaftarAsetPage() {
   const [editImagePreview, setEditImagePreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
-  const [kategoriList, setKategoriList] = useState(defaultKategoriOptions);
-  const [merekList, setMerekList] = useState(defaultMerekOptions);
+  const [kategoriList, setKategoriList] = useState([]);
+  const [merekList, setMerekList] = useState([]);
+
+  const [showKatModal, setShowKatModal] = useState(false);
+  const [showMerekModal, setShowMerekModal] = useState(false);
+  const [showKondisiModal, setShowKondisiModal] = useState(null);
+  const [newKatData, setNewKatData] = useState({ nama: "", kode_singkat: "" });
+  const [newMerekData, setNewMerekData] = useState({ nama: "" });
+  const [newKondisi, setNewKondisi] = useState("");
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
+
+  const fetchDependencies = async () => {
+    try {
+      const cats = await getAllCategories();
+      const brds = await getAllBrands();
+      setKategoriList(cats.map(c => c.nama));
+      setMerekList(brds.map(b => b.nama));
+    } catch (err) {
+      console.error("Failed to load dependencies", err);
+    }
+  };
 
   const fetchAssets = useCallback(async () => {
     try { 
@@ -196,20 +162,15 @@ export default function DaftarAsetPage() {
       setError(null); 
       const data = await getAllAssets();
       setAssets(data || []); 
-
-      if (data && data.length > 0) {
-        const uniqueKategori = [...new Set([...defaultKategoriOptions, ...data.map(item => item.kategori).filter(Boolean)])];
-        setKategoriList(uniqueKategori);
-        
-        const uniqueMerek = [...new Set([...defaultMerekOptions, ...data.map(item => item.merek).filter(Boolean)])];
-        setMerekList(uniqueMerek);
-      }
     }
     catch { setError("Gagal memuat data aset."); }
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchAssets(); }, [fetchAssets]);
+  useEffect(() => { 
+    fetchAssets(); 
+    fetchDependencies();
+  }, [fetchAssets]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -248,19 +209,41 @@ export default function DaftarAsetPage() {
     setCurrentPage(1);
   };
 
+  // CRUD Modals
+  const handleCreateKat = async (e) => {
+    e.preventDefault();
+    if (!newKatData.nama || !newKatData.kode_singkat) return;
+    try { setSubmitting(true); await createCategory(newKatData.nama, newKatData.kode_singkat); showToast("Kategori ditambahkan!"); setShowKatModal(false); setNewKatData({nama:"",kode_singkat:""}); await fetchDependencies(); }
+    catch { showToast("Gagal menambahkan kategori", "error"); }
+    finally { setSubmitting(false); }
+  };
+  const handleCreateMerek = async (e) => {
+    e.preventDefault();
+    if (!newMerekData.nama) return;
+    try { setSubmitting(true); await createBrand(newMerekData.nama); showToast("Merek ditambahkan!"); setShowMerekModal(false); setNewMerekData({nama:""}); await fetchDependencies(); }
+    catch { showToast("Gagal menambahkan merek", "error"); }
+    finally { setSubmitting(false); }
+  };
+
   // CRUD
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!formData.kodeAset || !formData.namaAset) { showToast("Kode Aset dan Nama Aset wajib diisi", "error"); return; }
-    try { setSubmitting(true); await createAsset(formData, imageFile); showToast("Aset berhasil ditambahkan!"); setShowModal(false); setFormData(emptyForm); setImageFile(null); setImagePreview(null); await fetchAssets(); }
+    if (!formData.namaAset) { showToast("Nama Aset wajib diisi", "error"); return; }
+    try { setSubmitting(true); await createAsset({ ...formData, kodeAset: undefined }, imageFile); showToast("Aset berhasil ditambahkan!"); setShowModal(false); setFormData(emptyForm); setImageFile(null); setImagePreview(null); await fetchAssets(); }
     catch (err) { showToast(err.response?.data?.message || "Gagal menambahkan aset", "error"); }
     finally { setSubmitting(false); }
   };
   const handleUpdate = async (e) => {
     e.preventDefault();
-    if (!editFormData.kodeAset || !editFormData.namaAset) { showToast("Kode Aset dan Nama Aset wajib diisi", "error"); return; }
+    if (!editFormData.namaAset) { showToast("Nama Aset wajib diisi", "error"); return; }
     try { setSubmitting(true); await updateAsset(showEdit.id, editFormData, editImageFile); showToast("Aset berhasil diperbarui!"); setShowEdit(null); setEditFormData(emptyForm); setEditImageFile(null); setEditImagePreview(null); await fetchAssets(); }
     catch (err) { showToast(err.response?.data?.message || "Gagal memperbarui aset", "error"); }
+    finally { setSubmitting(false); }
+  };
+  const handleUpdateKondisi = async () => {
+    if (!showKondisiModal || !newKondisi) return;
+    try { setSubmitting(true); await updateAssetKondisi(showKondisiModal.id, newKondisi); showToast("Kondisi berhasil diperbarui!"); setShowKondisiModal(null); await fetchAssets(); }
+    catch (err) { showToast(err.response?.data?.message || "Gagal memperbarui kondisi", "error"); }
     finally { setSubmitting(false); }
   };
   const handleDelete = async () => {
@@ -277,7 +260,7 @@ export default function DaftarAsetPage() {
       kondisi: item.kondisi || "", keterangan: item.keterangan || "",
       jumlah: item.jumlah || "", hargaAset: item.hargaAset || "",
     });
-    // Ensure existing values are in dropdown lists
+    // Ensure existing values are in dropdown lists if deleted previously
     if (item.kategori && !kategoriList.includes(item.kategori)) setKategoriList(prev => [...prev, item.kategori]);
     if (item.merek && !merekList.includes(item.merek)) setMerekList(prev => [...prev, item.merek]);
     setEditImageFile(null);
@@ -286,8 +269,13 @@ export default function DaftarAsetPage() {
   };
 
   const getKondisiBadge = (kondisi) => {
-    const s = { "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-200", "Rusak": "bg-red-50 text-red-700 border-red-200", "Maintenance": "bg-amber-50 text-amber-700 border-amber-200", "Diarsipkan": "bg-slate-100 text-slate-600 border-slate-200" };
-    return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200";
+    const s = { 
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-600 hover:text-white hover:border-emerald-600", 
+      "Rusak": "bg-red-50 text-red-700 border-red-200 hover:bg-red-600 hover:text-white hover:border-red-600", 
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-600 hover:text-white hover:border-amber-600", 
+      "Dijual": "bg-slate-100 text-slate-600 border-slate-400 hover:bg-slate-600 hover:text-white hover:border-slate-600" 
+    };
+    return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600";
   };
 
   const getPageNumbers = () => {
@@ -313,7 +301,7 @@ export default function DaftarAsetPage() {
   );
 
   // --- Form section builder ---
-  const renderFormFields = (data, setData, onImageChange, imgPreview, onImageClear) => (
+  const renderFormFields = (data, setData, onImageChange, imgPreview, onImageClear, isEdit = false) => (
     <div className="p-6 space-y-6">
       <div>
         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-800 uppercase tracking-wide">
@@ -321,11 +309,25 @@ export default function DaftarAsetPage() {
           Daftar Inventori
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <InputField label="Kode Aset" required placeholder="Masukkan kode aset" value={data.kodeAset} onChange={(e) => setData(d => ({...d, kodeAset: e.target.value}))} />
+          {isEdit && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Aset</label>
+              <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm font-mono font-bold text-primary">{data.kodeAset}</div>
+            </div>
+          )}
           <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: e.target.value}))} />
-          <InputField label="Pengguna" placeholder="Nama pengguna" value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} className="sm:col-span-2" />
-          <SelectWithAdd label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriList} onAddOption={(v) => setKategoriList(prev => [...prev, v])} placeholder="Pilih Kategori" />
-          <SelectWithAdd label="Merek" value={data.merek} onChange={(e) => setData(d => ({...d, merek: e.target.value}))} options={merekList} onAddOption={(v) => setMerekList(prev => [...prev, v])} placeholder="Pilih Merek" />
+          <InputField label="Pengguna" placeholder="Nama pengguna" value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} className={isEdit ? "sm:col-span-2" : ""} />
+          
+          <div className="flex gap-1.5 items-end">
+             <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriList} placeholder="Pilih Kategori" className="flex-1" />
+             <button type="button" onClick={() => setShowKatModal(true)} title="Tambah Kategori Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg></button>
+          </div>
+          
+          <div className="flex gap-1.5 items-end">
+             <SelectField label="Merek" value={data.merek} onChange={(e) => setData(d => ({...d, merek: e.target.value}))} options={merekList} placeholder="Pilih Merek" className="flex-1" />
+             <button type="button" onClick={() => setShowMerekModal(true)} title="Tambah Merek Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg></button>
+          </div>
+
           <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} />
           <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} />
           <InputField label="Harga Aset (Rp)" placeholder="Harga aset" type="number" value={data.hargaAset} onChange={(e) => setData(d => ({...d, hargaAset: e.target.value}))} />
@@ -426,21 +428,21 @@ export default function DaftarAsetPage() {
           <table className="w-full text-left text-sm table-fixed">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
-                <th className="w-[60px] px-3 py-3 font-bold text-slate-700 text-center">Gambar</th>
+                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[80px] px-3 py-3 font-bold text-slate-700 text-center">Gambar</th>
                 <th className="w-[190px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
-                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlah")} className="cursor-pointer flex items-center">Jumlah <SortIcon columnKey="jumlah" sortConfig={sortConfig} /></button></th>
-                <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
-                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
-                <th className="w-[130px] px-5 py-3 font-bold text-slate-700">Kondisi</th>
+                <th className="w-[80px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlah")} className="cursor-pointer flex items-center w-full justify-center">Jumlah <SortIcon columnKey="jumlah" sortConfig={sortConfig} /></button></th>
+                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
+                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
+                <th className="w-[150px] px-5 py-3 font-bold text-slate-700">Kondisi</th>
                 <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {paginatedData.map((item, index) => (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="w-[130px] px-5 py-3 font-mono text-xs font-medium text-primary truncate">{item.kodeAset}</td>
-                  <td className="w-[60px] px-3 py-2 text-center">
+                  <td className="w-[140px] px-5 py-3 font-mono text-xs font-bold text-primary hover:underline cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.kodeAset}</td>
+                  <td className="w-[80px] px-3 py-2 text-center">
                     {item.gambar ? (
                       <img src={getImageUrl(item.gambar)} alt="" onClick={() => setLightboxImg(getImageUrl(item.gambar))}
                         className="mx-auto h-9 w-9 rounded-md object-cover border border-slate-200 cursor-pointer hover:ring-2 hover:ring-primary transition-all" />
@@ -450,11 +452,11 @@ export default function DaftarAsetPage() {
                       </div>
                     )}
                   </td>
-                  <td className="w-[190px] px-5 py-3 text-slate-600 truncate">{item.namaAset}</td>
-                  <td className="w-[140px] px-5 py-3 text-slate-600 truncate">{item.jumlah ?? "-"}</td>
-                  <td className="w-[120px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
-                  <td className="w-[140px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
-                  <td className="w-[130px] px-5 py-3"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
+                  <td className="w-[190px] px-5 py-3 text-slate-600 hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.namaAset}</td>
+                  <td className="w-[80px] px-5 py-3 text-slate-600 text-center truncate">{item.jumlah ?? "-"}</td>
+                  <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
+                  <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
+                  <td className="w-[150px] px-5 py-3"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-all ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
                   <td className="w-[110px] px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button>
@@ -479,7 +481,7 @@ export default function DaftarAsetPage() {
               <h2 className="text-lg font-bold text-emerald-800">Tambah Aset Baru</h2>
               <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            {renderFormFields(formData, setFormData, (e) => handleImageSelect(e, setImageFile, setImagePreview), imagePreview, () => { setImageFile(null); setImagePreview(null); })}
+            {renderFormFields(formData, setFormData, (e) => handleImageSelect(e, setImageFile, setImagePreview), imagePreview, () => { setImageFile(null); setImagePreview(null); }, false)}
             <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
               <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
               <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Aset"}</button>
@@ -521,7 +523,8 @@ export default function DaftarAsetPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4">
+            <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4 gap-3">
+              <button onClick={() => {openEdit(showDetail); setShowDetail(null);}} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600">Edit Aset</button>
               <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600">Tutup</button>
             </div>
           </div>
@@ -536,7 +539,7 @@ export default function DaftarAsetPage() {
               <h2 className="text-lg font-bold text-amber-800">Edit Aset</h2>
               <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            {renderFormFields(editFormData, setEditFormData, (e) => handleImageSelect(e, setEditImageFile, setEditImagePreview), editImagePreview, () => { setEditImageFile(null); setEditImagePreview(null); })}
+            {renderFormFields(editFormData, setEditFormData, (e) => handleImageSelect(e, setEditImageFile, setEditImagePreview), editImagePreview, () => { setEditImageFile(null); setEditImagePreview(null); }, true)}
             <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
               <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
               <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
@@ -562,6 +565,60 @@ export default function DaftarAsetPage() {
             <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4">
               <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
               <button onClick={handleDelete} disabled={submitting} className="cursor-pointer rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-600 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Kategori */}
+      {showKatModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={handleCreateKat} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
+              <div className="space-y-4">
+                <InputField label="Nama Kategori" required placeholder="Contoh: Kamera" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({...d, nama: e.target.value}))} />
+                <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => setNewKatData(d => ({...d, kode_singkat: e.target.value.toUpperCase()}))} />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+              <button type="button" onClick={() => setShowKatModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">Simpan</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal Merek */}
+      {showMerekModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={handleCreateMerek} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Merek Baru</h3>
+              <div className="space-y-4">
+                <InputField label="Nama Merek" required placeholder="Contoh: Sony" value={newMerekData.nama} onChange={(e) => setNewMerekData(d => ({...d, nama: e.target.value}))} />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+              <button type="button" onClick={() => setShowMerekModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">Simpan</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal Update Kondisi */}
+      {showKondisiModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-1">Ubah Kondisi Aset</h3>
+              <p className="text-sm text-slate-500 mb-4 truncate">{showKondisiModal.namaAset}</p>
+              <SelectField label="" value={newKondisi} onChange={(e) => setNewKondisi(e.target.value)} options={kondisiOptions} placeholder="Pilih Kondisi" />
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+              <button onClick={() => setShowKondisiModal(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+              <button onClick={handleUpdateKondisi} disabled={submitting} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-600">Update Kondisi</button>
             </div>
           </div>
         </div>

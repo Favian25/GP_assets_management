@@ -34,14 +34,17 @@ export default function ClientWrapper({ children }) {
       const ctx = getUserContext();
       const role = ctx?.role || "user";
 
-      // Halaman Daftar Aset: hanya super admin & admin
-      if (pathname.startsWith("/aset/daftar") && !["super admin", "admin"].includes(role)) {
+      // Halaman Kelola Aset (Daftar, Kategori, Merek): hanya super admin & admin
+      if (
+        (pathname.startsWith("/aset/daftar") || pathname.startsWith("/aset/kategori") || pathname.startsWith("/aset/merek")) 
+        && !["super admin", "admin"].includes(role)
+      ) {
         router.replace("/");
         return;
       }
 
-      // Halaman Kelola User: hanya super admin
-      if (pathname.startsWith("/kelola-user") && role !== "super admin") {
+      // Halaman Kelola User: hanya super admin dan admin
+      if (pathname.startsWith("/kelola-user") && !["super admin", "admin"].includes(role)) {
         router.replace("/");
         return;
       }

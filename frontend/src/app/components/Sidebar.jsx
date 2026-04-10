@@ -25,7 +25,7 @@ export default function Sidebar() {
       {/* Brand */}
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-6">
         <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-lg bg-white overflow-hidden p-1.5 shadow-sm">
-          <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
+          <img src="/logo-galeria-production.png" alt="Logo" className="h-full w-full object-contain" />
         </div>
         <div>
           <h1 className="text-sm font-bold text-white leading-tight">
@@ -81,20 +81,50 @@ export default function Sidebar() {
           <div className="ml-4 border-l border-white/10 pl-3">
             {/* Daftar Aset - Only Super Admin & Admin */}
             {canSeeDaftarAset && (
-              <Link
-                href="/aset/daftar"
-                className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
-                  isActive("/aset/daftar")
-                    ? "bg-primary text-white"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                Daftar Aset
-              </Link>
+              <>
+                <Link
+                  href="/aset/daftar"
+                  className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                    isActive("/aset/daftar")
+                      ? "bg-primary text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Daftar Aset
+                </Link>
+                
+                <Link
+                  href="/aset/kategori"
+                  className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                    isActive("/aset/kategori")
+                      ? "bg-primary text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  Kategori
+                </Link>
+                
+                <Link
+                  href="/aset/merek"
+                  className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                    isActive("/aset/merek")
+                      ? "bg-primary text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  Merek
+                </Link>
+              </>
             )}
 
             {/* Peminjaman Aset - All roles */}
@@ -115,8 +145,8 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* Kelola User - Only Super Admin */}
-        {userRole === "super admin" && (
+        {/* Kelola User - Only Super Admin & Admin */}
+        {["super admin", "admin"].includes(userRole) && (
           <Link
             href="/kelola-user"
             className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${

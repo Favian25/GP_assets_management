@@ -96,6 +96,17 @@ export async function deleteAsset(id) {
 }
 
 /**
+ * PATCH update kondisi aset
+ * @param {number} id
+ * @param {string} kondisi
+ * @returns {Promise<Object>} response message
+ */
+export async function updateAssetKondisi(id, kondisi) {
+  const response = await api.patch(`/assets/${id}/kondisi`, { kondisi });
+  return response.data;
+}
+
+/**
  * SEARCH cari aset berdasarkan keyword
  * @param {string} keyword
  * @returns {Promise<Array>} list aset yang ditemukan
@@ -118,14 +129,14 @@ export async function getDashboardStats() {
   const tersedia = assets.filter((a) => a.kondisi === "Siap Digunakan").length;
   const maintenance = assets.filter((a) => a.kondisi === "Maintenance").length;
   const rusak = assets.filter((a) => a.kondisi === "Rusak").length;
-  const diarsipkan = assets.filter((a) => a.kondisi === "Diarsipkan").length;
+  const dijual = assets.filter((a) => a.kondisi === "Dijual").length; // Diupdate dari Diarsipkan
 
   return {
     total,
     tersedia,
     maintenance,
     rusak,
-    diarsipkan,
+    diarsipkan: dijual, // Tetap return property name 'diarsipkan' untuk kompatibilitas sementara, isinya 'dijual'
     recentAssets: assets.slice(0, 5),
   };
 }

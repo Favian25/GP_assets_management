@@ -37,6 +37,7 @@ router.get("/", assetController.getAll);           // GET  /api/assets
 router.get("/:id", assetController.getById);       // GET  /api/assets/:id
 router.post("/", upload.single("gambar"), assetController.create);    // POST /api/assets
 router.put("/:id", upload.single("gambar"), assetController.update);  // PUT  /api/assets/:id
+router.patch("/:id/kondisi", assetController.updateKondisi);      // PATCH /api/assets/:id/kondisi
 router.delete("/:id", assetController.delete);     // DELETE /api/assets/:id
 
 module.exports = router;

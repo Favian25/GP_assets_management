@@ -15,6 +15,21 @@ const Asset = {
     return rows[0];
   },
 
+  // Generate kode aset berikutnya
+  getNextKodeAset: async (kodeSingkat) => {
+    const prefix = `GPRO-${kodeSingkat}-`;
+    const [rows] = await db.query(
+      "SELECT kode_aset FROM assets WHERE kode_aset LIKE ? ORDER BY id DESC LIMIT 1",
+      [`${prefix}%`]
+    );
+    let nextNum = 1;
+    if (rows[0] && rows[0].kode_aset) {
+      const match = rows[0].kode_aset.match(new RegExp(`GPRO-${kodeSingkat}-(\\d+)`));
+      if (match) nextNum = parseInt(match[1]) + 1;
+    }
+    return `${prefix}${nextNum}`;
+  },
+
   // CREATE aset baru
   create: async (data) => {
     const {
@@ -108,6 +123,15 @@ const Asset = {
       ]
     );
 
+    return result.affectedRows;
+  },
+
+  // UPDATE kondisi aset (patch)
+  updateKondisi: async (id, kondisi) => {
+    const [result] = await db.query(
+      "UPDATE assets SET kondisi = ? WHERE id = ?",
+      [kondisi, id]
+    );
     return result.affectedRows;
   },
 

@@ -1,4 +1,5 @@
 const Asset = require("../models/assetModel");
+const Category = require("../models/categoryModel"); // Tambahkan ini
 const path = require("path");
 const fs = require("fs");
 
@@ -50,18 +51,25 @@ const assetController = {
   // POST /api/assets
   create: async (req, res) => {
     try {
-      const { kode_aset, nama_aset } = req.body;
+      const { nama_aset, kategori } = req.body;
 
       // Validasi field wajib
-      if (!kode_aset || !nama_aset) {
+      if (!nama_aset || !kategori) {
         return res.status(400).json({
           success: false,
-          message: "Kode Aset dan Nama Aset wajib diisi",
+          message: "Nama Aset dan Kategori wajib diisi",
         });
       }
 
+      // Ambil kode_singkat dari kategori
+      const categoryData = await Category.findByNama(kategori);
+      const kodeSingkat = categoryData ? categoryData.kode_singkat : "UMUM";
+
+      // Auto-generate kode_aset
+      const generatedKode = await Asset.getNextKodeAset(kodeSingkat);
+
       // Jika ada file upload, simpan path-nya
-      const data = { ...req.body };
+      const data = { ...req.body, kode_aset: generatedKode };
       if (req.file) {
         data.gambar = `/uploads/${req.file.filename}`;
       }
@@ -201,6 +209,33 @@ const assetController = {
         message: "Gagal menghapus aset",
         error: error.message,
       });
+    }
+  },
+
+  // PATCH /api/assets/:id/kondisi
+  updateKondisi: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { kondisi } = req.body;
+
+      if (!kondisi) {
+        return res.status(400).json({ success: false, message: "Kondisi wajib diisi" });
+      }
+
+      const existing = await Asset.getById(id);
+      if (!existing) {
+        return res.status(404).json({ success: false, message: "Aset tidak ditemukan" });
+      }
+
+      const affectedRows = await Asset.updateKondisi(id, kondisi);
+      if (affectedRows === 0) {
+        return res.status(400).json({ success: false, message: "Kondisi gagal diperbarui" });
+      }
+
+      res.json({ success: true, message: "Kondisi aset berhasil diperbarui" });
+    } catch (error) {
+      console.error("Error updateKondisi asset:", error);
+      res.status(500).json({ success: false, message: "Gagal memperbarui kondisi", error: error.message });
     }
   },
 

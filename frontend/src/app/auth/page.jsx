@@ -99,7 +99,7 @@ export default function AuthPage() {
         {/* Brand Logo & Title */}
         <div className="text-center mb-8">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-lg shadow-primary/20 mb-4 overflow-hidden border border-slate-100 p-1.5">
-            <img src="/logo.png" alt="Galeria Production Logo" className="h-full w-full object-contain" />
+            <img src="/logo-galeria-production-biru.png" alt="Galeria Production Logo" className="h-full w-full object-contain" />
           </div>
           <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Galeria Production</h1>
           <p className="text-sm font-medium text-slate-500 mt-1.5">Asset Management System</p>
