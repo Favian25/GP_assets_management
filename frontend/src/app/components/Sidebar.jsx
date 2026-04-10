@@ -23,17 +23,12 @@ export default function Sidebar() {
   return (
     <aside className="fixed top-0 left-0 z-40 flex h-screen w-64 flex-col bg-sidebar-bg text-sidebar-text">
       {/* Brand */}
-      <div className="flex h-16 items-center gap-3 border-b border-white/10 px-6">
-        <div className="flex shrink-0 h-10 w-10 items-center justify-center rounded-lg bg-white overflow-hidden p-1.5 shadow-sm">
-          <img src="/logo-galeria-production.png" alt="Logo" className="h-full w-full object-contain" />
+      <Link href="/" className="flex flex-col items-center justify-center border-b border-white/10 px-6 py-6 mb-2 cursor-pointer hover:bg-white/5 transition-colors">
+        <div className="flex h-14 w-auto items-center justify-center bg-transparent">
+          <img src="/logo-galeria-production.png" alt="Galeria Production Logo" className="h-full w-auto max-w-[160px] object-contain" />
         </div>
-        <div>
-          <h1 className="text-sm font-bold text-white leading-tight">
-            Galeria Production
-          </h1>
-          <p className="text-[11px] text-slate-400">Asset Management</p>
-        </div>
-      </div>
+        <p className="mt-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Asset Management</p>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -100,7 +95,7 @@ export default function Sidebar() {
                 <Link
                   href="/aset/kategori"
                   className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
-                    isActive("/aset/kategori")
+                    isActive("/aset/kategori") || isActive("/aset/merek")
                       ? "bg-primary text-white"
                       : "text-slate-400 hover:bg-white/5 hover:text-white"
                   }`}
@@ -108,21 +103,7 @@ export default function Sidebar() {
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                   </svg>
-                  Kategori
-                </Link>
-                
-                <Link
-                  href="/aset/merek"
-                  className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
-                    isActive("/aset/merek")
-                      ? "bg-primary text-white"
-                      : "text-slate-400 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                  Merek
+                  Kategori & Merek
                 </Link>
               </>
             )}

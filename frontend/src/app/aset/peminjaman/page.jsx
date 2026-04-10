@@ -190,7 +190,7 @@ export default function PeminjamanAsetPage() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input type="text" placeholder="Cari peminjaman..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            <input type="text" placeholder="Cari nama peminjam..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
               className="rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text" />
           </div>
           {canAdd && (
@@ -222,12 +222,12 @@ export default function PeminjamanAsetPage() {
             </thead>
             <tbody>
               {paginatedData.map((item, index) => (
-                <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-50/50" : "bg-white"}`}>
-                  <td className="px-5 py-3 font-mono text-sm font-bold text-primary">{item.kodePinjam}</td>
-                  <td className="px-5 py-3 text-slate-700 font-semibold">{item.namaPeminjam}</td>
+                <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
+                  <td className="px-5 py-3 font-mono text-xs font-bold text-primary hover:underline cursor-pointer" onClick={() => setShowDetail(item)}>{item.kodePinjam}</td>
+                  <td className="px-5 py-3 text-slate-700 font-semibold hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.namaPeminjam}</td>
                   <td className="px-5 py-3 text-slate-600 max-w-[220px]">
-                    <span className="inline-block bg-slate-100 text-slate-600 rounded-full px-2 py-0.5 text-xs font-medium mr-1">{item.totalItems || 0} barang</span>
-                    <span className="text-slate-500 text-sm truncate block mt-0.5">{item.daftarAset || "-"}</span>
+                    <span className="inline-block bg-slate-200 text-slate-700 rounded-full px-2.5 py-0.5 text-xs font-semibold mr-1 shadow-sm border border-slate-300/60">{item.totalItems || 0} barang</span>
+                    <span className="text-slate-500 text-sm truncate block mt-1">{item.daftarAset || "-"}</span>
                   </td>
                   <td className="px-5 py-3 text-slate-600 text-sm max-w-[160px] truncate">{item.alasanPeminjaman || "-"}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPeminjaman)}</td>
@@ -268,22 +268,47 @@ export default function PeminjamanAsetPage() {
               <h2 className="text-lg font-bold text-blue-800">Detail Peminjaman</h2>
               <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-2.5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">No. Peminjaman</span><span className="text-sm font-mono text-primary font-bold">{showDetail.kodePinjam}</span></div>
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Nama Peminjam</span><span className="text-sm text-slate-800">{showDetail.namaPeminjam}</span></div>
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Barang Dipinjam</span><span className="text-sm text-slate-800">{showDetail.daftarAset || "-"}</span></div>
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Alasan</span><span className="text-sm text-slate-800">{showDetail.alasanPeminjaman || "-"}</span></div>
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Status</span><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium uppercase ${getStatusBadge(showDetail.status)}`}>{showDetail.status}</span></div>
+            <div className="p-6 space-y-5">
+              <div>
+                <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Peminjaman</h4>
+                <div className="space-y-2.5">
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">No. Peminjaman</span><span className="text-sm font-mono text-primary font-bold">{showDetail.kodePinjam}</span></div>
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Nama Peminjam</span><span className="text-sm text-slate-800">{showDetail.namaPeminjam}</span></div>
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Peminjaman</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPeminjaman)}</span></div>
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Yang Menyerahkan</span><span className="text-sm text-slate-800">{showDetail.yangMenyerahkan || "-"}</span></div>
+                  <div className="flex items-start gap-3">
+                    <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Barang Dipinjam</span>
+                    <div className="text-sm text-slate-800 flex-1">
+                      {showDetail.daftarAset ? (
+                        <ul className="list-disc pl-4 space-y-1">
+                          {showDetail.daftarAset.split(',').map((itemStr, i) => (
+                            <li key={i}>{itemStr.trim()}</li>
+                          ))}
+                        </ul>
+                      ) : "-"}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Alasan</span><span className="text-sm text-slate-800">{showDetail.alasanPeminjaman || "-"}</span></div>
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Status</span><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium uppercase ${getStatusBadge(showDetail.status)}`}>{showDetail.status}</span></div>
+                </div>
               </div>
-              <div className="space-y-2.5">
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tgl Peminjaman</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPeminjaman)}</span></div>
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tgl Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Yang Menyerahkan</span><span className="text-sm text-slate-800">{showDetail.yangMenyerahkan || "-"}</span></div>
-                <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Penerima Aset</span><span className="text-sm text-slate-800">{showDetail.penerimaAset || "-"}</span></div>
-                {showDetail.approvedBy && (
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Approved By</span><span className="text-sm text-emerald-700 font-medium">{showDetail.approvedBy}</span></div>
-                )}
+
+              <hr className="border-slate-300" />
+              
+              <div>
+                <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Pengembalian</h4>
+                <div className="space-y-2.5">
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Batas Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Penerima Aset</span><span className="text-sm text-slate-800">{showDetail.penerimaAset || "-"}</span></div>
+                  <div className="flex items-start gap-3">
+                    <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Approved By</span>
+                    {showDetail.approvedBy ? (
+                      <span className="text-sm text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shadow-sm">{showDetail.approvedBy}</span>
+                    ) : (
+                      <span className="text-sm text-slate-400 italic">Belum diverifikasi</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4">

@@ -386,7 +386,7 @@ export default function DaftarAsetPage() {
     <div>
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-20 right-6 z-[100] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+        <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {toast.type === "error" ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />}
           </svg>
@@ -396,7 +396,7 @@ export default function DaftarAsetPage() {
 
       {/* Lightbox */}
       {lightboxImg && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxImg(null)}>
+        <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxImg(null)}>
           <img src={lightboxImg} alt="Preview" onClick={(e) => e.stopPropagation()} className="max-h-[85vh] max-w-[85vw] rounded-xl object-contain shadow-2xl cursor-default" />
         </div>
       )}
@@ -410,7 +410,7 @@ export default function DaftarAsetPage() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input type="text" placeholder="Cari aset..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            <input type="text" placeholder="Cari nama aset..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
               className="rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text" />
           </div>
           <button onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
@@ -572,7 +572,7 @@ export default function DaftarAsetPage() {
 
       {/* Modal Kategori */}
       {showKatModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4">
           <form onSubmit={handleCreateKat} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500">
             <div className="p-6">
               <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
@@ -591,7 +591,7 @@ export default function DaftarAsetPage() {
 
       {/* Modal Merek */}
       {showMerekModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4">
           <form onSubmit={handleCreateMerek} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500">
             <div className="p-6">
               <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Merek Baru</h3>
@@ -609,7 +609,7 @@ export default function DaftarAsetPage() {
 
       {/* Modal Update Kondisi */}
       {showKondisiModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500">
             <div className="p-6">
               <h3 className="text-lg font-bold text-slate-800 mb-1">Ubah Kondisi Aset</h3>

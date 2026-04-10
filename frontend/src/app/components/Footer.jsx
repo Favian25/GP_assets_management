@@ -5,9 +5,6 @@ export default function Footer() {
         <p className="text-xs text-slate-400">
           © 2026 Galeria Production. All rights reserved.
         </p>
-        <p className="text-xs text-slate-400">
-          Sistem Pencatatan Asset v1.0
-        </p>
       </div>
     </footer>
   );
