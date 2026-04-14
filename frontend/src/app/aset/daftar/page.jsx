@@ -453,7 +453,7 @@ export default function DaftarAsetPage() {
                     )}
                   </td>
                   <td className="w-[190px] px-5 py-3 text-slate-600 hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.namaAset}</td>
-                  <td className="w-[80px] px-5 py-3 text-slate-600 text-center truncate">{item.jumlah ?? "-"}</td>
+                  <td className="w-[80px] px-5 py-3 text-slate-600 text-center truncate">{item.jumlah ?? "-"} / {item.jumlah_total ?? item.jumlah ?? "-"}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
                   <td className="w-[150px] px-5 py-3"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-all ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
@@ -508,7 +508,7 @@ export default function DaftarAsetPage() {
               <div>
                 <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Inventori</h4>
                 <div className="space-y-2.5">
-                  {[["Kode Aset", showDetail.kodeAset], ["Nama Aset", showDetail.namaAset], ["Pengguna", showDetail.pengguna], ["Kategori", showDetail.kategori], ["Merek", showDetail.merek], ["Model", showDetail.model], ["Jumlah", showDetail.jumlah], ["Harga Aset", formatRupiah(showDetail.hargaAset)], ["Serial Number", showDetail.noSN], ["Spesifikasi", showDetail.spesifikasi]].map(([l, v]) => (
+                  {[["Kode Aset", showDetail.kodeAset], ["Nama Aset", showDetail.namaAset], ["Pengguna", showDetail.pengguna], ["Kategori", showDetail.kategori], ["Merek", showDetail.merek], ["Model", showDetail.model], ["Jumlah", `${showDetail.jumlah ?? "-"} / ${showDetail.jumlah_total ?? showDetail.jumlah ?? "-"}`], ["Harga Aset", formatRupiah(showDetail.hargaAset)], ["Serial Number", showDetail.noSN], ["Spesifikasi", showDetail.spesifikasi]].map(([l, v]) => (
                     <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
                   ))}
                 </div>

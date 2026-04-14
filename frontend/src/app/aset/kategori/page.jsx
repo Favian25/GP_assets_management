@@ -97,7 +97,7 @@ export default function KategoriMerekPage() {
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Kelola Data Master</h1>
+        <h1 className="text-2xl font-bold text-slate-800">Kelola Kategori & Merek</h1>
         <p className="text-sm text-slate-500">Manajemen kategori dan merek aset dalam satu tempat</p>
       </div>
 

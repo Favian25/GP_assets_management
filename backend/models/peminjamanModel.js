@@ -8,10 +8,10 @@ const Peminjaman = {
     );
     let nextNum = 1;
     if (rows[0] && rows[0].kode_pinjam) {
-      const match = rows[0].kode_pinjam.match(/GP-PJM-(\d+)/);
+      const match = rows[0].kode_pinjam.match(/GPRO-PJM-(\d+)/);
       if (match) nextNum = parseInt(match[1]) + 1;
     }
-    return `GP-PJM-${nextNum}`;
+    return `GPRO-PJM-${nextNum}`;
   },
 
   // GET semua data peminjaman beserta items

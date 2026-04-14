@@ -209,7 +209,7 @@ export default function PeminjamanAsetPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-t border-t-slate-300 border-b border-b-slate-300 bg-slate-50">
+              <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                 <th className="px-5 py-3 font-bold text-slate-700 w-[80px]"><button onClick={() => handleSort("kodePinjam")} className="cursor-pointer flex items-center">No <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} /></button></th>
                 <th className="px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaPeminjam")} className="cursor-pointer flex items-center">Nama Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} /></button></th>
                 <th className="px-5 py-3 font-bold text-slate-700">Barang Dipinjam</th>

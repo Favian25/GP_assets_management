@@ -44,8 +44,8 @@ const peminjamanController = {
     try {
       const { nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, items } = req.body;
 
-      if (!nama_peminjam || !tanggal_peminjaman) {
-        return res.status(400).json({ success: false, message: "Nama peminjam dan tanggal peminjaman wajib diisi" });
+      if (!nama_peminjam || !tanggal_peminjaman || !yang_menyerahkan || !alasan_peminjaman) {
+        return res.status(400).json({ success: false, message: "Nama, tanggal, yang menyerahkan, dan alasan peminjaman wajib diisi!" });
       }
 
       if (!items || !Array.isArray(items) || items.length === 0) {

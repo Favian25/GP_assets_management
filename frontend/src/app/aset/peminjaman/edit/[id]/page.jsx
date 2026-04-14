@@ -90,7 +90,7 @@ export default function EditPeminjamanPage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Edit Peminjaman</h1></div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Edit Pengembalian</h1></div>
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-8 animate-pulse space-y-3">
           {[1,2,3,4].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-32 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/></div>))}
         </div>
@@ -120,11 +120,11 @@ export default function EditPeminjamanPage() {
 
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => router.push("/aset/peminjaman")} className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 transition-colors">
+        <button onClick={() => router.push("/aset/peminjaman")} className="cursor-pointer rounded-lg bg-primary p-2 text-white hover:bg-primary-hover shadow-sm transition-colors">
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Edit Peminjaman #{data.kodePinjam}</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Edit Pengembalian #{data.kodePinjam}</h1>
           <p className="text-sm text-slate-500">Update data pengembalian aset</p>
         </div>
       </div>
@@ -169,16 +169,16 @@ export default function EditPeminjamanPage() {
               <table className="w-full text-sm">
                 <thead><tr className="bg-slate-50 border-b border-slate-200">
                   <th className="px-4 py-2 text-left font-semibold text-slate-600 w-10">No</th>
+                  <th className="px-4 py-2 text-left font-semibold text-slate-600 w-32">Kode Aset</th>
                   <th className="px-4 py-2 text-left font-semibold text-slate-600">Nama Aset</th>
-                  <th className="px-4 py-2 text-left font-semibold text-slate-600 w-20">Kode</th>
-                  <th className="px-4 py-2 text-center font-semibold text-slate-600 w-20">Jumlah</th>
+                  <th className="px-4 py-2 text-center font-semibold text-slate-600 w-36">Jumlah Dipinjam</th>
                 </tr></thead>
                 <tbody>
                   {data.items.map((item, i) => (
                     <tr key={item.id} className="border-b border-slate-100 last:border-0">
                       <td className="px-4 py-2 text-slate-500">{i + 1}</td>
+                      <td className="px-4 py-2 text-xs text-slate-500 font-mono font-bold">{item.kodeAset}</td>
                       <td className="px-4 py-2 text-slate-700 font-medium">{item.namaAset}</td>
-                      <td className="px-4 py-2 text-xs text-slate-400 font-mono">{item.kodeAset}</td>
                       <td className="px-4 py-2 text-center font-semibold text-slate-700">{item.jumlah}</td>
                     </tr>
                   ))}

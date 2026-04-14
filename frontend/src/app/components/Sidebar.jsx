@@ -27,7 +27,6 @@ export default function Sidebar() {
         <div className="flex h-14 w-auto items-center justify-center bg-transparent">
           <img src="/logo-galeria-production.png" alt="Galeria Production Logo" className="h-full w-auto max-w-[160px] object-contain" />
         </div>
-        <p className="mt-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Asset Management</p>
       </Link>
 
       {/* Navigation */}

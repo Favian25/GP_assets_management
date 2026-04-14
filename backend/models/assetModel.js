@@ -52,8 +52,8 @@ const Asset = {
 
     const [result] = await db.query(
       `INSERT INTO assets 
-        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         kode_aset,
         nama_aset,
@@ -70,6 +70,7 @@ const Asset = {
         keterangan || null,
         jumlah || null,
         harga_aset || null,
+        jumlah || null,
       ]
     );
 

@@ -102,8 +102,14 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="fixed top-0 right-0 left-64 z-30 flex h-16 items-center justify-end border-b border-slate-200 bg-white px-6">
-      <div className="flex items-center gap-2">
+    <header className="fixed top-0 right-0 left-64 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
+      <div 
+        className="text-xl font-montserrat font-extrabold tracking-wide drop-shadow-sm"
+        style={{ backgroundImage: 'radial-gradient(circle at top left, #3b82f6 0%, #1d4ed8 50%, #1e3a8a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}
+      >
+        ASSET MANAGEMENT SYSTEM
+      </div>
+      <div className="flex items-center gap-4">
         {/* Notification */}
         <div ref={notifRef} className="relative">
           <button

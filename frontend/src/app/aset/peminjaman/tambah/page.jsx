@@ -57,7 +57,7 @@ function AssetAutocompleteRow({ assetsList, value, onSelect, disabled }) {
         onFocus={() => setIsOpen(true)}
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-slate-50 disabled:cursor-not-allowed"
       />
-      {isOpen && query && (
+      {isOpen && (
         <div className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto rounded-lg bg-white border border-slate-200 shadow-xl">
           {filtered.length > 0 ? (
             filtered.map(asset => (
@@ -95,8 +95,32 @@ export default function TambahPeminjamanPage() {
   const [allAssets, setAllAssets] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 4000); return () => clearTimeout(t); } }, [toast]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('tempPeminjaman');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.namaPeminjam) setNamaPeminjam(parsed.namaPeminjam);
+        if (parsed.yangMenyerahkan) setYangMenyerahkan(parsed.yangMenyerahkan);
+        if (parsed.tanggalPeminjaman) setTanggalPeminjaman(parsed.tanggalPeminjaman);
+        if (parsed.alasanPeminjaman) setAlasanPeminjaman(parsed.alasanPeminjaman);
+        if (parsed.items && parsed.items.length > 0) setItems(parsed.items);
+      } catch(e) {}
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('tempPeminjaman', JSON.stringify({
+        namaPeminjam, yangMenyerahkan, tanggalPeminjaman, alasanPeminjaman, items
+      }));
+    }
+  }, [namaPeminjam, yangMenyerahkan, tanggalPeminjaman, alasanPeminjaman, items, isLoaded]);
   const showToast = (message, type = "success") => setToast({ message, type });
 
   const fetchInitialData = useCallback(async () => {
@@ -148,8 +172,8 @@ export default function TambahPeminjamanPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!namaPeminjam || !tanggalPeminjaman) {
-      showToast("Nama peminjam dan tanggal peminjaman wajib diisi", "error");
+    if (!namaPeminjam || !tanggalPeminjaman || !yangMenyerahkan || !alasanPeminjaman) {
+      showToast("Semua data input wajib diisi", "error");
       return;
     }
 
@@ -177,6 +201,7 @@ export default function TambahPeminjamanPage() {
         items: validItems.map(item => ({ assetId: item.assetId, jumlah: item.jumlah })),
       });
       showToast("Peminjaman berhasil ditambahkan!");
+      localStorage.removeItem('tempPeminjaman');
       setTimeout(() => router.push("/aset/peminjaman"), 1500);
     } catch (err) {
       showToast(err.response?.data?.message || "Gagal menambahkan peminjaman", "error");
@@ -199,7 +224,7 @@ export default function TambahPeminjamanPage() {
 
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => router.push("/aset/peminjaman")} className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 transition-colors">
+        <button onClick={() => router.push("/aset/peminjaman")} className="cursor-pointer rounded-lg bg-primary p-2 text-white hover:bg-primary-hover transition-colors shadow-sm">
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <div>
@@ -239,15 +264,15 @@ export default function TambahPeminjamanPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Yang Menyerahkan</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Yang Menyerahkan <span className="text-rose-500">*</span></label>
                 <input type="text" placeholder="Siapa yang menyerahkan barang" value={yangMenyerahkan} onChange={(e) => setYangMenyerahkan(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Alasan Peminjaman</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Alasan Peminjaman <span className="text-rose-500">*</span></label>
                 <textarea rows={3} placeholder="Alasan / keperluan meminjam" value={alasanPeminjaman} onChange={(e) => setAlasanPeminjaman(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none" required />
               </div>
             </div>
           </div>
