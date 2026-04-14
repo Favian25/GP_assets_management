@@ -8,6 +8,7 @@ export const getAllUsers = async () => {
       namaLengkap: u.nama_lengkap,
       email: u.email,
       role: u.role,
+      fotoProfil: u.foto_profil,
       createdAt: u.created_at,
     }));
   } catch (error) {
@@ -31,12 +32,38 @@ export const createUser = async (data) => {
   }
 };
 
+export const updateUser = async (id, data) => {
+  try {
+    const response = await api.put(`/users/${id}`, {
+      namaLengkap: data.namaLengkap,
+      password: data.password || undefined,
+      role: data.role,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+};
+
 export const updateUserRole = async (id, role) => {
   try {
     const response = await api.put(`/users/${id}/role`, { role });
     return response.data;
   } catch (error) {
     console.error("Error updating user role:", error);
+    throw error;
+  }
+};
+
+export const updateMyProfile = async (formData) => {
+  try {
+    const response = await api.put("/users/profile/me", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating profile:", error);
     throw error;
   }
 };

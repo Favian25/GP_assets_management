@@ -67,7 +67,7 @@ const authController = {
         nama: user.nama_lengkap
       };
 
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
 
       // Hilangkan field password yang akan di-return ke klien
       const userToReturn = {
@@ -81,7 +81,8 @@ const authController = {
         success: true,
         message: 'Login berhasil',
         token,
-        user: userToReturn
+        user: userToReturn,
+        loginAt: Date.now()
       });
     } catch (error) {
       console.error('Error saat login:', error);

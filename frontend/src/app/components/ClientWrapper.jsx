@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import { getToken, getUserContext } from "../lib/authService";
+import { getToken, getUserContext, isSessionExpired, logoutUser } from "../lib/authService";
 
 export default function ClientWrapper({ children }) {
   const pathname = usePathname();
@@ -16,6 +16,13 @@ export default function ClientWrapper({ children }) {
 
   useEffect(() => {
     const token = getToken();
+
+    // Cek session expired
+    if (!isAuthPage && isSessionExpired()) {
+      logoutUser();
+      router.replace("/auth");
+      return;
+    }
 
     // Jika tidak ada token dan bukan halaman auth, redirect ke login
     if (!token && !isAuthPage) {
@@ -43,7 +50,7 @@ export default function ClientWrapper({ children }) {
         return;
       }
 
-      // Halaman Kelola User: hanya super admin dan admin
+      // Halaman Kelola User: super admin dan admin
       if (pathname.startsWith("/kelola-user") && !["super admin", "admin"].includes(role)) {
         router.replace("/");
         return;

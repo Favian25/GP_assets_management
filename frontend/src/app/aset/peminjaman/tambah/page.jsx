@@ -254,25 +254,29 @@ export default function TambahPeminjamanPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Peminjam <span className="text-rose-500">*</span></label>
                 <input type="text" placeholder="Nama peminjam" value={namaPeminjam} onChange={(e) => setNamaPeminjam(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required />
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                  onInvalid={(e) => e.target.setCustomValidity("Nama peminjam wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
               </div>
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Peminjaman <span className="text-rose-500">*</span></label>
                 <input type="datetime-local" value={tanggalPeminjaman} onChange={(e) => setTanggalPeminjaman(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required />
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                  onInvalid={(e) => e.target.setCustomValidity("Tanggal peminjaman wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
               </div>
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">Yang Menyerahkan <span className="text-rose-500">*</span></label>
                 <input type="text" placeholder="Siapa yang menyerahkan barang" value={yangMenyerahkan} onChange={(e) => setYangMenyerahkan(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required />
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                  onInvalid={(e) => e.target.setCustomValidity("Yang menyerahkan wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">Alasan Peminjaman <span className="text-rose-500">*</span></label>
                 <textarea rows={3} placeholder="Alasan / keperluan meminjam" value={alasanPeminjaman} onChange={(e) => setAlasanPeminjaman(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none" required />
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none" required
+                  onInvalid={(e) => e.target.setCustomValidity("Alasan peminjaman wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
               </div>
             </div>
           </div>

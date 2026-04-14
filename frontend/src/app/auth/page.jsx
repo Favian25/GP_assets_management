@@ -13,29 +13,10 @@ export default function AuthPage() {
   
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-
-  // Forgot password state
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showNewPassword, setShowNewPassword] = useState(false);
-
-  const clearForm = () => {
-    setEmail("");
-    setPassword("");
-    setForgotEmail("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setErrorMsg("");
-    setSuccessMsg("");
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
-    setSuccessMsg("");
     setLoading(true);
 
     try {
@@ -45,45 +26,6 @@ export default function AuthPage() {
       }
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Terjadi kesalahan pada server");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setErrorMsg("");
-    setSuccessMsg("");
-
-    if (newPassword !== confirmPassword) {
-      setErrorMsg("Password baru dan konfirmasi password tidak sama");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setErrorMsg("Password minimal 6 karakter");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail, newPassword }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSuccessMsg("Password berhasil direset. Silakan login.");
-        setTimeout(() => {
-          setIsForgotPassword(false);
-          clearForm();
-        }, 2000);
-      } else {
-        setErrorMsg(data.message || "Gagal mereset password");
-      }
-    } catch (err) {
-      setErrorMsg("Terjadi kesalahan pada server");
     } finally {
       setLoading(false);
     }
@@ -138,6 +80,8 @@ export default function AuthPage() {
                     placeholder="Masukkan email anda"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                     required
+                    onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? "Format email tidak valid" : "Email wajib diisi")}
+                    onInput={(e) => e.target.setCustomValidity("")}
                   />
                 </div>
 
@@ -154,6 +98,8 @@ export default function AuthPage() {
                       placeholder="Masukkan password anda"
                       className="w-full pl-4 pr-11 py-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                       required
+                      onInvalid={(e) => e.target.setCustomValidity("Password wajib diisi")}
+                      onInput={(e) => e.target.setCustomValidity("")}
                     />
                     <button
                       type="button"
