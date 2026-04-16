@@ -27,7 +27,7 @@ const Asset = {
       const match = rows[0].kode_aset.match(new RegExp(`GPRO-${kodeSingkat}-(\\d+)`));
       if (match) nextNum = parseInt(match[1]) + 1;
     }
-    return `${prefix}${nextNum}`;
+    return `${prefix}${String(nextNum).padStart(3, "0")}`;
   },
 
   // CREATE aset baru
@@ -48,12 +48,13 @@ const Asset = {
       keterangan,
       jumlah,
       harga_aset,
+      tanggal_pembelian,
     } = data;
 
     const [result] = await db.query(
       `INSERT INTO assets 
-        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         kode_aset,
         nama_aset,
@@ -71,6 +72,7 @@ const Asset = {
         jumlah || null,
         harga_aset || null,
         jumlah || null,
+        tanggal_pembelian || null,
       ]
     );
 
@@ -95,6 +97,7 @@ const Asset = {
       keterangan,
       jumlah,
       harga_aset,
+      tanggal_pembelian,
     } = data;
 
     const [result] = await db.query(
@@ -102,7 +105,7 @@ const Asset = {
         kode_aset = ?, nama_aset = ?, pengguna = ?, kategori = ?,
         merek = ?, model = ?, no_sn = ?, spesifikasi = ?,
         lokasi_aset = ?, kondisi = ?, unit = ?, gambar = ?, keterangan = ?,
-        jumlah = ?, harga_aset = ?
+        jumlah = ?, harga_aset = ?, tanggal_pembelian = ?
        WHERE id = ?`,
       [
         kode_aset,
@@ -120,6 +123,7 @@ const Asset = {
         keterangan || null,
         jumlah || null,
         harga_aset || null,
+        tanggal_pembelian || null,
         id,
       ]
     );

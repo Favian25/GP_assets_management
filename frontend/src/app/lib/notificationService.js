@@ -5,7 +5,9 @@ export const getNotifications = async () => {
     const response = await api.get("/notifications");
     return response.data;
   } catch (error) {
-    console.error("Error fetching notifications:", error);
+    if (error.code !== "ERR_NETWORK") {
+      console.error("Error fetching notifications:", error.message || error);
+    }
     return { success: false, data: [], unreadCount: 0 };
   }
 };
@@ -14,7 +16,9 @@ export const markNotificationAsRead = async (id) => {
   try {
     await api.put(`/notifications/${id}/read`);
   } catch (error) {
-    console.error("Error marking notification as read:", error);
+    if (error.code !== "ERR_NETWORK") {
+      console.error("Error marking notification as read:", error.message || error);
+    }
   }
 };
 
@@ -22,7 +26,9 @@ export const markAllNotificationsAsRead = async () => {
   try {
     await api.put("/notifications/read-all");
   } catch (error) {
-    console.error("Error marking all notifications as read:", error);
+    if (error.code !== "ERR_NETWORK") {
+      console.error("Error marking all notifications as read:", error.message || error);
+    }
   }
 };
 

@@ -206,7 +206,7 @@ export default function ProfilPage() {
     <div>
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-20 right-6 z-[100] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+        <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {toast.type === "error" ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />}
           </svg>
@@ -232,7 +232,7 @@ export default function ProfilPage() {
             </div>
           </div>
           <div className="pt-14 pb-6 px-6 text-center">
-            <h2 className="text-lg font-bold text-slate-800 break-words">{namaLengkap || user.namaLengkap}</h2>
+            <h2 className="text-lg font-bold text-slate-800 wrap-break-word">{namaLengkap || user.namaLengkap}</h2>
             <p className="text-sm text-slate-500 mt-0.5">{user.email}</p>
             <div className="mt-3">
               <span className={`inline-block rounded-full border px-3 py-1 text-xs font-semibold capitalize ${getRoleBadge(user.role)}`}>{user.role}</span>

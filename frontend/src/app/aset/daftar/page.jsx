@@ -12,7 +12,7 @@ const ITEMS_PER_PAGE = 10;
 const emptyForm = {
   kodeAset: "", namaAset: "", pengguna: "", kategori: "", merek: "", model: "",
   noSN: "", spesifikasi: "", lokasiAset: "", kondisi: "", keterangan: "",
-  jumlah: "", hargaAset: "",
+  jumlah: "", hargaAset: "", tanggalPembelian: "",
 };
 
 // =====================================================
@@ -258,7 +258,8 @@ export default function DaftarAsetPage() {
       kategori: item.kategori || "", merek: item.merek || "", model: item.model || "",
       noSN: item.noSN || "", spesifikasi: item.spesifikasi || "", lokasiAset: item.lokasiAset || "",
       kondisi: item.kondisi || "", keterangan: item.keterangan || "",
-      jumlah: item.jumlah || "", hargaAset: item.hargaAset || "",
+      jumlah: item.jumlah || "", hargaAset: item.hargaAset || "", 
+      tanggalPembelian: item.tanggalPembelian ? item.tanggalPembelian.split('T')[0] : "",
     });
     // Ensure existing values are in dropdown lists if deleted previously
     if (item.kategori && !kategoriList.includes(item.kategori)) setKategoriList(prev => [...prev, item.kategori]);
@@ -330,9 +331,20 @@ export default function DaftarAsetPage() {
 
           <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} />
           <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} />
-          <InputField label="Harga Aset (Rp)" placeholder="Harga aset" type="number" value={data.hargaAset} onChange={(e) => setData(d => ({...d, hargaAset: e.target.value}))} />
+          <InputField 
+            label="Harga Aset (Rp)" 
+            placeholder="Harga Aset" 
+            type="text" 
+            value={data.hargaAset ? Number(data.hargaAset).toLocaleString("id-ID") : ""} 
+            onChange={(e) => {
+              const rawValue = e.target.value.replace(/\D/g, "");
+              setData(d => ({ ...d, hargaAset: rawValue }));
+            }} 
+          />
+          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} />
           <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} />
           <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: e.target.value}))} rows={3} className="sm:col-span-2" />
+
         </div>
       </div>
       <hr className="border-slate-200" />
@@ -433,7 +445,7 @@ export default function DaftarAsetPage() {
                 <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
                 <th className="w-[80px] px-3 py-3 font-bold text-slate-700 text-center">Gambar</th>
                 <th className="w-[190px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
-                <th className="w-[80px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlah")} className="cursor-pointer flex items-center w-full justify-center">Jumlah <SortIcon columnKey="jumlah" sortConfig={sortConfig} /></button></th>
+                <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlah")} className="cursor-pointer flex items-center">Jumlah <SortIcon columnKey="jumlah" sortConfig={sortConfig} /></button></th>
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
                 <th className="w-[150px] px-5 py-3 font-bold text-slate-700">Kondisi</th>
@@ -455,7 +467,12 @@ export default function DaftarAsetPage() {
                     )}
                   </td>
                   <td className="w-[190px] px-5 py-3 text-slate-600 hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.namaAset}</td>
-                  <td className="w-[80px] px-5 py-3 text-slate-600 text-center truncate">{item.jumlah ?? "-"} / {item.jumlah_total ?? item.jumlah ?? "-"}</td>
+                  <td className="w-[120px] px-5 py-3">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-emerald-600">{item.jumlah ?? "-"} Tersisa</span>
+                      <span className="text-slate-600">dari Total {item.jumlahTotal ?? item.jumlah ?? "-"}</span>
+                    </div>
+                  </td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
                   <td className="w-[150px] px-5 py-3"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-all ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
@@ -510,7 +527,19 @@ export default function DaftarAsetPage() {
               <div>
                 <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Inventori</h4>
                 <div className="space-y-2.5">
-                  {[["Kode Aset", showDetail.kodeAset], ["Nama Aset", showDetail.namaAset], ["Pengguna", showDetail.pengguna], ["Kategori", showDetail.kategori], ["Merek", showDetail.merek], ["Model", showDetail.model], ["Jumlah", `${showDetail.jumlah ?? "-"} / ${showDetail.jumlah_total ?? showDetail.jumlah ?? "-"}`], ["Harga Aset", formatRupiah(showDetail.hargaAset)], ["Serial Number", showDetail.noSN], ["Spesifikasi", showDetail.spesifikasi]].map(([l, v]) => (
+                  {[
+                    ["Kode Aset", showDetail.kodeAset], 
+                    ["Nama Aset", showDetail.namaAset], 
+                    ["Pengguna", showDetail.pengguna], 
+                    ["Kategori", showDetail.kategori], 
+                    ["Merek", showDetail.merek], 
+                    ["Model", showDetail.model], 
+                    ["Jumlah", `${showDetail.jumlah ?? "-"} Tersisa dari Total ${showDetail.jumlahTotal ?? showDetail.jumlah ?? "-"}`], 
+                    ["Harga Aset", formatRupiah(showDetail.hargaAset)], 
+                    ["Tanggal Pembelian", showDetail.tanggalPembelian ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(showDetail.tanggalPembelian)) : "-"],
+                    ["Serial Number", showDetail.noSN], 
+                    ["Spesifikasi", showDetail.spesifikasi]
+                  ].map(([l, v]) => (
                     <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
                   ))}
                 </div>

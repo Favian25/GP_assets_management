@@ -42,7 +42,9 @@ const fieldMapToBackend = {
   gambar: "gambar",
   keterangan: "keterangan",
   jumlah: "jumlah",
+  jumlahTotal: "jumlah_total",
   hargaAset: "harga_aset",
+  tanggalPembelian: "tanggal_pembelian",
 };
 
 // Mapping: Backend key → Frontend key (reverse)
