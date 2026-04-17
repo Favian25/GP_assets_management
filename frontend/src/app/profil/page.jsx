@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getUserContext, updateUserContext } from "../lib/authService";
 import { updateMyProfile } from "../lib/userService";
+import { User, Lock, Camera, Trash2, Eye, EyeOff, Check, X, Shield, Key } from "lucide-react";
 
 const API_BASE = "http://localhost:5000";
 
@@ -38,7 +39,7 @@ export default function ProfilPage() {
     }
   }, []);
 
-  const canChangePassword = user && ["super admin", "admin"].includes(user.role);
+  const canChangePassword = !!user;
 
   const handleFotoSelect = (e) => {
     const file = e.target.files[0];
@@ -71,10 +72,6 @@ export default function ProfilPage() {
       }
       if (newPassword !== confirmPassword) {
         showToast("Password baru dan konfirmasi tidak sama", "error");
-        return;
-      }
-      if (newPassword.length < 6) {
-        showToast("Password baru minimal 6 karakter", "error");
         return;
       }
     }
@@ -194,11 +191,7 @@ export default function ProfilPage() {
 
   const EyeIcon = ({ show, onClick }) => (
     <button type="button" onClick={onClick} className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" tabIndex="-1">
-      {show ? (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-      ) : (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-      )}
+      {show ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
     </button>
   );
 
@@ -207,9 +200,7 @@ export default function ProfilPage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {toast.type === "error" ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />}
-          </svg>
+          {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
         </div>
       )}
@@ -248,7 +239,7 @@ export default function ProfilPage() {
             <div className="border-b border-slate-200">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  <User className="h-4 w-4" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-800">Edit Profil</h3>
@@ -309,7 +300,7 @@ export default function ProfilPage() {
                           type={showNewPw ? "text" : "password"}
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Min. 6 karakter"
+                          placeholder="Masukkan password baru"
                           className="w-full pl-4 pr-11 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <EyeIcon show={showNewPw} onClick={() => setShowNewPw(!showNewPw)} />
@@ -330,7 +321,7 @@ export default function ProfilPage() {
               ) : (
                 <div className="p-8 flex flex-col items-center justify-center text-center pb-10">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 mb-4">
-                    <svg className="h-8 w-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    <Lock className="h-8 w-8 text-amber-500" />
                   </div>
                   <h4 className="text-base font-bold text-slate-800 mb-2">Ubah Password Tidak Tersedia</h4>
                   <p className="text-sm text-slate-500 max-w-xs">Minta persetujuan ke admin dulu yaa :)</p>

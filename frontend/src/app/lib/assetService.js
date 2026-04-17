@@ -3,6 +3,7 @@ import api, {
   mapAssetToBackend,
   mapAssetsToFrontend,
 } from "./api";
+import { getAllPeminjaman } from "./peminjamanService";
 
 // ============================================================
 // Asset Service — Semua operasi CRUD & Search terhadap API
@@ -125,18 +126,24 @@ export async function searchAssets(keyword) {
  */
 export async function getDashboardStats() {
   const assets = await getAllAssets();
+  const peminjaman = await getAllPeminjaman();
+  
   const total = assets.length;
   const tersedia = assets.filter((a) => a.kondisi === "Siap Digunakan").length;
   const maintenance = assets.filter((a) => a.kondisi === "Maintenance").length;
   const rusak = assets.filter((a) => a.kondisi === "Rusak").length;
-  const dijual = assets.filter((a) => a.kondisi === "Dijual").length; // Diupdate dari Diarsipkan
+  const dijual = assets.filter((a) => a.kondisi === "Dijual").length;
+  
+  // Hitung jumlah peminjaman yang sedang dipinjam (Pending)
+  const dipinjam = peminjaman.filter((p) => p.status === "Pending").length;
 
   return {
     total,
     tersedia,
     maintenance,
     rusak,
-    diarsipkan: dijual, // Tetap return property name 'diarsipkan' untuk kompatibilitas sementara, isinya 'dijual'
+    diarsipkan: dijual,
+    dipinjam,
     recentAssets: assets.slice(0, 5),
   };
 }

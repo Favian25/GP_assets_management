@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getDashboardStats } from "./lib/assetService";
+import { Package, CheckCircle2, AlertCircle, Settings, AlertTriangle, RefreshCw, ClipboardList } from "lucide-react";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -30,12 +31,7 @@ export default function DashboardPage() {
     {
       title: "Total Aset",
       value: stats?.total ?? 0,
-      icon: (
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        </svg>
-      ),
+      icon: <Package className="h-6 w-6" />,
       color: "bg-blue-500",
       bgLight: "bg-blue-50",
       textColor: "text-blue-600",
@@ -43,12 +39,7 @@ export default function DashboardPage() {
     {
       title: "Siap Digunakan",
       value: stats?.tersedia ?? 0,
-      icon: (
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <CheckCircle2 className="h-6 w-6" />,
       color: "bg-emerald-500",
       bgLight: "bg-emerald-50",
       textColor: "text-emerald-600",
@@ -56,12 +47,7 @@ export default function DashboardPage() {
     {
       title: "Rusak",
       value: stats?.rusak ?? 0,
-      icon: (
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <AlertCircle className="h-6 w-6" />,
       color: "bg-rose-500",
       bgLight: "bg-rose-50",
       textColor: "text-rose-600",
@@ -69,16 +55,18 @@ export default function DashboardPage() {
     {
       title: "Maintenance",
       value: stats?.maintenance ?? 0,
-      icon: (
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
+      icon: <Settings className="h-6 w-6" />,
       color: "bg-amber-500",
       bgLight: "bg-amber-50",
       textColor: "text-amber-600",
+    },
+    {
+      title: "Aset Dipinjam",
+      value: stats?.dipinjam ?? 0,
+      icon: <ClipboardList className="h-6 w-6" />,
+      color: "bg-indigo-500",
+      bgLight: "bg-indigo-50",
+      textColor: "text-indigo-600",
     },
   ];
 
@@ -92,8 +80,8 @@ export default function DashboardPage() {
             Selamat datang di Sistem Pencatatan Asset Galeria Production
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-5 shadow-sm animate-pulse">
               <div className="h-12 w-12 rounded-xl bg-slate-200" />
               <div className="space-y-2">
@@ -130,16 +118,14 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-10">
-          <svg className="h-12 w-12 text-rose-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.732c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-          <p className="text-sm font-medium text-rose-700 mb-1">Koneksi Gagal</p>
+        <AlertTriangle className="h-12 w-12 text-rose-400 mb-3" />
+        <p className="text-sm font-medium text-rose-700 mb-1">Koneksi Gagal</p>
           <p className="text-xs text-rose-500 mb-4 text-center">{error}</p>
           <button
             onClick={fetchStats}
-            className="cursor-pointer rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-600"
+            className="cursor-pointer flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-600"
           >
+            <RefreshCw className="h-4 w-4" />
             Coba Lagi
           </button>
         </div>
@@ -167,7 +153,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {statCards.map((stat, index) => (
           <div
             key={index}

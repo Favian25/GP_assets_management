@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getPeminjamanById, updatePeminjaman } from "../../../../lib/peminjamanService";
+import { ChevronLeft, FileText, Check, X, Calendar, User, Package, Lock } from "lucide-react";
 
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return "";
@@ -22,6 +23,15 @@ const formatDateTime = (dateString) => {
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
   }).format(new Date(dateString)) + " WIB";
+};
+
+const getStatusLabel = (status) => {
+  const map = {
+    "Pending": "Belum Dikembalikan",
+    "Dikembalikan": "Sudah Dikembalikan",
+    "Approved": "Sudah Disetujui",
+  };
+  return map[status] || status;
 };
 
 const getStatusBadge = (status) => {
@@ -111,9 +121,7 @@ export default function EditPeminjamanPage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {toast.type === "error" ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />}
-          </svg>
+          {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
         </div>
       )}
@@ -121,7 +129,7 @@ export default function EditPeminjamanPage() {
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
         <button onClick={() => router.push("/aset/peminjaman")} className="cursor-pointer rounded-lg bg-primary p-2 text-white hover:bg-primary-hover shadow-sm transition-colors">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          <ChevronLeft className="h-5 w-5" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Edit Pengembalian #{data.kodePinjam}</h1>
@@ -133,10 +141,10 @@ export default function EditPeminjamanPage() {
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-slate-400 mb-6">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-            <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            <FileText className="h-4 w-4 text-slate-400" />
             Data Peminjaman (Read-Only)
           </h2>
-          <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase ${getStatusBadge(data.status)}`}>{data.status}</span>
+          <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase ${getStatusBadge(data.status)}`}>{getStatusLabel(data.status)}</span>
         </div>
         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -164,7 +172,7 @@ export default function EditPeminjamanPage() {
         {/* Items Read-Only */}
         {data.items && data.items.length > 0 && (
           <div className="px-6 pb-6">
-            <label className="mb-2 block text-xs font-medium text-slate-500">Daftar Barang Dipinjam</label>
+            <label className="mb-2 block text-xs font-medium text-slate-500">Daftar Alat Dipinjam</label>
             <div className="rounded-lg border border-slate-200 overflow-hidden">
               <table className="w-full text-sm">
                 <thead><tr className="bg-slate-50 border-b border-slate-200">
@@ -194,7 +202,7 @@ export default function EditPeminjamanPage() {
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-amber-500 mb-6">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-              <svg className="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              <Package className="h-4 w-4 text-amber-500" />
               Data Pengembalian (Dapat Diedit)
             </h2>
           </div>
@@ -203,8 +211,8 @@ export default function EditPeminjamanPage() {
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Status <span className="text-rose-500">*</span></label>
               <select value={status} onChange={(e) => setStatus(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                <option value="Pending">Pending</option>
-                <option value="Dikembalikan">Dikembalikan</option>
+                <option value="Pending">Belum Dikembalikan</option>
+                <option value="Dikembalikan">Sudah Dikembalikan</option>
               </select>
             </div>
 
@@ -215,8 +223,8 @@ export default function EditPeminjamanPage() {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Penerima Aset</label>
-              <input type="text" placeholder="Siapa yang menerima barang yang dikembalikan" value={penerimaAset} onChange={(e) => setPenerimaAset(e.target.value)}
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Penerima Alat</label>
+              <input type="text" placeholder="Siapa yang menerima alat yang dikembalikan" value={penerimaAset} onChange={(e) => setPenerimaAset(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
           </div>

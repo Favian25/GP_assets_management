@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPeminjaman, getNextKodePinjam } from "../../../lib/peminjamanService";
 import { getAllAssets } from "../../../lib/assetService";
+import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle } from "lucide-react";
 
 // Format Datetime for MySQL
 const formatDatetimeForMySQL = (dateStr) => {
@@ -155,6 +156,11 @@ export default function TambahPeminjamanPage() {
       setItems(prev => prev.map((item, i) => i === index ? { ...item, assetId: "", namaAset: "", kodeAset: "", stokTersedia: 0 } : item));
       return;
     }
+    // Alert jika stok kosong
+    if ((asset.jumlah ?? 0) <= 0) {
+      showToast(`Stok alat "${asset.namaAset}" kosong. Tidak dapat dipinjam.`, "error");
+      return;
+    }
     setItems(prev => prev.map((item, i) => i === index ? {
       ...item,
       assetId: asset.id,
@@ -179,7 +185,7 @@ export default function TambahPeminjamanPage() {
 
     const validItems = items.filter(item => item.assetId && item.jumlah > 0);
     if (validItems.length === 0) {
-      showToast("Minimal harus ada 1 barang yang dipinjam", "error");
+      showToast("Minimal harus ada 1 alat yang dipinjam", "error");
       return;
     }
 
@@ -215,9 +221,7 @@ export default function TambahPeminjamanPage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {toast.type === "error" ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />}
-          </svg>
+          {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
         </div>
       )}
@@ -225,7 +229,7 @@ export default function TambahPeminjamanPage() {
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
         <button onClick={() => router.push("/aset/peminjaman")} className="cursor-pointer rounded-lg bg-primary p-2 text-white hover:bg-primary-hover transition-colors shadow-sm">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          <ChevronLeft className="h-5 w-5" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Tambah Peminjaman</h1>
@@ -238,7 +242,7 @@ export default function TambahPeminjamanPage() {
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary mb-6">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-              <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <FileText className="h-4 w-4 text-primary" />
               Informasi Peminjaman
             </h2>
           </div>
@@ -267,7 +271,7 @@ export default function TambahPeminjamanPage() {
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">Yang Menyerahkan <span className="text-rose-500">*</span></label>
-                <input type="text" placeholder="Siapa yang menyerahkan barang" value={yangMenyerahkan} onChange={(e) => setYangMenyerahkan(e.target.value)}
+                <input type="text" placeholder="Siapa yang menyerahkan alat" value={yangMenyerahkan} onChange={(e) => setYangMenyerahkan(e.target.value)}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
                   onInvalid={(e) => e.target.setCustomValidity("Yang menyerahkan wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
               </div>
@@ -282,17 +286,17 @@ export default function TambahPeminjamanPage() {
           </div>
         </div>
 
-        {/* Daftar Barang */}
+        {/* Daftar Alat */}
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-amber-500 mb-6">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-              <svg className="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-              Daftar Barang yang Dipinjam
+              <Package className="h-4 w-4 text-amber-500" />
+              Daftar Alat yang Dipinjam
             </h2>
             <button type="button" onClick={addItem}
               className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-hover">
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-              Tambah Barang
+              <Plus className="h-3.5 w-3.5" />
+              Tambah Alat
             </button>
           </div>
           <div className="p-6 space-y-3">
@@ -305,7 +309,7 @@ export default function TambahPeminjamanPage() {
 
                 {/* Autocomplete Aset */}
                 <div className="flex-1 min-w-0">
-                  <label className="mb-1 block text-xs font-medium text-slate-500">Nama Barang/Aset</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-500">Nama Alat/Aset</label>
                   <AssetAutocompleteRow
                     assetsList={getAvailableAssets(index)}
                     value={{ namaAset: item.namaAset }}
@@ -333,7 +337,7 @@ export default function TambahPeminjamanPage() {
                 <div className="shrink-0 pt-5">
                   <button type="button" onClick={() => removeItem(index)} disabled={items.length <= 1}
                     className="cursor-pointer rounded-lg p-1.5 text-rose-400 transition-colors hover:bg-rose-100 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>

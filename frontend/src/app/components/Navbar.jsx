@@ -4,8 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { logoutUser, getUserContext } from "../lib/authService";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, formatTimeAgo } from "../lib/notificationService";
+import { Bell, User, ChevronDown, LogOut, FileText, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
 
-export default function Navbar({ isCollapsed }) {
+export default function Navbar() {
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -79,10 +80,10 @@ export default function Navbar({ isCollapsed }) {
   // Icon berdasarkan tipe notifikasi
   const getNotifIcon = (type) => {
     const icons = {
-      peminjaman_baru: { bg: "bg-blue-100", color: "text-blue-600", d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
-      dikembalikan: { bg: "bg-emerald-100", color: "text-emerald-600", d: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-      approved: { bg: "bg-violet-100", color: "text-violet-600", d: "M5 13l4 4L19 7" },
-      stok_rendah: { bg: "bg-amber-100", color: "text-amber-600", d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.732c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" },
+      peminjaman_baru: { bg: "bg-blue-100", color: "text-blue-600", component: FileText },
+      dikembalikan: { bg: "bg-emerald-100", color: "text-emerald-600", component: CheckCircle2 },
+      approved: { bg: "bg-violet-100", color: "text-violet-600", component: ShieldCheck },
+      stok_rendah: { bg: "bg-amber-100", color: "text-amber-600", component: AlertTriangle },
     };
     return icons[type] || icons.peminjaman_baru;
   };
@@ -102,7 +103,7 @@ export default function Navbar({ isCollapsed }) {
   }, []);
 
   return (
-    <header className={`fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 transition-all duration-300 ${isCollapsed ? "left-20" : "left-64"}`}>
+    <header className="fixed top-0 right-0 left-64 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
       <div 
         className="text-xl font-montserrat font-extrabold tracking-wide drop-shadow-sm truncate pr-4"
         style={{ backgroundImage: 'radial-gradient(circle at top left, #3b82f6 0%, #1d4ed8 50%, #1e3a8a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}
@@ -116,10 +117,7 @@ export default function Navbar({ isCollapsed }) {
             onClick={handleOpenNotif}
             className="cursor-pointer relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+            <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -140,7 +138,7 @@ export default function Navbar({ isCollapsed }) {
               <div className="max-h-80 overflow-y-auto">
                 {notifications.length === 0 ? (
                   <div className="px-4 py-8 text-center">
-                    <svg className="mx-auto h-10 w-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                    <Bell className="mx-auto h-10 w-10 text-slate-300 mb-2" />
                     <p className="text-sm text-slate-400">Tidak ada notifikasi</p>
                   </div>
                 ) : (
@@ -155,9 +153,7 @@ export default function Navbar({ isCollapsed }) {
                         }`}
                       >
                         <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${icon.bg}`}>
-                          <svg className={`h-4 w-4 ${icon.color}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon.d} />
-                          </svg>
+                          <icon.component className={`h-4 w-4 ${icon.color}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm ${!notif.is_read ? "text-slate-800 font-medium" : "text-slate-600"}`}>{notif.message}</p>
@@ -184,9 +180,7 @@ export default function Navbar({ isCollapsed }) {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
               {userInitial}
             </div>
-            <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown className="h-4 w-4 text-slate-400" />
           </button>
 
           {profileOpen && (
@@ -197,20 +191,14 @@ export default function Navbar({ isCollapsed }) {
               </div>
               <div className="p-1.5">
                 <button onClick={() => { setProfileOpen(false); router.push("/profil"); }} className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-primary/10 hover:text-primary">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                  <User className="h-4 w-4" />
                   Profil Saya
                 </button>
               </div>
               <div className="mx-1.5 border-t border-slate-200" />
               <div className="p-1.5">
                 <button onClick={handleLogout} className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-100">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                  <LogOut className="h-4 w-4" />
                   Keluar
                 </button>
               </div>

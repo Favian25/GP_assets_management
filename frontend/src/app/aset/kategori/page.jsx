@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getAllCategories, createCategory, deleteCategory } from "../../lib/categoryService";
 import { getAllBrands, createBrand, deleteBrand } from "../../lib/brandService";
+import { Plus, Trash2, X, Check, Tag, Bookmark, AlertTriangle } from "lucide-react";
 
 export default function KategoriMerekPage() {
   const [categories, setCategories] = useState([]);
@@ -91,6 +92,7 @@ export default function KategoriMerekPage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+          {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
         </div>
       )}
@@ -109,7 +111,7 @@ export default function KategoriMerekPage() {
             <h2 className="text-lg font-bold text-slate-800">Daftar Kategori</h2>
             <button onClick={() => { setFormKat({ nama: "", kode_singkat: "" }); setShowModalKat(true); }}
               className="cursor-pointer flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              <Plus className="h-4 w-4" />
               Tambah
             </button>
           </div>
@@ -132,7 +134,7 @@ export default function KategoriMerekPage() {
                       <td className="px-4 py-3 font-medium text-slate-700 truncate">{item.nama}</td>
                       <td className="px-4 py-3"><span className="inline-block px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-mono text-xs font-bold border border-blue-200">{item.kode_singkat}</span></td>
                       <td className="px-4 py-3 text-center">
-                        <button onClick={() => setShowDeleteKat(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        <button onClick={() => setShowDeleteKat(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-4 w-4" /></button>
                       </td>
                     </tr>
                   ))}
@@ -149,7 +151,7 @@ export default function KategoriMerekPage() {
             <h2 className="text-lg font-bold text-slate-800">Daftar Merek</h2>
             <button onClick={() => { setFormMerek({ nama: "" }); setShowModalMerek(true); }}
               className="cursor-pointer flex items-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              <Plus className="h-4 w-4" />
               Tambah
             </button>
           </div>
@@ -170,7 +172,7 @@ export default function KategoriMerekPage() {
                       <td className="px-4 py-3 text-center text-slate-500">{index + 1}</td>
                       <td className="px-4 py-3 font-medium text-slate-700 truncate">{item.nama}</td>
                       <td className="px-4 py-3 text-center">
-                        <button onClick={() => setShowDeleteMerek(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        <button onClick={() => setShowDeleteMerek(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-4 w-4" /></button>
                       </td>
                     </tr>
                   ))}
@@ -189,7 +191,7 @@ export default function KategoriMerekPage() {
           <form onSubmit={handleCreateKat} className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500">
             <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-50 px-6 py-4 rounded-t-2xl">
               <h2 className="text-lg font-bold text-emerald-800">Tambah Kategori</h2>
-              <button type="button" onClick={() => setShowModalKat(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <button type="button" onClick={() => setShowModalKat(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -215,7 +217,7 @@ export default function KategoriMerekPage() {
           <form onSubmit={handleCreateMerek} className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500">
             <div className="flex items-center justify-between border-b border-slate-100 bg-amber-50 px-6 py-4 rounded-t-2xl">
               <h2 className="text-lg font-bold text-amber-800">Tambah Merek</h2>
-              <button type="button" onClick={() => setShowModalMerek(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <button type="button" onClick={() => setShowModalMerek(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-6">
               <div>
@@ -236,7 +238,7 @@ export default function KategoriMerekPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-rose-500">
             <div className="p-6 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100"><svg className="h-7 w-7 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100"><Trash2 className="h-7 w-7 text-rose-600" /></div>
               <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Kategori?</h3>
               <p className="text-sm font-semibold text-slate-700 mb-1">{showDeleteKat.nama}</p>
             </div>
@@ -253,7 +255,7 @@ export default function KategoriMerekPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-rose-500">
             <div className="p-6 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100"><svg className="h-7 w-7 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100"><Trash2 className="h-7 w-7 text-rose-600" /></div>
               <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Merek?</h3>
               <p className="text-sm font-semibold text-slate-700 mb-1">{showDeleteMerek.nama}</p>
             </div>
