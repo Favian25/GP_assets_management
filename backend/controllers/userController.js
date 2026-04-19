@@ -1,4 +1,6 @@
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 const User = require('../models/userModel');
 
 const userController = {
@@ -99,11 +101,21 @@ const userController = {
       }
 
       // Handle foto profil (dari multer)
+      let shouldDeleteOldPhoto = false;
       if (req.file) {
         updateData.foto_profil = `/uploads/profiles/${req.file.filename}`;
+        shouldDeleteOldPhoto = true;
       }
 
       await User.update(id, updateData);
+
+      // Clean up old file
+      if (shouldDeleteOldPhoto && targetUser.foto_profil) {
+        const oldPath = path.join(__dirname, '../public', targetUser.foto_profil);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
       res.status(200).json({ success: true, message: 'Data user berhasil diperbarui' });
     } catch (error) {
       console.error('Error update user:', error);
@@ -157,13 +169,27 @@ const userController = {
 
       const updateData = {};
       if (namaLengkap) updateData.nama_lengkap = namaLengkap;
+      
+      let shouldDeleteOldPhoto = false;
       if (removeFoto === 'true') {
         updateData.foto_profil = null; // explicit null for removing
+        shouldDeleteOldPhoto = true;
       } else if (req.file) {
         updateData.foto_profil = `/uploads/profiles/${req.file.filename}`;
+        shouldDeleteOldPhoto = true;
       }
 
+      const oldUser = await User.findById(userId);
+
       await User.updateProfile(userId, updateData);
+
+      // Clean up old file
+      if (shouldDeleteOldPhoto && oldUser && oldUser.foto_profil) {
+        const oldPath = path.join(__dirname, '../public', oldUser.foto_profil);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
 
       // Fetch updated user data to return
       const updatedUser = await User.findById(userId);
@@ -206,6 +232,15 @@ const userController = {
       }
 
       await User.delete(id);
+
+      // Clean up old file
+      if (user.foto_profil) {
+        const oldPath = path.join(__dirname, '../public', user.foto_profil);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+
       res.status(200).json({ success: true, message: 'User berhasil dihapus' });
     } catch (error) {
       console.error('Error delete user:', error);

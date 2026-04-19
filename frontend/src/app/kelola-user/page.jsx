@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { getAllUsers, createUser, updateUser, updateUserRole, deleteUser } from "../lib/userService";
 import { getUserContext } from "../lib/authService";
 import { 
@@ -60,6 +61,9 @@ export default function KelolaUserPage() {
   // Edit user form
   const [editForm, setEditForm] = useState({ namaLengkap: "", password: "", role: "" });
   const [selectedRole, setSelectedRole] = useState("");
+  const [lightboxImg, setLightboxImg] = useState(null);
+
+  const BACKEND_URL = "http://localhost:5000";
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -340,6 +344,7 @@ export default function KelolaUserPage() {
             <thead>
               <tr className="border-b border-slate-300 bg-slate-50">
                 <th className="px-5 py-3 font-bold text-slate-700 w-12 text-center">No</th>
+                <th className="px-5 py-3 font-bold text-slate-700 w-14 text-center"></th>
                 <th className="px-5 py-3 font-bold text-slate-700 cursor-pointer select-none hover:bg-slate-200/50 transition-colors" onClick={handleSortName}>
                   <div className="flex items-center justify-between gap-2">
                     Nama Lengkap
@@ -360,13 +365,27 @@ export default function KelolaUserPage() {
                 <tr key={user.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-50/50" : "bg-white"}`}>
                   <td className="px-5 py-3 text-slate-400 font-medium text-center">{indexOfFirstItem + index + 1}</td>
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm ${user.role === "admin" ? "bg-blue-500" : user.role === "supervisor" ? "bg-amber-500" : user.role === "super admin" ? "bg-violet-500" : "bg-emerald-500"}`}>
-                        {(user.namaLengkap || "U").charAt(0).toUpperCase()}
+                    <div className="flex justify-center">
+                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-slate-200 shadow-sm cursor-pointer group" onClick={() => {
+                        const src = user.fotoProfil || user.foto_profil;
+                        if (src) setLightboxImg(src.startsWith('http') ? src : `${BACKEND_URL}${src}`);
+                      }}>
+                        {(() => {
+                          const src = user.fotoProfil || user.foto_profil;
+                          if (src) {
+                            const fullSrc = src.startsWith('http') ? src : `${BACKEND_URL}${src}`;
+                            return <Image src={fullSrc} alt={user.namaLengkap} fill className="object-cover group-hover:scale-110 transition-transform" sizes="40px" unoptimized />;
+                          }
+                          return (
+                            <div className={`flex h-full w-full items-center justify-center text-xs font-bold text-white ${user.role === "admin" ? "bg-blue-500" : user.role === "supervisor" ? "bg-amber-500" : user.role === "super admin" ? "bg-violet-500" : "bg-emerald-500"}`}>
+                              {(user.namaLengkap || "U").charAt(0).toUpperCase()}
+                            </div>
+                          );
+                        })()}
                       </div>
-                      <span className="font-semibold text-slate-800">{user.namaLengkap}</span>
                     </div>
                   </td>
+                  <td className="px-5 py-3 font-semibold text-slate-800">{user.namaLengkap}</td>
                   <td className="px-5 py-3 text-slate-600">{user.email}</td>
                   <td className="px-5 py-3">
                     <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${getRoleBadge(user.role)}`}>{user.role}</span>
@@ -408,23 +427,25 @@ export default function KelolaUserPage() {
       {/* Modal Tambah User */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-primary">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-primary">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <h2 className="text-lg font-bold text-slate-800">Tambah User Baru</h2>
-              <button onClick={() => setShowAddModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+              <button type="button" onClick={() => setShowAddModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
             </div>
             <form onSubmit={handleAddUser} className="p-6 space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
-                <input type="text" value={newUser.namaLengkap} onChange={(e) => setNewUser(p => ({...p, namaLengkap: e.target.value}))} placeholder="Masukkan nama lengkap"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
-                  onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-rose-500">*</span></label>
-                <input type="email" value={newUser.email} onChange={(e) => setNewUser(p => ({...p, email: e.target.value}))} placeholder="email@example.com"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
-                  onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? "Format email tidak valid" : "Email wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                  <input type="text" value={newUser.namaLengkap} onChange={(e) => setNewUser(p => ({...p, namaLengkap: e.target.value}))} placeholder="Masukkan nama lengkap"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                    onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-rose-500">*</span></label>
+                  <input type="email" value={newUser.email} onChange={(e) => setNewUser(p => ({...p, email: e.target.value}))} placeholder="email@example.com"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                    onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? "Format email tidak valid" : "Email wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                </div>
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">Password <span className="text-rose-500">*</span></label>
@@ -455,22 +476,24 @@ export default function KelolaUserPage() {
       {/* Modal Edit User */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <h2 className="text-lg font-bold text-slate-800">Edit User</h2>
-              <button onClick={() => setShowEditModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+              <button type="button" onClick={() => setShowEditModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
             </div>
             <form onSubmit={handleEditUser} className="p-6 space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-                <input type="email" value={showEditModal.email} disabled
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-500 bg-slate-50 cursor-not-allowed" />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
-                <input type="text" value={editForm.namaLengkap} onChange={(e) => setEditForm(p => ({...p, namaLengkap: e.target.value}))} placeholder="Nama lengkap"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
-                  onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                  <input type="text" value={editForm.namaLengkap} onChange={(e) => setEditForm(p => ({...p, namaLengkap: e.target.value}))} placeholder="Nama lengkap"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                    onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                  <input type="email" value={showEditModal.email} disabled
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-500 bg-slate-50 cursor-not-allowed" />
+                </div>
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">Password Baru</label>
@@ -537,6 +560,16 @@ export default function KelolaUserPage() {
               <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
               <button onClick={handleDelete} disabled={submitting} className="cursor-pointer rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-600 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Profil */}
+      {lightboxImg && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 p-4 transition-all animate-in fade-in duration-200" onClick={() => setLightboxImg(null)}>
+          <button className="absolute right-6 top-6 text-white/70 hover:text-white transition-colors" onClick={() => setLightboxImg(null)}><X className="h-8 w-8" /></button>
+          <div className="relative h-full max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <Image src={lightboxImg} alt="Profil Full" fill className="object-contain" unoptimized />
           </div>
         </div>
       )}

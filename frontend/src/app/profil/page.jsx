@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getUserContext, updateUserContext } from "../lib/authService";
 import { updateMyProfile } from "../lib/userService";
@@ -44,6 +45,10 @@ export default function ProfilPage() {
   const handleFotoSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        showToast("Ukuran foto profil maksimal 2 MB", "error");
+        return;
+      }
       setFotoFile(file);
       setRemoveFoto(false);
       setFotoPreview(URL.createObjectURL(file));
@@ -89,13 +94,25 @@ export default function ProfilPage() {
 
       const profileResult = await updateMyProfile(formData);
       if (profileResult.success) {
-        // Update user context for Navbar
+        // Handle snake_case vs camelCase dari API
+        const newNamaLengkap = profileResult.user.namaLengkap || profileResult.user.nama_lengkap;
+        const newFotoProfil = profileResult.user.fotoProfil !== undefined ? profileResult.user.fotoProfil : profileResult.user.foto_profil;
+
         updateUserContext({
-          namaLengkap: profileResult.user.namaLengkap,
-          fotoProfil: profileResult.user.fotoProfil
+          namaLengkap: newNamaLengkap,
+          fotoProfil: newFotoProfil,
+          foto_profil: newFotoProfil
         });
-        setUser(prev => ({ ...prev, namaLengkap: profileResult.user.namaLengkap, fotoProfil: profileResult.user.fotoProfil }));
+        
+        setUser(prev => ({ 
+          ...prev, 
+          namaLengkap: newNamaLengkap, 
+          fotoProfil: newFotoProfil,
+          foto_profil: newFotoProfil 
+        }));
+        
         setFotoFile(null);
+        setFotoPreview(null);
         setRemoveFoto(false);
         successCount++;
       }
@@ -178,9 +195,10 @@ export default function ProfilPage() {
         </div>
       );
     }
-    const fotoSrc = fotoPreview || (user.fotoProfil ? `${API_BASE}${user.fotoProfil}` : null);
+    const f = user.fotoProfil || user.foto_profil;
+    const fotoSrc = fotoPreview || (f ? (f.startsWith('http') ? f : `${API_BASE}${f}`) : null);
     if (fotoSrc) {
-      return <img src={fotoSrc} alt="Foto Profil" className="h-full w-full rounded-full object-cover" />;
+      return <Image src={fotoSrc} alt="Foto Profil" fill className="object-cover" sizes="128px" unoptimized />;
     }
     return (
       <div className={`flex h-full w-full items-center justify-center rounded-full ${getRoleColor(user.role)} text-2xl font-bold text-white`}>
@@ -216,7 +234,7 @@ export default function ProfilPage() {
           <div className={`h-24 ${getRoleColor(user.role)} relative`}>
             <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
               <div className="relative group">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white border-4 border-white shadow-lg overflow-hidden">
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white border-4 border-white shadow-lg overflow-hidden">
                   {getAvatarContent()}
                 </div>
               </div>
@@ -260,17 +278,19 @@ export default function ProfilPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap</label>
-                  <input type="text" value={namaLengkap} onChange={(e) => setNamaLengkap(e.target.value)} placeholder="Nama lengkap"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
-                    onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-                  <input type="email" value={user.email} disabled
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-500 bg-slate-50 cursor-not-allowed" />
-                  <p className="mt-1 text-xs text-slate-400">Email tidak dapat diubah.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap</label>
+                    <input type="text" value={namaLengkap} onChange={(e) => setNamaLengkap(e.target.value)} placeholder="Nama lengkap"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                      onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                    <input type="email" value={user.email} disabled
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-500 bg-slate-50 cursor-not-allowed" />
+                    <p className="mt-1 text-xs text-slate-400">Email tidak dapat diubah.</p>
+                  </div>
                 </div>
               </div>
             </div>

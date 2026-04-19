@@ -119,6 +119,8 @@ export function mapPeminjamanToFrontend(backendData) {
     approvedBy: backendData.approved_by,
     totalItems: backendData.total_items,
     daftarAset: backendData.daftar_aset,
+    buktiPeminjaman: backendData.bukti_peminjaman,
+    buktiPengembalian: backendData.bukti_pengembalian,
     createdAt: backendData.created_at,
     // Items (jika ada dari getById)
     items: backendData.items
@@ -145,6 +147,8 @@ export function mapPeminjamanToBackend(frontendData) {
   if (frontendData.status !== undefined) mapped.status = frontendData.status;
   if (frontendData.yangMenyerahkan !== undefined) mapped.yang_menyerahkan = frontendData.yangMenyerahkan;
   if (frontendData.approvedBy !== undefined) mapped.approved_by = frontendData.approvedBy;
+  if (frontendData.buktiPeminjaman !== undefined) mapped.bukti_peminjaman = frontendData.buktiPeminjaman;
+  if (frontendData.buktiPengembalian !== undefined) mapped.bukti_pengembalian = frontendData.buktiPengembalian;
   // Items
   if (frontendData.items) {
     mapped.items = frontendData.items.map((item) => ({

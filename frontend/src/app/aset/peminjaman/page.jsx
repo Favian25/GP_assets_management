@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { getAllPeminjaman, deletePeminjaman, searchPeminjaman, approvePeminjaman } from "../../lib/peminjamanService";
 import { getUserContext } from "../../lib/authService";
 import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, X, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
+const BACKEND_URL = "http://localhost:5000";
 
 function SortIcon({ columnKey, sortConfig }) {
   const isActive = sortConfig.key === columnKey;
@@ -59,6 +61,7 @@ export default function PeminjamanAsetPage() {
   const [submitting, setSubmitting] = useState(false);
   const [userRole, setUserRole] = useState("user");
   const [userName, setUserName] = useState("");
+  const [lightboxImg, setLightboxImg] = useState(null);
 
   useEffect(() => {
     const ctx = getUserContext();
@@ -162,6 +165,42 @@ export default function PeminjamanAsetPage() {
       </div>
     </div>
   );
+
+  const ImageCarousel = ({ images, title }) => {
+    const [startIndex, setStartIndex] = useState(0);
+    if (!images || images.length === 0) return null;
+
+    const visibleImages = images.slice(startIndex, startIndex + 3);
+    const canNext = startIndex + 3 < images.length;
+    const canPrev = startIndex > 0;
+
+    return (
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-semibold text-slate-600">{title}</span>
+          {images.length > 3 && (
+            <div className="flex gap-1">
+              <button disabled={!canPrev} onClick={() => setStartIndex(s => Math.max(0, s - 1))} className="p-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ChevronLeft className="h-4 w-4" /></button>
+              <button disabled={!canNext} onClick={() => setStartIndex(s => Math.min(images.length - 3, s + 1))} className="p-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ChevronRight className="h-4 w-4" /></button>
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {visibleImages.map((path, i) => (
+            <div key={i} className="relative h-20 rounded-lg overflow-hidden border border-slate-200 group cursor-zoom-in shadow-sm hover:border-primary/50 transition-colors" onClick={() => setLightboxImg(`${BACKEND_URL}${path}`)}>
+              <Image src={`${BACKEND_URL}${path}`} alt={title} fill className="object-cover group-hover:scale-110 transition-transform duration-300" sizes="120px" unoptimized />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                <Search className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
+          ))}
+          {[...Array(Math.max(0, 3 - visibleImages.length))].map((_, i) => (
+            <div key={`empty-${i}`} className="h-20 rounded-lg bg-slate-50 border border-dashed border-slate-200" />
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // Loading
   if (loading) {
@@ -309,6 +348,14 @@ export default function PeminjamanAsetPage() {
                   </div>
                   <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Alasan</span><span className="text-sm text-slate-800">{showDetail.alasanPeminjaman || "-"}</span></div>
                   <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Status</span><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusBadge(showDetail.status)}`}>{getStatusLabel(showDetail.status)}</span></div>
+                  
+                  {/* Bukti Peminjaman Images with Carousel */}
+                  {showDetail.buktiPeminjaman && (() => {
+                    try {
+                      const paths = JSON.parse(showDetail.buktiPeminjaman);
+                      return <ImageCarousel images={paths} title="Bukti Peminjaman" />;
+                    } catch (e) { return null; }
+                  })()}
                 </div>
               </div>
 
@@ -317,22 +364,40 @@ export default function PeminjamanAsetPage() {
               <div>
                 <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Pengembalian</h4>
                 <div className="space-y-2.5">
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Batas Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
+                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
                   <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Penerima Aset</span><span className="text-sm text-slate-800">{showDetail.penerimaAset || "-"}</span></div>
                   <div className="flex items-start gap-3">
                     <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Disetujui Oleh</span>
                     {showDetail.approvedBy ? (
                       <span className="text-sm text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shadow-sm">{showDetail.approvedBy}</span>
                     ) : (
-                      <span className="text-sm text-slate-400 italic">Belum diverifikasi</span>
+                      <span className="text-sm text-slate-400 italic">Belum disetujui</span>
                     )}
                   </div>
+
+                  {/* Bukti Pengembalian Images with Carousel */}
+                  {showDetail.buktiPengembalian && (() => {
+                    try {
+                      const paths = JSON.parse(showDetail.buktiPengembalian);
+                      return <ImageCarousel images={paths} title="Bukti Pengembalian" />;
+                    } catch (e) { return null; }
+                  })()}
                 </div>
               </div>
             </div>
             <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4">
-              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600">Tutup</button>
+              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Tutup</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Overlay */}
+      {lightboxImg && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 p-4 transition-all animate-in fade-in duration-200" onClick={() => setLightboxImg(null)}>
+          <button className="absolute right-6 top-6 text-white/70 hover:text-white transition-colors z-110" onClick={() => setLightboxImg(null)}><X className="h-8 w-8" /></button>
+          <div className="relative h-full max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <Image src={lightboxImg} alt="Preview Bukti Full" fill className="object-contain" unoptimized />
           </div>
         </div>
       )}
@@ -367,7 +432,7 @@ export default function PeminjamanAsetPage() {
                 <Check className="h-7 w-7 text-emerald-600" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-1">Setujui Peminjaman?</h3>
-              <p className="text-sm text-slate-500 mb-1">Verifikasi pengembalian #{showApproveConfirm.kodePinjam}</p>
+              <p className="text-sm text-slate-500 mb-1">Setujui pengembalian #{showApproveConfirm.kodePinjam}?</p>
               <p className="text-sm font-semibold text-slate-700">{showApproveConfirm.namaPeminjam}</p>
               <p className="text-xs text-emerald-600 mt-3">Stok aset akan dikembalikan setelah disetujui.</p>
             </div>

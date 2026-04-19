@@ -48,23 +48,38 @@ const peminjamanController = {
         return res.status(400).json({ success: false, message: "Nama, tanggal, yang menyerahkan, dan alasan peminjaman wajib diisi!" });
       }
 
-      if (!items || !Array.isArray(items) || items.length === 0) {
+      let itemsArray = items;
+      if (typeof items === "string") {
+        try {
+          itemsArray = JSON.parse(items);
+        } catch (e) {
+          itemsArray = [];
+        }
+      }
+
+      if (!itemsArray || !Array.isArray(itemsArray) || itemsArray.length === 0) {
         return res.status(400).json({ success: false, message: "Minimal harus ada 1 barang yang dipinjam" });
       }
 
       // Validasi setiap item punya asset_id dan jumlah
-      for (const item of items) {
+      for (const item of itemsArray) {
         if (!item.asset_id || !item.jumlah || item.jumlah < 1) {
           return res.status(400).json({ success: false, message: "Setiap barang harus memiliki aset dan jumlah yang valid" });
         }
+      }
+
+      // Handle file uploads utk bukti_peminjaman
+      let buktiPeminjamanUrls = null;
+      if (req.files && req.files.length > 0) {
+        buktiPeminjamanUrls = JSON.stringify(req.files.map(f => `/uploads/${f.filename}`));
       }
 
       // Auto-generate kode pinjam
       const kode_pinjam = await Peminjaman.getNextKodePinjam();
 
       const result = await Peminjaman.create(
-        { kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan },
-        items
+        { kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, bukti_peminjaman: buktiPeminjamanUrls },
+        itemsArray
       );
 
       // Notifikasi: peminjaman baru
@@ -76,7 +91,7 @@ const peminjamanController = {
       });
 
       // Cek stok rendah (≤ 3) untuk setiap item
-      for (const item of items) {
+      for (const item of itemsArray) {
         const [assetRows] = await db.query('SELECT nama_aset, jumlah FROM assets WHERE id = ?', [item.asset_id]);
         if (assetRows[0] && assetRows[0].jumlah <= 3) {
           await Notification.create({
@@ -107,8 +122,13 @@ const peminjamanController = {
       }
 
       const { tanggal_pengembalian, status, penerima_aset } = req.body;
+      
+      let buktiPengembalianUrls = undefined;
+      if (req.files && req.files.length > 0) {
+        buktiPengembalianUrls = JSON.stringify(req.files.map(f => `/uploads/${f.filename}`));
+      }
 
-      await Peminjaman.updateReturn(id, { tanggal_pengembalian, status, penerima_aset });
+      await Peminjaman.updateReturn(id, { tanggal_pengembalian, status, penerima_aset, bukti_pengembalian: buktiPengembalianUrls });
 
       // Notifikasi: pengembalian
       if (status === 'Dikembalikan') {

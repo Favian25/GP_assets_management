@@ -53,15 +53,15 @@ const Peminjaman = {
 
       const {
         kode_pinjam, nama_peminjam, alasan_peminjaman,
-        tanggal_peminjaman, yang_menyerahkan
+        tanggal_peminjaman, yang_menyerahkan, bukti_peminjaman
       } = headerData;
 
       // Insert header
       const [headerResult] = await connection.query(
         `INSERT INTO peminjaman 
-          (kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, status)
-         VALUES (?, ?, ?, ?, ?, 'Pending')`,
-        [kode_pinjam, nama_peminjam, alasan_peminjaman || null, tanggal_peminjaman, yang_menyerahkan || null]
+          (kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, status, bukti_peminjaman)
+         VALUES (?, ?, ?, ?, ?, 'Pending', ?)`,
+        [kode_pinjam, nama_peminjam, alasan_peminjaman || null, tanggal_peminjaman, yang_menyerahkan || null, bukti_peminjaman || null]
       );
 
       const peminjamanId = headerResult.insertId;
@@ -111,13 +111,38 @@ const Peminjaman = {
 
   // UPDATE pengembalian (hanya field tertentu)
   updateReturn: async (id, data) => {
-    const { tanggal_pengembalian, status, penerima_aset } = data;
+    const { tanggal_pengembalian, status, penerima_aset, bukti_pengembalian } = data;
+
+    let updateFields = [];
+    let updateValues = [];
+
+    if (tanggal_pengembalian !== undefined) {
+      updateFields.push("tanggal_pengembalian = ?");
+      updateValues.push(tanggal_pengembalian || null);
+    }
+    
+    if (status !== undefined) {
+      updateFields.push("status = ?");
+      updateValues.push(status || "Dikembalikan");
+    }
+
+    if (penerima_aset !== undefined) {
+      updateFields.push("penerima_aset = ?");
+      updateValues.push(penerima_aset || null);
+    }
+
+    if (bukti_pengembalian !== undefined) {
+      updateFields.push("bukti_pengembalian = ?");
+      updateValues.push(bukti_pengembalian);
+    }
+
+    if (updateFields.length === 0) return 0;
+    
+    updateValues.push(id);
 
     const [result] = await db.query(
-      `UPDATE peminjaman SET 
-        tanggal_pengembalian = ?, status = ?, penerima_aset = ?
-       WHERE id = ?`,
-      [tanggal_pengembalian || null, status || "Dikembalikan", penerima_aset || null, id]
+      `UPDATE peminjaman SET ${updateFields.join(', ')} WHERE id = ?`,
+      updateValues
     );
 
     return result.affectedRows;

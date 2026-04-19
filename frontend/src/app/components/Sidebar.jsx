@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getUserContext } from "../lib/authService";
@@ -25,8 +26,8 @@ export default function Sidebar() {
     <aside className="fixed top-0 left-0 z-40 flex h-screen w-64 flex-col bg-sidebar-bg text-sidebar-text">
       {/* Brand */}
       <Link href="/" className="flex h-16 items-center justify-center border-b border-white/10 px-6 cursor-pointer hover:bg-white/5 transition-colors">
-        <div className="flex h-10 w-auto items-center justify-center bg-transparent">
-          <img src="/logo-galeria-production.png" alt="Galeria Production Logo" className="h-full w-auto max-w-[140px] object-contain" />
+        <div className="flex h-10 w-auto items-center justify-center bg-transparent relative">
+          <Image src="/logo-galeria-production.png" alt="Galeria Production Logo" width={140} height={40} className="h-full w-auto object-contain" />
         </div>
       </Link>
 

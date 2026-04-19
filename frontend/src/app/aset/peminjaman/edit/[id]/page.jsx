@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 import { getPeminjamanById, updatePeminjaman } from "../../../../lib/peminjamanService";
-import { ChevronLeft, FileText, Check, X, Calendar, User, Package, Lock } from "lucide-react";
+import { ChevronLeft, FileText, Check, X, Calendar, User, Package, Lock, Plus } from "lucide-react";
+
+const BACKEND_URL = "http://localhost:5000";
 
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return "";
@@ -57,6 +60,10 @@ export default function EditPeminjamanPage() {
   const [tanggalPengembalian, setTanggalPengembalian] = useState("");
   const [status, setStatus] = useState("");
   const [penerimaAset, setPenerimaAset] = useState("");
+  const [buktiFiles, setBuktiFiles] = useState([]);
+  const [buktiPreviews, setBuktiPreviews] = useState([]);
+  const [existingBuktiPeminjaman, setExistingBuktiPeminjaman] = useState([]);
+  const fileInputRef = useRef(null);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 4000); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -69,6 +76,14 @@ export default function EditPeminjamanPage() {
       setTanggalPengembalian(formatDateForInput(result.tanggalPengembalian));
       setStatus(result.status);
       setPenerimaAset(result.penerimaAset || "");
+      
+      if (result.buktiPeminjaman) {
+        try {
+          setExistingBuktiPeminjaman(JSON.parse(result.buktiPeminjaman));
+        } catch (e) {
+          setExistingBuktiPeminjaman([]);
+        }
+      }
     } catch (err) {
       console.error("Error fetching peminjaman:", err);
       showToast("Gagal memuat data", "error");
@@ -79,6 +94,44 @@ export default function EditPeminjamanPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    handleFiles(files);
+  };
+
+  const handleFiles = (newFiles) => {
+    const validTypes = ["image/jpeg", "image/jpg", "image/png"];
+    let filesToAdd = [];
+    let isValid = true;
+
+    newFiles.forEach(file => {
+      if (!validTypes.includes(file.type)) {
+        showToast("Format file tidak didukung (harus JPG/PNG)", "error");
+        isValid = false;
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(`Ukuran ${file.name} melebihi 5MB`, "error");
+        isValid = false;
+        return;
+      }
+      filesToAdd.push(file);
+    });
+
+    if (!isValid) return;
+
+    if (buktiFiles.length + filesToAdd.length > 5) {
+      showToast("Maksimal 5 gambar diperbolehkan", "error");
+      return;
+    }
+
+    const updatedFiles = [...buktiFiles, ...filesToAdd];
+    setBuktiFiles(updatedFiles);
+
+    const previews = updatedFiles.map(f => URL.createObjectURL(f));
+    setBuktiPreviews(previews);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -87,7 +140,7 @@ export default function EditPeminjamanPage() {
         tanggalPengembalian: tanggalPengembalian ? formatDatetimeForMySQL(tanggalPengembalian) : null,
         status,
         penerimaAset,
-      });
+      }, buktiFiles);
       showToast("Data peminjaman berhasil diperbarui!");
       setTimeout(() => router.push("/aset/peminjaman"), 1500);
     } catch (err) {
@@ -167,6 +220,20 @@ export default function EditPeminjamanPage() {
             <label className="mb-1 block text-xs font-medium text-slate-500">Alasan Peminjaman</label>
             <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-700 min-h-[60px]">{data.alasanPeminjaman || "-"}</div>
           </div>
+          
+          {/* Existing Bukti Peminjaman */}
+          {existingBuktiPeminjaman.length > 0 && (
+            <div className="sm:col-span-2">
+              <label className="mb-2 block text-xs font-medium text-slate-500">Bukti Peminjaman</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {existingBuktiPeminjaman.map((path, idx) => (
+                  <div key={idx} className="relative h-24 rounded-lg overflow-hidden border border-slate-200">
+                    <Image src={`${BACKEND_URL}${path}`} alt={`Bukti Peminjaman ${idx + 1}`} fill className="object-cover" unoptimized />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Items Read-Only */}
@@ -226,6 +293,39 @@ export default function EditPeminjamanPage() {
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Penerima Alat</label>
               <input type="text" placeholder="Siapa yang menerima alat yang dikembalikan" value={penerimaAset} onChange={(e) => setPenerimaAset(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+
+            {/* Bukti Pengembalian Upload */}
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Bukti Pengembalian <span className="text-xs text-slate-400 font-normal ml-1">(Opsional)</span></label>
+              <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
+                <input type="file" multiple accept="image/*" onChange={handleFileChange} ref={fileInputRef} className="hidden" id="bukti-pengembalian-upload" />
+                <label htmlFor="bukti-pengembalian-upload" className="cursor-pointer flex flex-col items-center justify-center">
+                  <Plus className="h-8 w-8 text-slate-300 mb-2" />
+                  <span className="text-sm font-medium text-slate-600">Klik untuk upload bukti pengembalian</span>
+                  <span className="text-xs text-slate-400 mt-1">Maks. 5 file (JPG/PNG), masing-masing maks 5MB</span>
+                </label>
+              </div>
+
+              {/* Previews */}
+              {buktiPreviews.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {buktiPreviews.map((src, idx) => (
+                    <div key={idx} className="relative group h-20 rounded-lg overflow-hidden border border-slate-200">
+                      <Image src={src} alt="Preview Bukti" fill unoptimized className="object-cover" />
+                      <button type="button" 
+                        onClick={() => {
+                          const newFiles = [...buktiFiles]; newFiles.splice(idx, 1); setBuktiFiles(newFiles);
+                          const newPreviews = [...buktiPreviews]; newPreviews.splice(idx, 1); setBuktiPreviews(newPreviews);
+                        }}
+                        className="absolute top-1 right-1 rounded-full bg-rose-500 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-600 shadow-sm"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

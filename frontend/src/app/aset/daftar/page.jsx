@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import { getAllAssets, createAsset, updateAsset, deleteAsset, searchAssets, updateAssetKondisi } from "../../lib/assetService";
 import { getAllCategories, createCategory } from "../../lib/categoryService";
 import { getAllBrands, createBrand } from "../../lib/brandService";
@@ -75,8 +76,8 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
         className={`rounded-lg border-2 border-dashed px-6 py-6 transition-colors ${dragging ? "border-primary bg-primary/5" : "border-slate-200 hover:border-primary/50"}`}>
         <div className="flex flex-col items-center text-center">
           {previewUrl ? (
-            <div className="relative mb-3">
-              <img src={previewUrl} alt="Preview" className="max-h-40 rounded-lg object-contain border border-slate-200" />
+            <div className="relative mb-3 h-40 w-full max-w-[200px]">
+              <Image src={previewUrl} alt="Preview" fill unoptimized className="rounded-lg object-contain border border-slate-200" />
               <button type="button" onClick={onClear}
                 className="absolute -top-2 -right-2 cursor-pointer rounded-full bg-rose-500 p-1 text-white shadow-md transition-colors hover:bg-rose-600">
                 <X className="h-3.5 w-3.5" />
@@ -351,7 +352,7 @@ export default function DaftarAsetPage() {
             }} 
           />
           <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} />
-          <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} />
+          <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} className="sm:col-span-2" />
           <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: e.target.value}))} rows={3} className="sm:col-span-2" />
 
         </div>
@@ -416,7 +417,9 @@ export default function DaftarAsetPage() {
       {/* Lightbox */}
       {lightboxImg && (
         <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxImg(null)}>
-          <img src={lightboxImg} alt="Preview" onClick={(e) => e.stopPropagation()} className="max-h-[85vh] max-w-[85vw] rounded-xl object-contain shadow-2xl cursor-default" />
+          <div className="relative h-[85vh] w-[85vw] max-w-5xl">
+            <Image src={lightboxImg} alt="Preview" fill unoptimized onClick={(e) => e.stopPropagation()} className="rounded-xl object-contain shadow-2xl cursor-default" />
+          </div>
         </div>
       )}
 
@@ -465,8 +468,9 @@ export default function DaftarAsetPage() {
                   <td className="w-[140px] px-5 py-3 font-mono text-xs font-bold text-primary hover:underline cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.kodeAset}</td>
                   <td className="w-[80px] px-3 py-2 text-center">
                     {item.gambar ? (
-                      <img src={getImageUrl(item.gambar)} alt="" onClick={() => setLightboxImg(getImageUrl(item.gambar))}
-                        className="mx-auto h-9 w-9 rounded-md object-cover border border-slate-200 cursor-pointer hover:ring-2 hover:ring-primary transition-all" />
+                      <div className="mx-auto h-9 w-9 relative cursor-pointer hover:ring-2 hover:ring-primary transition-all rounded-md overflow-hidden" onClick={() => setLightboxImg(getImageUrl(item.gambar))}>
+                        <Image src={getImageUrl(item.gambar)} alt="" fill unoptimized className="object-cover border border-slate-200" />
+                      </div>
                     ) : (
                       <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-300">
                         <ImageIcon className="h-4 w-4" />
@@ -527,8 +531,9 @@ export default function DaftarAsetPage() {
             <div className="p-6 space-y-5">
               {getImageUrl(showDetail.gambar) && (
                 <div className="flex justify-center">
-                  <img src={getImageUrl(showDetail.gambar)} alt={showDetail.namaAset} onClick={() => setLightboxImg(getImageUrl(showDetail.gambar))}
-                    className="max-h-48 rounded-xl object-contain border border-slate-200 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all" />
+                  <div className="relative h-48 w-full max-w-[300px] cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all rounded-xl overflow-hidden border border-slate-200" onClick={() => setLightboxImg(getImageUrl(showDetail.gambar))}>
+                    <Image src={getImageUrl(showDetail.gambar)} alt={showDetail.namaAset} fill unoptimized className="object-contain" />
+                  </div>
                 </div>
               )}
               <div>

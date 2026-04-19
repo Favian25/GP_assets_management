@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { loginUser } from "../lib/authService";
 import { LogIn, Eye, EyeOff } from "lucide-react";
@@ -41,8 +42,8 @@ export default function AuthPage() {
         
         {/* Brand Logo & Title */}
         <div className="text-center mb-6">
-          <div className="mx-auto flex h-24 w-auto items-center justify-center mb-1">
-            <img src="/logo-galeria-production-biru.png" alt="Galeria Production Logo" className="h-full w-auto max-w-[220px] object-contain" />
+          <div className="mx-auto flex h-24 w-auto items-center justify-center mb-1 relative">
+            <Image src="/logo-galeria-production-biru.png" alt="Galeria Production Logo" width={220} height={96} className="h-full w-auto object-contain" priority />
           </div>
           <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">Asset Management</p>
         </div>

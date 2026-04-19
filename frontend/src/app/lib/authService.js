@@ -78,6 +78,7 @@ export const updateUserContext = (updates) => {
     if (current) {
       const updated = { ...current, ...updates };
       localStorage.setItem("user", JSON.stringify(updated));
+      window.dispatchEvent(new Event("userContextUpdated"));
     }
   }
 };

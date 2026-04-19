@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createPeminjaman, getNextKodePinjam } from "../../../lib/peminjamanService";
 import { getAllAssets } from "../../../lib/assetService";
@@ -93,6 +94,8 @@ export default function TambahPeminjamanPage() {
   const [tanggalPeminjaman, setTanggalPeminjaman] = useState("");
   const [alasanPeminjaman, setAlasanPeminjaman] = useState("");
   const [items, setItems] = useState([{ assetId: "", namaAset: "", kodeAset: "", jumlah: 1, stokTersedia: 0 }]);
+  const [buktiFiles, setBuktiFiles] = useState([]);
+  const [buktiPreviews, setBuktiPreviews] = useState([]);
   const [allAssets, setAllAssets] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
@@ -136,6 +139,47 @@ export default function TambahPeminjamanPage() {
   }, []);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
+
+  // Handlers file bukti
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    handleFiles(files);
+  };
+  
+  const handleFiles = (newFiles) => {
+    const validTypes = ["image/jpeg", "image/jpg", "image/png"];
+    let filesToAdd = [];
+    let isValid = true;
+    
+    newFiles.forEach(file => {
+      if (!validTypes.includes(file.type)) {
+        showToast("Format file tidak didukung (harus JPG/PNG)", "error");
+        isValid = false;
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(`Ukuran ${file.name} melebihi 5MB`, "error");
+        isValid = false;
+        return;
+      }
+      filesToAdd.push(file);
+    });
+
+    if (!isValid) return;
+
+    if (buktiFiles.length + filesToAdd.length > 5) {
+      showToast("Maksimal 5 gambar diperbolehkan", "error");
+      return;
+    }
+
+    const updatedFiles = [...buktiFiles, ...filesToAdd];
+    setBuktiFiles(updatedFiles);
+
+    const previews = updatedFiles.map(f => URL.createObjectURL(f));
+    setBuktiPreviews(previews);
+  };
+
+  const currentFileRef = useRef(null);
 
   // Item management
   const addItem = () => {
@@ -205,7 +249,7 @@ export default function TambahPeminjamanPage() {
         tanggalPeminjaman: formatDatetimeForMySQL(tanggalPeminjaman),
         alasanPeminjaman,
         items: validItems.map(item => ({ assetId: item.assetId, jumlah: item.jumlah })),
-      });
+      }, buktiFiles);
       showToast("Peminjaman berhasil ditambahkan!");
       localStorage.removeItem('tempPeminjaman');
       setTimeout(() => router.push("/aset/peminjaman"), 1500);
@@ -342,6 +386,64 @@ export default function TambahPeminjamanPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Bukti Peminjaman */}
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-emerald-500 mb-6">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+              <FileText className="h-4 w-4 text-emerald-500" />
+              Bukti Peminjaman <span className="text-xs text-slate-400 ml-2">(Opsional)</span>
+            </h2>
+          </div>
+          <div className="p-6">
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:bg-slate-50 transition-colors">
+              <input
+                type="file"
+                multiple
+                accept="image/jpeg,image/jpg,image/png"
+                onChange={handleFileChange}
+                ref={currentFileRef}
+                className="hidden"
+                id="bukti-upload"
+              />
+              <label htmlFor="bukti-upload" className="cursor-pointer flex flex-col items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                  <Plus className="h-6 w-6 text-emerald-600" />
+                </div>
+                <h3 className="text-sm font-semibold text-slate-700">Klik untuk upload bukti peminjaman</h3>
+                <p className="text-xs text-slate-500 mt-1">Maks. 5 gambar (JPG/PNG), masing-masing maks 5MB</p>
+              </label>
+            </div>
+
+            {/* Previews */}
+            {buktiPreviews.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Preview Gambar ({buktiPreviews.length}/5)</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {buktiPreviews.map((src, idx) => (
+                    <div key={idx} className="relative group rounded-lg overflow-hidden border border-slate-200 h-24">
+                      <Image src={src} alt="Preview Bukti" fill unoptimized className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newFiles = [...buktiFiles];
+                          newFiles.splice(idx, 1);
+                          setBuktiFiles(newFiles);
+                          const newPreviews = [...buktiPreviews];
+                          newPreviews.splice(idx, 1);
+                          setBuktiPreviews(newPreviews);
+                        }}
+                        className="absolute top-1 right-1 rounded-full bg-rose-500 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-600 shadow-sm"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

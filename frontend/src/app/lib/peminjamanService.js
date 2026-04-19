@@ -34,11 +34,30 @@ export const getNextKodePinjam = async () => {
 };
 
 // 4. CREATE Peminjaman
-export const createPeminjaman = async (data) => {
+export const createPeminjaman = async (data, files = []) => {
   try {
     const backendData = mapPeminjamanToBackend(data);
-    const response = await api.post("/peminjaman", backendData);
-    return response.data;
+    
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      Object.keys(backendData).forEach(key => {
+        if (key === "items") {
+          formData.append(key, JSON.stringify(backendData[key]));
+        } else {
+          formData.append(key, backendData[key]);
+        }
+      });
+      Array.from(files).forEach((file) => {
+        formData.append("bukti", file);
+      });
+      const response = await api.post("/peminjaman", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      return response.data;
+    } else {
+      const response = await api.post("/peminjaman", backendData);
+      return response.data;
+    }
   } catch (error) {
     console.error("Error creating peminjaman:", error);
     throw error;
@@ -46,11 +65,26 @@ export const createPeminjaman = async (data) => {
 };
 
 // 5. UPDATE Peminjaman (Pengembalian)
-export const updatePeminjaman = async (id, data) => {
+export const updatePeminjaman = async (id, data, files = []) => {
   try {
     const backendData = mapPeminjamanToBackend(data);
-    const response = await api.put(`/peminjaman/${id}`, backendData);
-    return response.data;
+    
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      Object.keys(backendData).forEach(key => {
+        formData.append(key, backendData[key]);
+      });
+      Array.from(files).forEach((file) => {
+        formData.append("bukti", file);
+      });
+      const response = await api.put(`/peminjaman/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      return response.data;
+    } else {
+      const response = await api.put(`/peminjaman/${id}`, backendData);
+      return response.data;
+    }
   } catch (error) {
     console.error(`Error updating peminjaman ${id}:`, error);
     throw error;

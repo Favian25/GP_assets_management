@@ -2,9 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { logoutUser, getUserContext } from "../lib/authService";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, formatTimeAgo } from "../lib/notificationService";
 import { Bell, User, ChevronDown, LogOut, FileText, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
+
+const BACKEND_URL = "http://localhost:5000";
 
 export default function Navbar() {
   const router = useRouter();
@@ -15,18 +18,26 @@ export default function Navbar() {
   const [userName, setUserName] = useState("");
   const [userInitial, setUserInitial] = useState("U");
   const [userRole, setUserRole] = useState("");
+  const [userFoto, setUserFoto] = useState(null);
 
   // Notifikasi state
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    const ctx = getUserContext();
-    if (ctx) {
-      setUserName(ctx.namaLengkap || ctx.email || "");
-      setUserInitial((ctx.namaLengkap || ctx.email || "U").charAt(0).toUpperCase());
-      setUserRole(ctx.role || "user");
-    }
+    const updateFromCtx = () => {
+      const ctx = getUserContext();
+      if (ctx) {
+        setUserName(ctx.namaLengkap || ctx.email || "");
+        setUserInitial((ctx.namaLengkap || ctx.email || "U").charAt(0).toUpperCase());
+        setUserRole(ctx.role || "user");
+        setUserFoto(ctx.fotoProfil || ctx.foto_profil || null);
+      }
+    };
+    updateFromCtx();
+
+    window.addEventListener("userContextUpdated", updateFromCtx);
+    return () => window.removeEventListener("userContextUpdated", updateFromCtx);
   }, []);
 
   const handleLogout = () => {
@@ -177,8 +188,12 @@ export default function Navbar() {
             onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
             className="cursor-pointer flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-slate-100"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-              {userInitial}
+            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white overflow-hidden">
+              {userFoto ? (
+                <Image src={userFoto.startsWith("http") ? userFoto : `${BACKEND_URL}${userFoto}`} alt="Profile" fill className="object-cover" sizes="32px" unoptimized />
+              ) : (
+                userInitial
+              )}
             </div>
             <ChevronDown className="h-4 w-4 text-slate-400" />
           </button>
