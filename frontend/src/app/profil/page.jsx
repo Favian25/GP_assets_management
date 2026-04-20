@@ -7,7 +7,13 @@ import { getUserContext, updateUserContext } from "../lib/authService";
 import { updateMyProfile } from "../lib/userService";
 import { User, Lock, Camera, Trash2, Eye, EyeOff, Check, X, Shield, Key } from "lucide-react";
 
-const API_BASE = "http://localhost:5000";
+const getAPIBase = () => {
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return "http://localhost:5000";
+};
+const API_BASE = getAPIBase();
 
 export default function ProfilPage() {
   const router = useRouter();

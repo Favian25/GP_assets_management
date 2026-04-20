@@ -6,7 +6,13 @@ import Image from "next/image";
 import { getPeminjamanById, updatePeminjaman } from "../../../../lib/peminjamanService";
 import { ChevronLeft, FileText, Check, X, Calendar, User, Package, Lock, Plus } from "lucide-react";
 
-const BACKEND_URL = "http://localhost:5000";
+const getBackendURL = () => {
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return "http://localhost:5000";
+};
+const BACKEND_URL = getBackendURL();
 
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return "";

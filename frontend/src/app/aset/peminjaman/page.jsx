@@ -8,7 +8,13 @@ import { getUserContext } from "../../lib/authService";
 import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, X, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
-const BACKEND_URL = "http://localhost:5000";
+const getBackendURL = () => {
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return "http://localhost:5000";
+};
+const BACKEND_URL = getBackendURL();
 
 function SortIcon({ columnKey, sortConfig }) {
   const isActive = sortConfig.key === columnKey;

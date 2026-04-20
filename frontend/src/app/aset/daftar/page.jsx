@@ -7,7 +7,13 @@ import { getAllCategories, createCategory } from "../../lib/categoryService";
 import { getAllBrands, createBrand } from "../../lib/brandService";
 import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Package } from "lucide-react";
 
-const BACKEND_URL = "http://localhost:5000";
+const getBackendURL = () => {
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return "http://localhost:5000";
+};
+const BACKEND_URL = getBackendURL();
 const kondisiOptions = ["Siap Digunakan", "Rusak", "Maintenance", "Dijual"];
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 

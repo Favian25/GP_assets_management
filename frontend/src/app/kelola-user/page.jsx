@@ -63,7 +63,13 @@ export default function KelolaUserPage() {
   const [selectedRole, setSelectedRole] = useState("");
   const [lightboxImg, setLightboxImg] = useState(null);
 
-  const BACKEND_URL = "http://localhost:5000";
+  const getBackendURL = () => {
+    if (typeof window !== "undefined") {
+      return `http://${window.location.hostname}:5000`;
+    }
+    return "http://localhost:5000";
+  };
+  const BACKEND_URL = getBackendURL();
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });

@@ -1,8 +1,15 @@
 import axios from "axios";
 
 // Axios instance dengan base URL backend
+const getBaseURL = () => {
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000/api`;
+  }
+  return "http://localhost:5000/api";
+};
+
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: getBaseURL(),
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

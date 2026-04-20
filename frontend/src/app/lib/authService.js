@@ -1,6 +1,13 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/auth";
+const getAuthURL = () => {
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000/api/auth`;
+  }
+  return "http://localhost:5000/api/auth";
+};
+
+const API_URL = getAuthURL();
 
 const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 jam dalam milidetik
 

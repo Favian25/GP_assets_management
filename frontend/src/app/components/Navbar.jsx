@@ -7,7 +7,13 @@ import { logoutUser, getUserContext } from "../lib/authService";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, formatTimeAgo } from "../lib/notificationService";
 import { Bell, User, ChevronDown, LogOut, FileText, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
 
-const BACKEND_URL = "http://localhost:5000";
+const getBackendURL = () => {
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return "http://localhost:5000";
+};
+const BACKEND_URL = getBackendURL();
 
 export default function Navbar() {
   const router = useRouter();
