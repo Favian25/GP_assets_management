@@ -56,4 +56,7 @@ router.put("/:id/approve", peminjamanController.approvePeminjaman);
 // DELETE peminjaman
 router.delete("/:id", peminjamanController.deletePeminjaman);
 
+// DOWNLOAD PDF
+router.get("/:id/pdf", peminjamanController.generatePDF);
+
 module.exports = router;

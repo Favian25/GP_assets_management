@@ -74,7 +74,8 @@ const authController = {
         id: user.id,
         namaLengkap: user.nama_lengkap,
         email: user.email,
-        role: user.role
+        role: user.role,
+        fotoProfil: user.foto_profil || null
       };
 
       res.status(200).json({

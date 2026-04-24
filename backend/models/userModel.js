@@ -16,12 +16,12 @@ const User = {
   },
   
   findById: async (id) => {
-    const [rows] = await db.query('SELECT id, nama_lengkap, email, role, created_at, updated_at FROM users WHERE id = ?', [id]);
+    const [rows] = await db.query('SELECT id, nama_lengkap, email, role, foto_profil, created_at, updated_at FROM users WHERE id = ?', [id]);
     return rows[0];
   },
 
   getAll: async () => {
-    const [rows] = await db.query('SELECT id, nama_lengkap, email, role, created_at, updated_at FROM users ORDER BY created_at DESC');
+    const [rows] = await db.query('SELECT id, nama_lengkap, email, role, foto_profil, created_at, updated_at FROM users ORDER BY created_at DESC');
     return rows;
   },
 

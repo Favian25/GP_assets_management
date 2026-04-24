@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { getPeminjamanById, updatePeminjaman } from "../../../../lib/peminjamanService";
-import { ChevronLeft, FileText, Check, X, Calendar, User, Package, Lock, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Check, X, Calendar, User, Package, Lock, Plus } from "lucide-react";
 
 const getBackendURL = () => {
   if (typeof window !== "undefined") {
@@ -13,6 +13,16 @@ const getBackendURL = () => {
   return "http://localhost:5000";
 };
 const BACKEND_URL = getBackendURL();
+
+// Helper: parse bukti data yang bisa berupa string JSON atau array (jika kolom MySQL bertipe JSON)
+const parseBuktiImages = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (typeof data === 'string') {
+    try { return JSON.parse(data); } catch { return []; }
+  }
+  return [];
+};
 
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return "";
@@ -69,6 +79,7 @@ export default function EditPeminjamanPage() {
   const [buktiFiles, setBuktiFiles] = useState([]);
   const [buktiPreviews, setBuktiPreviews] = useState([]);
   const [existingBuktiPeminjaman, setExistingBuktiPeminjaman] = useState([]);
+  const [lightboxData, setLightboxData] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 4000); return () => clearTimeout(t); } }, [toast]);
@@ -83,13 +94,8 @@ export default function EditPeminjamanPage() {
       setStatus(result.status);
       setPenerimaAset(result.penerimaAset || "");
       
-      if (result.buktiPeminjaman) {
-        try {
-          setExistingBuktiPeminjaman(JSON.parse(result.buktiPeminjaman));
-        } catch (e) {
-          setExistingBuktiPeminjaman([]);
-        }
-      }
+      // Parse bukti - handle both JSON string and already-parsed array
+      setExistingBuktiPeminjaman(parseBuktiImages(result.buktiPeminjaman));
     } catch (err) {
       console.error("Error fetching peminjaman:", err);
       showToast("Gagal memuat data", "error");
@@ -176,6 +182,7 @@ export default function EditPeminjamanPage() {
   }
 
   return (
+    <>
     <div className="max-w-4xl mx-auto">
       {/* Toast */}
       {toast && (
@@ -231,10 +238,15 @@ export default function EditPeminjamanPage() {
           {existingBuktiPeminjaman.length > 0 && (
             <div className="sm:col-span-2">
               <label className="mb-2 block text-xs font-medium text-slate-500">Bukti Peminjaman</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              <div className="flex flex-wrap justify-center gap-3">
                 {existingBuktiPeminjaman.map((path, idx) => (
-                  <div key={idx} className="relative h-24 rounded-lg overflow-hidden border border-slate-200">
-                    <Image src={`${BACKEND_URL}${path}`} alt={`Bukti Peminjaman ${idx + 1}`} fill className="object-cover" unoptimized />
+                  <div 
+                    key={idx} 
+                    className="relative h-24 w-[calc(33.333%-12px)] min-w-[120px] rounded-lg overflow-hidden border border-slate-200 group cursor-zoom-in shadow-sm hover:border-primary/50 transition-colors" 
+                    onClick={() => setLightboxData({ images: existingBuktiPeminjaman, index: idx })}
+                  >
+                    <Image src={`${BACKEND_URL}${path}`} alt={`Bukti Peminjaman ${idx + 1}`} fill className="object-cover group-hover:scale-110 transition-transform duration-300" unoptimized />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                   </div>
                 ))}
               </div>
@@ -349,5 +361,47 @@ export default function EditPeminjamanPage() {
         </div>
       </form>
     </div>
+
+    {/* Lightbox Overlay */}
+    {lightboxData && (
+      <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxData(null)}>
+        <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh]" onClick={(e) => e.stopPropagation()}>
+          {lightboxData.images.length > 1 && (
+            <button 
+              onClick={() => setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length }))}
+              className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-sm shadow-xl"
+            >
+              <ChevronLeft className="h-8 w-8" />
+            </button>
+          )}
+          
+          <div className="relative flex-1 h-full">
+            <Image 
+              src={`${BACKEND_URL}${lightboxData.images[lightboxData.index]}`} 
+              alt="Preview Bukti Full" 
+              fill 
+              className="rounded-xl object-contain shadow-2xl cursor-default" 
+              unoptimized 
+            />
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm">
+              {lightboxData.index + 1} / {lightboxData.images.length}
+            </div>
+          </div>
+
+          {lightboxData.images.length > 1 && (
+            <button 
+              onClick={() => setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length }))}
+              className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-sm shadow-xl"
+            >
+              <ChevronRight className="h-8 w-8" />
+            </button>
+          )}
+        </div>
+        <button className="absolute right-6 top-6 text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" onClick={() => setLightboxData(null)}>
+          <X className="h-8 w-8" />
+        </button>
+      </div>
+    )}
+    </>
   );
 }

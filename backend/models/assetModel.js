@@ -105,7 +105,7 @@ const Asset = {
         kode_aset = ?, nama_aset = ?, pengguna = ?, kategori = ?,
         merek = ?, model = ?, no_sn = ?, spesifikasi = ?,
         lokasi_aset = ?, kondisi = ?, unit = ?, gambar = ?, keterangan = ?,
-        jumlah = ?, harga_aset = ?, tanggal_pembelian = ?
+        jumlah = ?, jumlah_total = ?, harga_aset = ?, tanggal_pembelian = ?
        WHERE id = ?`,
       [
         kode_aset,
@@ -122,6 +122,7 @@ const Asset = {
         gambar || null,
         keterangan || null,
         jumlah || null,
+        data.jumlah_total || jumlah || null,
         harga_aset || null,
         tanggal_pembelian || null,
         id,

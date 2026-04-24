@@ -125,6 +125,12 @@ const assetController = {
 
       const data = { ...req.body };
 
+      // Sinkronisasi jumlah_total berdasarkan perubahan jumlah
+      const newJumlah = parseInt(data.jumlah) || 0;
+      const oldJumlah = parseInt(existing.jumlah) || 0;
+      const oldJumlahTotal = parseInt(existing.jumlah_total) || oldJumlah;
+      data.jumlah_total = oldJumlahTotal + (newJumlah - oldJumlah);
+
       // Jika ada file upload baru, simpan path dan hapus gambar lama
       if (req.file) {
         data.gambar = `/uploads/${req.file.filename}`;

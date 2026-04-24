@@ -194,7 +194,7 @@ export default function Navbar() {
             onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
             className="cursor-pointer flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-slate-100"
           >
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white overflow-hidden">
+            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white border border-slate-200 text-sm font-bold text-slate-600 overflow-hidden">
               {userFoto ? (
                 <Image src={userFoto.startsWith("http") ? userFoto : `${BACKEND_URL}${userFoto}`} alt="Profile" fill className="object-cover" sizes="32px" unoptimized />
               ) : (

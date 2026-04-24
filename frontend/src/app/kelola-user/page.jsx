@@ -572,10 +572,9 @@ export default function KelolaUserPage() {
 
       {/* Lightbox Profil */}
       {lightboxImg && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 p-4 transition-all animate-in fade-in duration-200" onClick={() => setLightboxImg(null)}>
-          <button className="absolute right-6 top-6 text-white/70 hover:text-white transition-colors" onClick={() => setLightboxImg(null)}><X className="h-8 w-8" /></button>
-          <div className="relative h-full max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <Image src={lightboxImg} alt="Profil Full" fill className="object-contain" unoptimized />
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxImg(null)}>
+          <div className="relative h-[85vh] w-[85vw] max-w-5xl" onClick={(e) => e.stopPropagation()}>
+            <Image src={lightboxImg} alt="Profil Full" fill className="rounded-xl object-contain shadow-2xl cursor-default" unoptimized />
           </div>
         </div>
       )}
