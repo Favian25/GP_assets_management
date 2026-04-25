@@ -11,13 +11,30 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const brandRoutes = require("./routes/brandRoutes");
 
+const os = require("os");
+
+// Fungsi untuk mendapatkan IP lokal secara dinamis
+const getLocalIp = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return "localhost";
+};
+
+const localIp = getLocalIp();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://192.168.1.158:3000"],
+    origin: ["http://localhost:3000", `http://${localIp}:3000`],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],

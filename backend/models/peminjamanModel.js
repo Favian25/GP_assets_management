@@ -17,13 +17,14 @@ const Peminjaman = {
   // GET semua data peminjaman beserta items
   getAll: async () => {
     const [headers] = await db.query(
-      `SELECT p.*, 
+      `SELECT p.*, u.nama_lengkap as created_by_name,
         (SELECT COUNT(*) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id) AS total_items,
         (SELECT GROUP_CONCAT(a.nama_aset SEPARATOR ', ') 
          FROM peminjaman_items pi 
          JOIN assets a ON pi.asset_id = a.id 
          WHERE pi.peminjaman_id = p.id) AS daftar_aset
        FROM peminjaman p
+       LEFT JOIN users u ON p.user_id = u.id
        ORDER BY p.created_at DESC`
     );
     return headers;
@@ -59,9 +60,9 @@ const Peminjaman = {
       // Insert header
       const [headerResult] = await connection.query(
         `INSERT INTO peminjaman 
-          (kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, status, bukti_peminjaman)
-         VALUES (?, ?, ?, ?, ?, 'Pending', ?)`,
-        [kode_pinjam, nama_peminjam, alasan_peminjaman || null, tanggal_peminjaman, yang_menyerahkan || null, bukti_peminjaman || null]
+          (kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, status, bukti_peminjaman, user_id)
+         VALUES (?, ?, ?, ?, ?, 'Pending', ?, ?)`,
+        [kode_pinjam, nama_peminjam, alasan_peminjaman || null, tanggal_peminjaman, yang_menyerahkan || null, bukti_peminjaman || null, headerData.user_id || null]
       );
 
       const peminjamanId = headerResult.insertId;

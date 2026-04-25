@@ -134,8 +134,39 @@ export async function getDashboardStats() {
   const rusak = assets.filter((a) => a.kondisi === "Rusak").length;
   const dijual = assets.filter((a) => a.kondisi === "Dijual").length;
   
-  // Hitung jumlah peminjaman yang sedang dipinjam (Pending)
-  const dipinjam = peminjaman.filter((p) => p.status === "Pending").length;
+  // Hitung jumlah unit yang sedang dipinjam (total - tersedia)
+  const dipinjam = assets.reduce((sum, a) => {
+    const total = parseInt(a.jumlahTotal) || 0;
+    const ready = parseInt(a.jumlah) || 0;
+    return sum + (total - ready);
+  }, 0);
+
+  // Peringatan Stok Rendah (jumlah <= 3)
+  const lowStockAssets = assets.filter(a => (parseInt(a.jumlah) || 0) <= 3);
+
+  // Aktivitas Terbaru (Gabungan Asset & Peminjaman)
+  const activities = [
+    ...assets.map(a => ({
+      id: `asset-${a.id}`,
+      date: a.createdAt,
+      createdBy: a.createdByName || "Admin",
+      action: "Tambah Aset",
+      item: a.namaAset,
+      target: "-",
+      type: "asset"
+    })),
+    ...peminjaman.map(p => ({
+      id: `pjm-${p.id}`,
+      date: p.createdAt,
+      createdBy: p.createdByName || "User",
+      action: p.status === 'Pending' ? 'Peminjaman' : 'Pengembalian',
+      item: p.kodePinjam,
+      target: p.namaPeminjam,
+      type: "loan"
+    }))
+  ]
+  .sort((a, b) => new Date(b.date) - new Date(a.date))
+  .slice(0, 25);
 
   return {
     total,
@@ -144,6 +175,8 @@ export async function getDashboardStats() {
     rusak,
     diarsipkan: dijual,
     dipinjam,
+    activities,
+    lowStockAssets,
     recentAssets: assets.slice(0, 5),
   };
 }

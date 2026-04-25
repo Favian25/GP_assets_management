@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, cloneElement } from "react";
+import Link from "next/link";
 import { getDashboardStats } from "./lib/assetService";
-import { Package, CheckCircle2, AlertCircle, Settings, AlertTriangle, RefreshCw, ClipboardList } from "lucide-react";
+import { 
+  Package, CheckCircle2, AlertCircle, Settings, AlertTriangle, 
+  RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus, 
+  Calendar, User, Clock, LayoutGrid
+} from "lucide-react";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -27,46 +32,66 @@ export default function DashboardPage() {
     }
   };
 
+  const [activitySearch, setActivitySearch] = useState("");
+  const [isActivityMinimized, setIsActivityMinimized] = useState(false);
+  const [isStockMinimized, setIsStockMinimized] = useState(false);
+
+  const filteredActivities = stats?.activities?.filter(a => 
+    a.item?.toLowerCase().includes(activitySearch.toLowerCase()) ||
+    a.action?.toLowerCase().includes(activitySearch.toLowerCase()) ||
+    a.createdBy?.toLowerCase().includes(activitySearch.toLowerCase()) ||
+    a.target?.toLowerCase().includes(activitySearch.toLowerCase())
+  ) || [];
+
+  const formatActivityDate = (dateStr) => {
+    const d = new Date(dateStr);
+    const datePart = new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(d);
+    const timePart = new Intl.DateTimeFormat("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d) + " WIB";
+    return { datePart, timePart };
+  };
+
   const statCards = [
     {
       title: "Total Aset",
       value: stats?.total ?? 0,
-      icon: <Package className="h-6 w-6" />,
-      color: "bg-blue-500",
-      bgLight: "bg-blue-50",
-      textColor: "text-blue-600",
+      icon: <Package />,
+      color: "bg-blue-600",
+      link: "/aset",
     },
     {
       title: "Siap Digunakan",
       value: stats?.tersedia ?? 0,
-      icon: <CheckCircle2 className="h-6 w-6" />,
-      color: "bg-emerald-500",
-      bgLight: "bg-emerald-50",
-      textColor: "text-emerald-600",
+      icon: <CheckCircle2 />,
+      color: "bg-emerald-600",
+      link: "/aset",
     },
     {
       title: "Rusak",
       value: stats?.rusak ?? 0,
-      icon: <AlertCircle className="h-6 w-6" />,
-      color: "bg-rose-500",
-      bgLight: "bg-rose-50",
-      textColor: "text-rose-600",
+      icon: <AlertCircle />,
+      color: "bg-rose-600",
+      link: "/aset",
     },
     {
       title: "Maintenance",
       value: stats?.maintenance ?? 0,
-      icon: <Settings className="h-6 w-6" />,
+      icon: <Settings />,
       color: "bg-amber-500",
-      bgLight: "bg-amber-50",
-      textColor: "text-amber-600",
+      link: "/aset",
     },
     {
       title: "Aset Dipinjam",
       value: stats?.dipinjam ?? 0,
-      icon: <ClipboardList className="h-6 w-6" />,
-      color: "bg-indigo-500",
-      bgLight: "bg-indigo-50",
-      textColor: "text-indigo-600",
+      icon: <ClipboardList />,
+      color: "bg-indigo-600",
+      link: "/aset/peminjaman",
     },
   ];
 
@@ -80,14 +105,17 @@ export default function DashboardPage() {
             Selamat datang di Sistem Pencatatan Asset Galeria Production
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-5 shadow-sm animate-pulse">
-              <div className="h-12 w-12 rounded-xl bg-slate-200" />
-              <div className="space-y-2">
-                <div className="h-3 w-20 rounded bg-slate-200" />
-                <div className="h-6 w-12 rounded bg-slate-200" />
+            <div key={i} className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm animate-pulse">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-slate-200" />
+                <div className="flex flex-col space-y-2">
+                  <div className="h-6 w-12 rounded bg-slate-200" />
+                  <div className="h-3 w-20 rounded bg-slate-200" />
+                </div>
               </div>
+              <div className="h-3 w-24 rounded bg-slate-200 mt-1" />
             </div>
           ))}
         </div>
@@ -153,60 +181,184 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {statCards.map((stat, index) => (
-          <div
+          <Link
             key={index}
-            className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+            href={stat.link}
+            className={`relative overflow-hidden rounded-2xl ${stat.color} p-5 text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl group block`}
           >
-            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bgLight} ${stat.textColor}`}>
-              {stat.icon}
+            {/* Decorative background elements */}
+            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 transition-transform group-hover:scale-125" />
+            
+            <div className="relative z-10 flex flex-col h-full justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md shadow-inner">
+                  {cloneElement(stat.icon, { className: "h-6 w-6 text-white" })}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-black leading-none mb-0.5">
+                    {stats ? stat.value : "—"}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">
+                    {stat.title}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider group-hover:translate-x-1 transition-transform">
+                Lihat Selengkapnya <ChevronRight className="h-3 w-3" />
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">{stat.title}</p>
-              <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
 
-      {/* Recent Assets dari API */}
-      <div className="mt-8 rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-slate-800">
-          Aset Terbaru
-        </h2>
-        <div className="space-y-3">
-          {stats?.recentAssets && stats.recentAssets.length > 0 ? (
-            stats.recentAssets.map((asset, index) => (
-              <div key={asset.id || index} className="flex items-center gap-3 rounded-lg p-3 hover:bg-slate-50 transition-colors">
-                <div className={`h-2 w-2 rounded-full ${
-                  getActivityType(asset.kondisi) === "add" ? "bg-blue-500" :
-                  getActivityType(asset.kondisi) === "borrow" ? "bg-amber-500" :
-                  getActivityType(asset.kondisi) === "return" ? "bg-rose-500" :
-                  "bg-amber-500"
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-600 truncate">
-                    <span className="font-medium">{asset.namaAset}</span>
-                    <span className="text-slate-400"> — {asset.kodeAset}</span>
-                  </p>
-                </div>
-                <span className={`shrink-0 inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                  asset.kondisi === "Siap Digunakan" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                  asset.kondisi === "Rusak" ? "bg-red-50 text-red-700 border-red-200" :
-                  asset.kondisi === "Maintenance" ? "bg-amber-50 text-amber-700 border-amber-200" :
-                  "bg-slate-100 text-slate-600 border-slate-200"
-                }`}>
-                  {asset.kondisi}
-                </span>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-6 text-sm text-slate-400">
-              Belum ada data aset.
+      {/* Dashboard Tables Grid */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        {/* Aktivitas Terbaru Section (Col Span 2) */}
+        <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden border-t-4 border-t-slate-500">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-slate-500" />
+              <h2 className="text-lg font-bold text-slate-800">Aktivitas Terbaru</h2>
             </div>
-          )}
+            <div className="flex items-center gap-4">
+              <div className={`relative transition-all duration-300 ${isActivityMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-40 sm:w-60"}`}>
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Cari aktivitas..." 
+                  value={activitySearch}
+                  onChange={(e) => { setActivitySearch(e.target.value); setActivityPage(1); }}
+                  className="rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full"
+                />
+              </div>
+              <button 
+                onClick={() => setIsActivityMinimized(!isActivityMinimized)}
+                className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500 cursor-pointer"
+              >
+                {isActivityMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+              </button>
+            </div>
+          </div>
+
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isActivityMinimized ? "max-h-0" : "max-h-[600px]"}`}>
+            <div className="overflow-x-auto max-h-[480px] overflow-y-auto custom-scrollbar">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="sticky top-0 bg-slate-50 z-10">
+                  <tr className="border-b border-slate-300">
+                    <th className="px-4 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider w-[120px]"><Calendar className="inline h-3 w-3 mr-1" /> Tanggal</th>
+                    <th className="px-6 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider"><User className="inline h-3 w-3 mr-1" /> Dibuat Oleh</th>
+                    <th className="px-6 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Aksi</th>
+                    <th className="px-6 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider"><LayoutGrid className="inline h-3 w-3 mr-1" /> Item</th>
+                    <th className="px-6 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Tujuan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredActivities.map((activity, idx) => (
+                    <tr key={activity.id} className={`${idx % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
+                      <td className="px-4 py-3 text-slate-500 font-medium">
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-xs text-slate-700 font-bold">{formatActivityDate(activity.date).datePart}</span>
+                          <span className="text-xs text-slate-400">{formatActivityDate(activity.date).timePart}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="text-sm font-bold text-blue-600 hover:underline cursor-pointer">{activity.createdBy}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded-full border ${
+                          activity.action === 'Peminjaman' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                          activity.action === 'Pengembalian' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                          'bg-emerald-50 text-emerald-600 border-emerald-200'
+                        }`}>
+                          {activity.action}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-slate-400" />
+                          <span className="text-sm text-slate-700 font-semibold">{activity.item}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {activity.target !== "-" ? (
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-slate-400" />
+                            <span className="text-sm text-slate-600 font-medium">{activity.target}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredActivities.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-10 text-center text-slate-400 italic font-medium">Tidak ada aktivitas ditemukan.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
+
+        {/* Stok Rendah Section (Col Span 1) */}
+        <div className="rounded-xl border border-rose-200 bg-white shadow-sm overflow-hidden border-t-4 border-t-rose-500">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-rose-100 bg-rose-50/50">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-rose-500" />
+              <h2 className="text-lg font-bold text-rose-800">Stok Rendah</h2>
+            </div>
+            <button 
+              onClick={() => setIsStockMinimized(!isStockMinimized)}
+              className="p-1.5 hover:bg-rose-100 rounded-lg transition-colors text-rose-500 cursor-pointer"
+            >
+              {isStockMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+            </button>
+          </div>
+
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isStockMinimized ? "max-h-0" : "max-h-[600px]"}`}>
+            <div className="overflow-x-auto max-h-[522px] overflow-y-auto custom-scrollbar">
+              <table className="w-full text-left text-sm">
+                <thead className="sticky top-0 bg-rose-50 z-10">
+                  <tr className="border-b border-rose-200">
+                    <th className="px-6 py-3 font-bold text-rose-700 uppercase text-[10px] tracking-wider">Nama Aset</th>
+                    <th className="px-6 py-3 font-bold text-rose-700 uppercase text-[10px] tracking-wider text-center">Stok</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-rose-50">
+                  {stats?.lowStockAssets?.map((asset, idx) => (
+                    <tr key={asset.id} className={`${idx % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
+                      <td className="px-6 py-3.5">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-800">{asset.namaAset}</span>
+                          <span className="text-[10px] text-slate-400 font-medium font-mono">{asset.kodeAset}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3.5 text-center">
+                        <span className={`inline-block min-w-[32px] px-2 py-1 rounded-lg text-xs font-black ${
+                          parseInt(asset.jumlah) === 0 ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {asset.jumlah}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!stats?.lowStockAssets || stats.lowStockAssets.length === 0) && (
+                    <tr>
+                      <td colSpan={2} className="px-6 py-10 text-center text-slate-400 italic font-medium">Semua stok aman.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

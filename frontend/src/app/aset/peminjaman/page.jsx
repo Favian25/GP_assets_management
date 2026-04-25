@@ -128,6 +128,7 @@ export default function PeminjamanAsetPage() {
   const [submitting, setSubmitting] = useState(false);
   const [userRole, setUserRole] = useState("user");
   const [userName, setUserName] = useState("");
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [lightboxData, setLightboxData] = useState(null);
 
   useEffect(() => {
@@ -135,6 +136,7 @@ export default function PeminjamanAsetPage() {
     if (ctx) {
       setUserRole(ctx.role || "user");
       setUserName(ctx.namaLengkap || ctx.email || "");
+      setCurrentUserId(ctx.userId || null);
     }
   }, []);
 
@@ -338,7 +340,7 @@ export default function PeminjamanAsetPage() {
                       {/* Detail */}
                       <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>
                       {/* Edit */}
-                      {canEdit && item.status === "Pending" && (
+                      {canEdit && item.status === "Pending" && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
                         <button onClick={() => router.push(`/aset/peminjaman/edit/${item.id}`)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit / Pengembalian"><Pencil className="h-4 w-4" /></button>
                       )}
                       {/* Approve */}
@@ -362,13 +364,13 @@ export default function PeminjamanAsetPage() {
 
       {/* Modal Detail */}
       {showDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500">
-            <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4">
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDetail(null)}>
+          <div className="max-h-[90vh] w-full max-w-lg flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
               <h2 className="text-lg font-bold text-blue-800">Detail Peminjaman</h2>
               <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
             </div>
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
               <div>
                 <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Peminjaman</h4>
                 <div className="space-y-2.5">
@@ -429,12 +431,12 @@ export default function PeminjamanAsetPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
-              <button onClick={() => handleDownloadPDF(showDetail.id)} className="flex items-center cursor-pointer gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-sm">
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+              <button onClick={() => handleDownloadPDF(showDetail.id)} className="flex items-center cursor-pointer gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 shadow-sm">
                 <FileText className="h-4 w-4" />
                 Cetak PDF
               </button>
-              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm">Tutup</button>
+              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm">Tutup</button>
             </div>
           </div>
         </div>
@@ -442,61 +444,50 @@ export default function PeminjamanAsetPage() {
 
       {/* Lightbox Overlay */}
       {lightboxData && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxData(null)}>
-          <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxData(null)}>
+          <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
             {lightboxData.images.length > 1 && (
               <button 
-                onClick={() => setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length }))}
-                className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-sm shadow-xl"
+                onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length })); }}
+                className="rounded-full bg-white/10 p-3 text-white backdrop-blur-md hover:bg-white/20 transition-all border border-white/20"
               >
                 <ChevronLeft className="h-8 w-8" />
               </button>
             )}
-            
-            <div className="relative flex-1 h-full">
+            <div className="relative flex-1 h-full flex items-center justify-center">
               <Image 
                 src={`${BACKEND_URL}${lightboxData.images[lightboxData.index]}`} 
-                alt="Preview Bukti Full" 
+                alt="Full View" 
                 fill 
-                className="rounded-xl object-contain shadow-2xl cursor-default" 
                 unoptimized 
+                className="object-contain drop-shadow-2xl" 
               />
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm">
-                {lightboxData.index + 1} / {lightboxData.images.length}
-              </div>
             </div>
-
             {lightboxData.images.length > 1 && (
               <button 
-                onClick={() => setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length }))}
-                className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-sm shadow-xl"
+                onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length })); }}
+                className="rounded-full bg-white/10 p-3 text-white backdrop-blur-md hover:bg-white/20 transition-all border border-white/20"
               >
                 <ChevronRight className="h-8 w-8" />
               </button>
             )}
+            <button onClick={() => setLightboxData(null)} className="absolute top-0 right-0 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors border border-white/20 backdrop-blur-md"><X className="h-6 w-6" /></button>
           </div>
-          <button className="absolute right-6 top-6 text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" onClick={() => setLightboxData(null)}>
-            <X className="h-8 w-8" />
-          </button>
         </div>
       )}
 
       {/* Modal Delete Confirm */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-rose-500">
-            <div className="p-6 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100">
-                <Trash2 className="h-7 w-7 text-rose-600" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Data?</h3>
-              <p className="text-sm text-slate-500 mb-1">Peminjaman #{showDeleteConfirm.kodePinjam} oleh:</p>
-              <p className="text-sm font-semibold text-slate-700">{showDeleteConfirm.namaPeminjam}</p>
-              <p className="text-xs text-rose-500 mt-3">Tindakan ini tidak dapat dibatalkan.</p>
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteConfirm(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
+              <Trash2 className="h-6 w-6" />
             </div>
-            <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4">
-              <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleDelete} disabled={submitting} className="cursor-pointer rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-600 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
+            <h3 className="text-lg font-bold text-slate-800 text-center mb-1">Hapus Peminjaman?</h3>
+            <p className="text-sm text-slate-500 text-center mb-6">Apakah Anda yakin ingin menghapus data peminjaman #{showDeleteConfirm.kodePinjam}?</p>
+            <div className="flex items-center justify-center gap-3">
+              <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+              <button onClick={handleDelete} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Hapus"}</button>
             </div>
           </div>
         </div>
@@ -504,20 +495,20 @@ export default function PeminjamanAsetPage() {
 
       {/* Modal Approve Confirm */}
       {showApproveConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500">
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowApproveConfirm(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
-                <Check className="h-7 w-7 text-emerald-600" />
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                <Check className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-1">Setujui Peminjaman?</h3>
               <p className="text-sm text-slate-500 mb-1">Setujui pengembalian #{showApproveConfirm.kodePinjam}?</p>
               <p className="text-sm font-semibold text-slate-700">{showApproveConfirm.namaPeminjam}</p>
               <p className="text-xs text-emerald-600 mt-3">Stok aset akan dikembalikan setelah disetujui.</p>
             </div>
-            <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4">
-              <button onClick={() => setShowApproveConfirm(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleApprove} disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
+            <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
+              <button onClick={() => setShowApproveConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+              <button onClick={handleApprove} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
             </div>
           </div>
         </div>

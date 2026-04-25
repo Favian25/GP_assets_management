@@ -52,6 +52,7 @@ const fieldMapToBackend = {
   jumlahTotal: "jumlah_total",
   hargaAset: "harga_aset",
   tanggalPembelian: "tanggal_pembelian",
+  userId: "user_id",
 };
 
 // Mapping: Backend key → Frontend key (reverse)
@@ -75,9 +76,10 @@ export function mapAssetToFrontend(backendAsset) {
     }
   }
 
-  // Preserve timestamps jika ada
+  // Preserve timestamps & special fields jika ada
   if (backendAsset.created_at) mapped.createdAt = backendAsset.created_at;
   if (backendAsset.updated_at) mapped.updatedAt = backendAsset.updated_at;
+  if (backendAsset.created_by_name) mapped.createdByName = backendAsset.created_by_name;
 
   return mapped;
 }
@@ -128,6 +130,8 @@ export function mapPeminjamanToFrontend(backendData) {
     daftarAset: backendData.daftar_aset,
     buktiPeminjaman: backendData.bukti_peminjaman,
     buktiPengembalian: backendData.bukti_pengembalian,
+    userId: backendData.user_id,
+    createdByName: backendData.created_by_name,
     createdAt: backendData.created_at,
     // Items (jika ada dari getById)
     items: backendData.items

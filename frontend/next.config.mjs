@@ -1,8 +1,25 @@
+import os from 'os';
+
+// Fungsi untuk mendapatkan IP lokal secara dinamis
+const getLocalIp = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
+const localIp = getLocalIp();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-allowedDevOrigins: [
-    'http://192.168.1.158:3000', 
-    '192.168.1.158:3000',
+  allowedDevOrigins: [
+    `http://${localIp}:3000`, 
+    `${localIp}:3000`,
     'http://localhost:3000',
     'localhost:3000'
   ],
@@ -17,7 +34,7 @@ allowedDevOrigins: [
       },
       {
         protocol: 'http',
-        hostname: '192.168.1.158',
+        hostname: localIp,
         port: '5000',
         pathname: '/**',
       },

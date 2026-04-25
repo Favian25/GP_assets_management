@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, cloneElement } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getAllUsers, createUser, updateUser, updateUserRole, deleteUser } from "../lib/userService";
@@ -277,21 +277,24 @@ export default function KelolaUserPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { label: "Total User", count: totalManagedUsers, color: "bg-primary", customIcon: <Users className="h-5 w-5" /> },
-          { label: "Admin", count: countAdmin, color: "bg-blue-500", customIcon: <Shield className="h-5 w-5" /> },
-          { label: "Supervisor", count: countSupervisor, color: "bg-amber-500", customIcon: <ClipboardList className="h-5 w-5" /> },
-          { label: "User", count: countUser, color: "bg-slate-500", customIcon: <User className="h-5 w-5" /> },
+          { label: "Total User", count: totalManagedUsers, color: "bg-violet-600", customIcon: <Users /> },
+          { label: "Admin", count: countAdmin, color: "bg-blue-600", customIcon: <Shield /> },
+          { label: "Supervisor", count: countSupervisor, color: "bg-amber-500", customIcon: <ClipboardList /> },
+          { label: "User", count: countUser, color: "bg-emerald-600", customIcon: <User /> },
         ].map(stat => (
-          <div key={stat.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.color} text-white`}>
-                {stat.customIcon}
+          <div key={stat.label} className={`relative overflow-hidden rounded-2xl ${stat.color} p-4 text-white shadow-lg transition-all hover:scale-[1.03] hover:shadow-xl group`}>
+            {/* Decorative background elements */}
+            <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/10 transition-transform group-hover:scale-125" />
+            
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md shadow-inner">
+                {cloneElement(stat.customIcon, { className: "h-5 w-5 text-white" })}
               </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-800">{stat.count}</p>
-                <p className="text-xs text-slate-500 font-medium">{stat.label}</p>
+              <div className="flex flex-col">
+                <p className="text-xl font-black leading-none mb-0.5">{stat.count}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{stat.label}</p>
               </div>
             </div>
           </div>
@@ -345,13 +348,13 @@ export default function KelolaUserPage() {
 
         {/* Table Controls (Pagination Top) & Table */}
         <Pagination />
-        <div className="overflow-x-auto border-t border-slate-100">
+        <div className="overflow-x-auto border-t border-slate-200">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
-              <tr className="border-b border-slate-300 bg-slate-50">
-                <th className="px-5 py-3 font-bold text-slate-700 w-12 text-center">No</th>
+              <tr className="border-b border-slate-300 bg-slate-50/50">
+                <th className="px-5 py-3 font-bold text-slate-700 w-12 text-center uppercase text-[10px] tracking-wider">No</th>
                 <th className="px-5 py-3 font-bold text-slate-700 w-14 text-center"></th>
-                <th className="px-5 py-3 font-bold text-slate-700 cursor-pointer select-none hover:bg-slate-200/50 transition-colors" onClick={handleSortName}>
+                <th className="px-5 py-3 font-bold text-slate-700 cursor-pointer select-none hover:bg-slate-200/50 transition-colors uppercase text-[10px] tracking-wider" onClick={handleSortName}>
                   <div className="flex items-center justify-between gap-2">
                     Nama Lengkap
                     <div className="flex flex-col">
@@ -360,15 +363,15 @@ export default function KelolaUserPage() {
                     </div>
                   </div>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700">Email</th>
-                <th className="px-5 py-3 font-bold text-slate-700">Role</th>
-                <th className="px-5 py-3 font-bold text-slate-700">Terdaftar</th>
-                <th className="px-5 py-3 font-bold text-slate-700 text-center w-[160px]">Aksi</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Email</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Role</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Terdaftar</th>
+                <th className="px-5 py-3 font-bold text-slate-700 text-center w-[160px] uppercase text-[10px] tracking-wider">Aksi</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {currentData.map((user, index) => (
-                <tr key={user.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-50/50" : "bg-white"}`}>
+                <tr key={user.id} className={`${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                   <td className="px-5 py-3 text-slate-400 font-medium text-center">{indexOfFirstItem + index + 1}</td>
                   <td className="px-5 py-3">
                     <div className="flex justify-center">
@@ -432,13 +435,13 @@ export default function KelolaUserPage() {
 
       {/* Modal Tambah User */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-primary">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowAddModal(false)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-primary flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
               <h2 className="text-lg font-bold text-slate-800">Tambah User Baru</h2>
-              <button type="button" onClick={() => setShowAddModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+              <button type="button" onClick={() => setShowAddModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleAddUser} className="p-6 space-y-4">
+            <form onSubmit={handleAddUser} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
@@ -481,13 +484,13 @@ export default function KelolaUserPage() {
 
       {/* Modal Edit User */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowEditModal(null)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
               <h2 className="text-lg font-bold text-slate-800">Edit User</h2>
-              <button type="button" onClick={() => setShowEditModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+              <button type="button" onClick={() => setShowEditModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleEditUser} className="p-6 space-y-4">
+            <form onSubmit={handleEditUser} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
@@ -528,9 +531,13 @@ export default function KelolaUserPage() {
 
       {/* Modal Ubah Role */}
       {showRoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500">
-            <div className="p-6">
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowRoleModal(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
+              <h2 className="text-lg font-bold text-slate-800">Ubah Role User</h2>
+              <button type="button" onClick={() => setShowRoleModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
                 <Shield className="h-7 w-7 text-amber-600" />
               </div>
@@ -541,7 +548,7 @@ export default function KelolaUserPage() {
                 {getRoleOptions().map(r => (<option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>))}
               </select>
             </div>
-            <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4">
+            <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
               <button onClick={() => setShowRoleModal(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
               <button onClick={handleUpdateRole} disabled={submitting || selectedRole === showRoleModal.role} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
             </div>
@@ -551,9 +558,9 @@ export default function KelolaUserPage() {
 
       {/* Modal Delete */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-rose-500">
-            <div className="p-6 text-center">
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteConfirm(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-rose-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 text-center overflow-y-auto custom-scrollbar">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100">
                 <Trash2 className="h-7 w-7 text-rose-600" />
               </div>
@@ -572,8 +579,8 @@ export default function KelolaUserPage() {
 
       {/* Lightbox Profil */}
       {lightboxImg && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxImg(null)}>
-          <div className="relative h-[85vh] w-[85vw] max-w-5xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxImg(null)}>
+          <div className="relative h-[85vh] w-[85vw] max-w-5xl animate-modal-in" onClick={(e) => e.stopPropagation()}>
             <Image src={lightboxImg} alt="Profil Full" fill className="rounded-xl object-contain shadow-2xl cursor-default" unoptimized />
           </div>
         </div>

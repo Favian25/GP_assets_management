@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 export default function ClientWrapper({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isClientAuthChecked, setIsClientAuthChecked] = useState(false);
 
   const isAuthPage = pathname === "/auth" || pathname.startsWith("/auth/");
@@ -83,10 +84,10 @@ export default function ClientWrapper({ children }) {
 
   return (
     <>
-      <Sidebar />
-      <Navbar />
-      <div className="flex min-h-screen flex-col ml-64">
-        <main className="flex-1 bg-background p-6 pt-22">
+      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <Navbar isCollapsed={isCollapsed} />
+      <div className={`flex min-h-screen flex-col transition-all duration-300 ease-in-out ${isCollapsed ? "ml-20" : "ml-64"}`}>
+        <main key={pathname} className="flex-1 bg-background p-6 pt-22 animate-page-in">
           {children}
         </main>
         <Footer />

@@ -2,6 +2,7 @@ const Asset = require("../models/assetModel");
 const Category = require("../models/categoryModel"); // Tambahkan ini
 const path = require("path");
 const fs = require("fs");
+const { optimizeImage } = require("../utils/imageOptimizer");
 
 const assetController = {
   // GET /api/assets
@@ -68,10 +69,19 @@ const assetController = {
       // Auto-generate kode_aset
       const generatedKode = await Asset.getNextKodeAset(kodeSingkat);
 
-      // Jika ada file upload, simpan path-nya
-      const data = { ...req.body, kode_aset: generatedKode };
+      // Jika ada file upload, simpan path-nya & Optimize
+      const data = { 
+        ...req.body, 
+        kode_aset: generatedKode,
+        user_id: req.user.id 
+      };
       if (req.file) {
-        data.gambar = `/uploads/${req.file.filename}`;
+        const newFilename = await optimizeImage(
+          req.file.path,
+          path.join(__dirname, "..", "public", "uploads"),
+          req.file.filename
+        );
+        data.gambar = `/uploads/${newFilename}`;
       }
 
       const newAsset = await Asset.create(data);
@@ -131,9 +141,14 @@ const assetController = {
       const oldJumlahTotal = parseInt(existing.jumlah_total) || oldJumlah;
       data.jumlah_total = oldJumlahTotal + (newJumlah - oldJumlah);
 
-      // Jika ada file upload baru, simpan path dan hapus gambar lama
+      // Jika ada file upload baru, simpan path, hapus gambar lama & Optimize
       if (req.file) {
-        data.gambar = `/uploads/${req.file.filename}`;
+        const newFilename = await optimizeImage(
+          req.file.path,
+          path.join(__dirname, "..", "public", "uploads"),
+          req.file.filename
+        );
+        data.gambar = `/uploads/${newFilename}`;
 
         // Hapus file gambar lama jika ada
         if (existing.gambar) {

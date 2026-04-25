@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { getPeminjamanById, updatePeminjaman } from "../../../../lib/peminjamanService";
+import { getUserContext } from "../../../../lib/authService";
 import { ChevronLeft, ChevronRight, FileText, Check, X, Calendar, User, Package, Lock, Plus } from "lucide-react";
 
 const getBackendURL = () => {
@@ -89,6 +90,18 @@ export default function EditPeminjamanPage() {
     try {
       setLoading(true);
       const result = await getPeminjamanById(peminjamanId);
+      
+      // PERMISSION CHECK: Only owner or admin/super admin
+      const user = getUserContext();
+      const isOwner = result.userId === user?.userId;
+      const isAdmin = ["super admin", "admin"].includes(user?.role);
+      
+      if (!isOwner && !isAdmin) {
+        showToast("Akses ditolak. Anda tidak memiliki izin untuk mengedit data ini.", "error");
+        setTimeout(() => router.push("/aset/peminjaman"), 1500);
+        return;
+      }
+
       setData(result);
       setTanggalPengembalian(formatDateForInput(result.tanggalPengembalian));
       setStatus(result.status);
@@ -102,7 +115,7 @@ export default function EditPeminjamanPage() {
     } finally {
       setLoading(false);
     }
-  }, [peminjamanId]);
+  }, [peminjamanId, router]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -364,8 +377,8 @@ export default function EditPeminjamanPage() {
 
     {/* Lightbox Overlay */}
     {lightboxData && (
-      <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-4 cursor-pointer" onClick={() => setLightboxData(null)}>
-        <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh]" onClick={(e) => e.stopPropagation()}>
+      <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxData(null)}>
+        <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
           {lightboxData.images.length > 1 && (
             <button 
               onClick={() => setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length }))}

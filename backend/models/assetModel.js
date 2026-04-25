@@ -4,7 +4,10 @@ const Asset = {
   // GET semua aset
   getAll: async () => {
     const [rows] = await db.query(
-      "SELECT * FROM assets ORDER BY created_at DESC"
+      `SELECT a.*, u.nama_lengkap as created_by_name 
+       FROM assets a
+       LEFT JOIN users u ON a.user_id = u.id
+       ORDER BY a.created_at DESC`
     );
     return rows;
   },
@@ -53,8 +56,8 @@ const Asset = {
 
     const [result] = await db.query(
       `INSERT INTO assets 
-        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         kode_aset,
         nama_aset,
@@ -73,6 +76,7 @@ const Asset = {
         harga_aset || null,
         jumlah || null,
         tanggal_pembelian || null,
+        data.user_id || null,
       ]
     );
 
@@ -151,9 +155,11 @@ const Asset = {
   search: async (keyword) => {
     const search = `%${keyword}%`;
     const [rows] = await db.query(
-      `SELECT * FROM assets 
-       WHERE kode_aset LIKE ? OR nama_aset LIKE ? OR kategori LIKE ? OR model LIKE ? OR merek LIKE ?
-       ORDER BY created_at DESC`,
+      `SELECT a.*, u.nama_lengkap as created_by_name 
+       FROM assets a
+       LEFT JOIN users u ON a.user_id = u.id
+       WHERE a.kode_aset LIKE ? OR a.nama_aset LIKE ? OR a.kategori LIKE ? OR a.model LIKE ? OR a.merek LIKE ?
+       ORDER BY a.created_at DESC`,
       [search, search, search, search, search]
     );
     return rows;

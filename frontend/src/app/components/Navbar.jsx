@@ -15,7 +15,7 @@ const getBackendURL = () => {
 };
 const BACKEND_URL = getBackendURL();
 
-export default function Navbar() {
+export default function Navbar({ isCollapsed }) {
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -120,7 +120,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="fixed top-0 right-0 left-64 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
+    <header className={`fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 transition-all duration-300 ease-in-out ${isCollapsed ? "left-20" : "left-64"}`}>
       <div 
         className="text-xl font-montserrat font-extrabold tracking-wide drop-shadow-sm truncate pr-4"
         style={{ backgroundImage: 'radial-gradient(circle at top left, #3b82f6 0%, #1d4ed8 50%, #1e3a8a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}

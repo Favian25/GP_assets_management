@@ -32,6 +32,8 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // Maksimal 5 MB per file
 });
 
+const { verifyToken } = require("../middlewares/authMiddleware");
+
 // GET kode pinjam berikutnya (harus di atas /:id)
 router.get("/next-kode", peminjamanController.getNextKode);
 
@@ -44,17 +46,17 @@ router.get("/search", peminjamanController.searchPeminjaman);
 // GET peminjaman by ID
 router.get("/:id", peminjamanController.getPeminjamanById);
 
-// CREATE peminjaman baru (tambah upload array)
-router.post("/", upload.array("bukti", 5), peminjamanController.createPeminjaman);
+// CREATE peminjaman baru (tambah verifyToken & upload array)
+router.post("/", verifyToken, upload.array("bukti", 5), peminjamanController.createPeminjaman);
 
-// UPDATE pengembalian peminjaman (tambah upload array)
-router.put("/:id", upload.array("bukti", 5), peminjamanController.updatePeminjaman);
+// UPDATE pengembalian peminjaman (tambah verifyToken & upload array)
+router.put("/:id", verifyToken, upload.array("bukti", 5), peminjamanController.updatePeminjaman);
 
-// APPROVE peminjaman
-router.put("/:id/approve", peminjamanController.approvePeminjaman);
+// APPROVE peminjaman (verifyToken & potentially check role inside)
+router.put("/:id/approve", verifyToken, peminjamanController.approvePeminjaman);
 
 // DELETE peminjaman
-router.delete("/:id", peminjamanController.deletePeminjaman);
+router.delete("/:id", verifyToken, peminjamanController.deletePeminjaman);
 
 // DOWNLOAD PDF
 router.get("/:id/pdf", peminjamanController.generatePDF);

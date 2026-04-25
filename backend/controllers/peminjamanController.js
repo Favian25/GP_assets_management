@@ -1,6 +1,9 @@
 const Peminjaman = require("../models/peminjamanModel");
 const Notification = require("../models/notificationModel");
 const db = require("../config/db");
+const path = require("path");
+const fs = require("fs");
+const { optimizeImage } = require("../utils/imageOptimizer");
 
 const peminjamanController = {
   // GET semua data
@@ -68,17 +71,37 @@ const peminjamanController = {
         }
       }
 
-      // Handle file uploads utk bukti_peminjaman
+      // Handle file uploads utk bukti_peminjaman & Optimize with Sharp
       let buktiPeminjamanUrls = null;
       if (req.files && req.files.length > 0) {
-        buktiPeminjamanUrls = JSON.stringify(req.files.map(f => `/uploads/${f.filename}`));
+        const optimizedFiles = await Promise.all(
+          req.files.map(async (f, idx) => {
+            const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+            const newFilename = await optimizeImage(
+              f.path,
+              path.join(__dirname, "..", "public", "uploads"),
+              `bukti_pinjam-${uniqueSuffix}-${idx}`
+            );
+            return `/uploads/${newFilename}`;
+          })
+        );
+        buktiPeminjamanUrls = JSON.stringify(optimizedFiles);
       }
 
       // Auto-generate kode pinjam
       const kode_pinjam = await Peminjaman.getNextKodePinjam();
 
+      // req.user.userId from verifyToken middleware
       const result = await Peminjaman.create(
-        { kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, bukti_peminjaman: buktiPeminjamanUrls },
+        { 
+          kode_pinjam, 
+          nama_peminjam, 
+          alasan_peminjaman, 
+          tanggal_peminjaman, 
+          yang_menyerahkan, 
+          bukti_peminjaman: buktiPeminjamanUrls,
+          user_id: req.user?.userId 
+        },
         itemsArray
       );
 
@@ -121,11 +144,33 @@ const peminjamanController = {
         return res.status(404).json({ success: false, message: "Data peminjaman tidak ditemukan" });
       }
 
+      // PERMISSION CHECK: Only owner or admin/super admin
+      const isOwner = checkData.user_id === req.user?.userId;
+      const isAdmin = ["super admin", "admin"].includes(req.user?.role);
+      
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Akses ditolak. Anda hanya dapat mengubah pengembalian untuk data yang Anda buat sendiri." 
+        });
+      }
+
       const { tanggal_pengembalian, status, penerima_aset } = req.body;
       
       let buktiPengembalianUrls = undefined;
       if (req.files && req.files.length > 0) {
-        buktiPengembalianUrls = JSON.stringify(req.files.map(f => `/uploads/${f.filename}`));
+        const optimizedFiles = await Promise.all(
+          req.files.map(async (f, idx) => {
+            const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+            const newFilename = await optimizeImage(
+              f.path,
+              path.join(__dirname, "..", "public", "uploads"),
+              `bukti_kembali-${uniqueSuffix}-${idx}`
+            );
+            return `/uploads/${newFilename}`;
+          })
+        );
+        buktiPengembalianUrls = JSON.stringify(optimizedFiles);
       }
 
       await Peminjaman.updateReturn(id, { tanggal_pengembalian, status, penerima_aset, bukti_pengembalian: buktiPengembalianUrls });
@@ -187,6 +232,17 @@ const peminjamanController = {
 
       if (!checkData) {
         return res.status(404).json({ success: false, message: "Data peminjaman tidak ditemukan" });
+      }
+
+      // PERMISSION CHECK: Only owner or admin/super admin
+      const isOwner = checkData.user_id === req.user?.userId;
+      const isAdmin = ["super admin", "admin"].includes(req.user?.role);
+      
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Akses ditolak. Anda hanya dapat menghapus data yang Anda buat sendiri." 
+        });
       }
 
       await Peminjaman.delete(id);
