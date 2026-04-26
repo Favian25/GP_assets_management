@@ -97,7 +97,7 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
             className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover">
             Pilih Gambar
           </button>
-          <p className="mt-2 text-xs text-slate-400">Seret gambar ke sini atau klik tombol · PNG, JPG, JPEG (Max. 2MB)</p>
+          <p className="mt-2 text-xs text-slate-400">Seret gambar ke sini atau klik tombol · PNG, JPG, JPEG</p>
         </div>
       </div>
     </div>
@@ -148,6 +148,7 @@ export default function DaftarAsetPage() {
   const [newKatData, setNewKatData] = useState({ nama: "", kode_singkat: "" });
   const [newMerekData, setNewMerekData] = useState({ nama: "" });
   const [newKondisi, setNewKondisi] = useState("");
+  const [tableLoading, setTableLoading] = useState(false);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -165,14 +166,17 @@ export default function DaftarAsetPage() {
 
   const fetchAssets = useCallback(async () => {
     try { 
-      setLoading(true); 
+      if (!loading) setTableLoading(true);
       setError(null); 
       const data = await getAllAssets();
       setAssets(data || []); 
     }
     catch { setError("Gagal memuat data aset."); }
-    finally { setLoading(false); }
-  }, []);
+    finally { 
+      setLoading(false); 
+      setTableLoading(false);
+    }
+  }, [loading]);
 
   useEffect(() => { 
     fetchAssets(); 
@@ -278,10 +282,10 @@ export default function DaftarAsetPage() {
 
   const getKondisiBadge = (kondisi) => {
     const s = { 
-      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-600 hover:text-white hover:border-emerald-600", 
-      "Rusak": "bg-red-50 text-red-700 border-red-200 hover:bg-red-600 hover:text-white hover:border-red-600", 
-      "Maintenance": "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-600 hover:text-white hover:border-amber-600", 
-      "Dijual": "bg-slate-100 text-slate-600 border-slate-400 hover:bg-slate-600 hover:text-white hover:border-slate-600" 
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600", 
+      "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600", 
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600", 
+      "Dijual": "bg-slate-100 text-slate-600 border-slate-500 hover:bg-slate-600 hover:text-white hover:border-slate-600" 
     };
     return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600";
   };
@@ -436,7 +440,19 @@ export default function DaftarAsetPage() {
       </div>
 
       {/* Toolbar & Table Section */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
+        {/* Table Loading Overlay */}
+        {tableLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] transition-all animate-in fade-in duration-200">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-sm" />
+              <div className="flex flex-col items-center">
+                <p className="text-sm font-bold text-slate-700">Memperbarui Data</p>
+                <p className="text-[10px] text-slate-400">Mohon tunggu sebentar...</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Toolbar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">

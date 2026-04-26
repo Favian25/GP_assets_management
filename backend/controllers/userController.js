@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 const User = require('../models/userModel');
+const { optimizeImage } = require('../utils/imageOptimizer');
 
 const userController = {
   // GET semua user
@@ -103,7 +104,12 @@ const userController = {
       // Handle foto profil (dari multer)
       let shouldDeleteOldPhoto = false;
       if (req.file) {
-        updateData.foto_profil = `/uploads/profiles/${req.file.filename}`;
+        const optimizedFilename = await optimizeImage(
+          req.file.path,
+          req.file.destination,
+          req.file.filename
+        );
+        updateData.foto_profil = `/uploads/profiles/${optimizedFilename}`;
         shouldDeleteOldPhoto = true;
       }
 
@@ -175,7 +181,12 @@ const userController = {
         updateData.foto_profil = null; // explicit null for removing
         shouldDeleteOldPhoto = true;
       } else if (req.file) {
-        updateData.foto_profil = `/uploads/profiles/${req.file.filename}`;
+        const optimizedFilename = await optimizeImage(
+          req.file.path,
+          req.file.destination,
+          req.file.filename
+        );
+        updateData.foto_profil = `/uploads/profiles/${optimizedFilename}`;
         shouldDeleteOldPhoto = true;
       }
 

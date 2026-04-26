@@ -96,18 +96,20 @@ const formatDateTime = (dateString) => {
 
 const getStatusLabel = (status) => {
   const map = {
-    "Pending": "BELUM DIKEMBALIKAN",
-    "Dikembalikan": "SUDAH DIKEMBALIKAN",
-    "Approved": "SUDAH DISETUJUI",
+    "Menunggu Persetujuan": "MENUNGGU PERSETUJUAN",
+    "Sedang Dipinjam": "SEDANG DIPINJAM",
+    "Menunggu Verifikasi": "MENUNGGU VERIFIKASI",
+    "Peminjaman Selesai": "PEMINJAMAN SELESAI",
   };
   return map[status] || status;
 };
 
 const getStatusBadge = (status) => {
   const s = {
-    "Pending": "bg-amber-50 text-amber-700 border-amber-200",
-    "Dikembalikan": "bg-blue-50 text-blue-700 border-blue-200",
-    "Approved": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "Menunggu Persetujuan": "bg-amber-50 text-amber-700 border-amber-500",
+    "Sedang Dipinjam": "bg-blue-50 text-blue-700 border-blue-500",
+    "Menunggu Verifikasi": "bg-violet-50 text-violet-700 border-violet-500",
+    "Peminjaman Selesai": "bg-emerald-50 text-emerald-700 border-emerald-500",
   };
   return s[status] || "bg-slate-50 text-slate-700 border-slate-200";
 };
@@ -130,13 +132,14 @@ export default function PeminjamanAsetPage() {
   const [userName, setUserName] = useState("");
   const [currentUserId, setCurrentUserId] = useState(null);
   const [lightboxData, setLightboxData] = useState(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
   useEffect(() => {
     const ctx = getUserContext();
     if (ctx) {
       setUserRole(ctx.role || "user");
       setUserName(ctx.namaLengkap || ctx.email || "");
-      setCurrentUserId(ctx.userId || null);
+      setCurrentUserId(ctx.id || null);
     }
   }, []);
 
@@ -153,10 +156,18 @@ export default function PeminjamanAsetPage() {
   };
 
   const fetchData = useCallback(async () => {
-    try { setLoading(true); setError(null); setDataList(await getAllPeminjaman()); }
-    catch { setError("Gagal memuat data. Pastikan backend berjalan."); }
-    finally { setLoading(false); }
-  }, []);
+    try { 
+      if (!loading) setTableLoading(true);
+      setError(null); 
+      const data = await getAllPeminjaman(); 
+      setDataList(data || []); 
+    }
+    catch { setError("Gagal memuat data peminjaman."); }
+    finally { 
+      setLoading(false); 
+      setTableLoading(false);
+    }
+  }, [loading]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -288,8 +299,21 @@ export default function PeminjamanAsetPage() {
       </div>
 
       {/* Toolbar & Table Section */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-blue-500">
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
         
+        {/* Table Loading Overlay */}
+        {tableLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] transition-all animate-in fade-in duration-200">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-sm" />
+              <div className="flex flex-col items-center">
+                <p className="text-sm font-bold text-slate-700">Memperbarui Data</p>
+                <p className="text-[10px] text-slate-400">Mohon tunggu sebentar...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Toolbar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
           <div className="relative w-full sm:w-72">
@@ -318,7 +342,7 @@ export default function PeminjamanAsetPage() {
                 <th className="px-5 py-3 font-bold text-slate-700">Alasan</th>
                 <th className="px-5 py-3 font-bold text-slate-700 w-[170px]"><button onClick={() => handleSort("tanggalPeminjaman")} className="cursor-pointer flex items-center">Tgl Pinjam <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} /></button></th>
                 <th className="px-5 py-3 font-bold text-slate-700 w-[170px]">Tgl Kembali</th>
-                <th className="px-5 py-3 font-bold text-slate-700 w-[180px]"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
+                <th className="px-5 py-3 font-bold text-slate-700 w-[180px] text-center"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center justify-center w-full">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-center w-[120px]">Aksi</th>
               </tr>
             </thead>
@@ -334,17 +358,17 @@ export default function PeminjamanAsetPage() {
                   <td className="px-5 py-3 text-slate-600 text-sm max-w-[160px] truncate">{item.alasanPeminjaman || "-"}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPeminjaman)}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPengembalian)}</td>
-                  <td className="px-5 py-3"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
+                  <td className="px-5 py-3 text-center"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       {/* Detail */}
                       <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>
                       {/* Edit */}
-                      {canEdit && item.status === "Pending" && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
+                      {canEdit && (item.status === "Menunggu Persetujuan" || item.status === "Sedang Dipinjam") && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
                         <button onClick={() => router.push(`/aset/peminjaman/edit/${item.id}`)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit / Pengembalian"><Pencil className="h-4 w-4" /></button>
                       )}
                       {/* Approve */}
-                      {canApprove && item.status === "Dikembalikan" && (
+                      {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && (
                         <button onClick={() => setShowApproveConfirm(item)} className="cursor-pointer rounded-lg bg-emerald-100 p-1.5 text-emerald-600 transition-colors hover:bg-emerald-600 hover:text-white" title="Setujui"><Check className="h-4 w-4" /></button>
                       )}
                       {/* Delete */}
@@ -501,10 +525,18 @@ export default function PeminjamanAsetPage() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
                 <Check className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">Setujui Peminjaman?</h3>
-              <p className="text-sm text-slate-500 mb-1">Setujui pengembalian #{showApproveConfirm.kodePinjam}?</p>
+              <h3 className="text-lg font-bold text-slate-800 mb-1">
+                {showApproveConfirm.status === 'Menunggu Persetujuan' ? 'Setujui Peminjaman?' : 'Setujui Pengembalian?'}
+              </h3>
+              <p className="text-sm text-slate-500 mb-1">
+                {showApproveConfirm.status === 'Menunggu Persetujuan' ? 'Setujui peminjaman' : 'Setujui pengembalian'} #{showApproveConfirm.kodePinjam}?
+              </p>
               <p className="text-sm font-semibold text-slate-700">{showApproveConfirm.namaPeminjam}</p>
-              <p className="text-xs text-emerald-600 mt-3">Stok aset akan dikembalikan setelah disetujui.</p>
+              <p className="text-xs text-emerald-600 mt-3">
+                {showApproveConfirm.status === 'Menunggu Persetujuan' 
+                  ? 'Status akan berubah menjadi Sedang Dipinjam.' 
+                  : 'Stok aset akan dikembalikan ke inventaris.'}
+              </p>
             </div>
             <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
               <button onClick={() => setShowApproveConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>

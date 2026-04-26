@@ -176,10 +176,10 @@ const peminjamanController = {
       await Peminjaman.updateReturn(id, { tanggal_pengembalian, status, penerima_aset, bukti_pengembalian: buktiPengembalianUrls });
 
       // Notifikasi: pengembalian
-      if (status === 'Dikembalikan') {
+      if (status === 'Menunggu Verifikasi') {
         await Notification.create({
           type: 'dikembalikan',
-          message: `Peminjaman ${checkData.kode_pinjam} telah dikembalikan oleh ${checkData.nama_peminjam}`,
+          message: `Peminjaman ${checkData.kode_pinjam} menunggu verifikasi pengembalian dari ${checkData.nama_peminjam}`,
           referenceId: id,
           targetRoles: 'super admin,admin,supervisor',
         });
@@ -203,16 +203,17 @@ const peminjamanController = {
         return res.status(404).json({ success: false, message: "Data peminjaman tidak ditemukan" });
       }
 
-      if (checkData.status !== "Dikembalikan") {
-        return res.status(400).json({ success: false, message: "Hanya peminjaman dengan status 'Dikembalikan' yang bisa di-approve" });
+      if (checkData.status !== "Menunggu Persetujuan" && checkData.status !== "Menunggu Verifikasi") {
+        return res.status(400).json({ success: false, message: "Status saat ini tidak membutuhkan persetujuan" });
       }
 
       await Peminjaman.approve(id, approved_by || "System");
 
       // Notifikasi: approved
+      const actionText = checkData.status === "Menunggu Persetujuan" ? "disetujui untuk dipinjam" : "diverifikasi pengembaliannya";
       await Notification.create({
         type: 'approved',
-        message: `Peminjaman ${checkData.kode_pinjam} telah di-approve oleh ${approved_by || 'System'}`,
+        message: `Peminjaman ${checkData.kode_pinjam} telah ${actionText} oleh ${approved_by || 'System'}`,
         referenceId: id,
         targetRoles: 'super admin,admin,supervisor,user',
       });

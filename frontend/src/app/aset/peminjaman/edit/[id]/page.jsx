@@ -47,18 +47,20 @@ const formatDateTime = (dateString) => {
 
 const getStatusLabel = (status) => {
   const map = {
-    "Pending": "Belum Dikembalikan",
-    "Dikembalikan": "Sudah Dikembalikan",
-    "Approved": "Sudah Disetujui",
+    "Menunggu Persetujuan": "Menunggu Persetujuan",
+    "Sedang Dipinjam": "Sedang Dipinjam",
+    "Menunggu Verifikasi": "Menunggu Verifikasi",
+    "Peminjaman Selesai": "Peminjaman Selesai",
   };
   return map[status] || status;
 };
 
 const getStatusBadge = (status) => {
   const s = {
-    "Pending": "bg-amber-50 text-amber-700 border-amber-200",
-    "Dikembalikan": "bg-blue-50 text-blue-700 border-blue-200",
-    "Approved": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "Menunggu Persetujuan": "bg-amber-50 text-amber-700 border-amber-200",
+    "Sedang Dipinjam": "bg-blue-50 text-blue-700 border-blue-200",
+    "Menunggu Verifikasi": "bg-violet-50 text-violet-700 border-violet-200",
+    "Peminjaman Selesai": "bg-emerald-50 text-emerald-700 border-emerald-200",
   };
   return s[status] || "bg-slate-50 text-slate-700 border-slate-200";
 };
@@ -93,7 +95,7 @@ export default function EditPeminjamanPage() {
       
       // PERMISSION CHECK: Only owner or admin/super admin
       const user = getUserContext();
-      const isOwner = result.userId === user?.userId;
+      const isOwner = result.userId === user?.id;
       const isAdmin = ["super admin", "admin"].includes(user?.role);
       
       if (!isOwner && !isAdmin) {
@@ -309,8 +311,9 @@ export default function EditPeminjamanPage() {
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Status <span className="text-rose-500">*</span></label>
               <select value={status} onChange={(e) => setStatus(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                <option value="Pending">Belum Dikembalikan</option>
-                <option value="Dikembalikan">Sudah Dikembalikan</option>
+                <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
+                <option value="Sedang Dipinjam">Sedang Dipinjam</option>
+                <option value="Menunggu Verifikasi">Menunggu Verifikasi (Dikembalikan)</option>
               </select>
             </div>
 

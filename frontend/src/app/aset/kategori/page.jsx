@@ -22,13 +22,14 @@ export default function KategoriMerekPage() {
   
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!loading) setTableLoading(true);
       const [catsData, brandsData] = await Promise.all([getAllCategories(), getAllBrands()]);
       setCategories(catsData || []);
       setBrands(brandsData || []);
@@ -36,8 +37,9 @@ export default function KategoriMerekPage() {
       setError("Gagal memuat data master.");
     } finally {
       setLoading(false);
+      setTableLoading(false);
     }
-  }, []);
+  }, [loading]);
 
   useEffect(() => { 
     fetchData(); 
@@ -116,7 +118,15 @@ export default function KategoriMerekPage() {
             </button>
           </div>
           
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-emerald-500 h-full">
+          <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-emerald-500 h-full">
+            {/* Table Loading Overlay */}
+            {tableLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] transition-all animate-in fade-in duration-200">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent shadow-sm" />
+                </div>
+              </div>
+            )}
             <div className="overflow-x-auto min-h-[300px]">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -156,7 +166,15 @@ export default function KategoriMerekPage() {
             </button>
           </div>
           
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-amber-500 h-full">
+          <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-amber-500 h-full">
+            {/* Table Loading Overlay */}
+            {tableLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] transition-all animate-in fade-in duration-200">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent shadow-sm" />
+                </div>
+              </div>
+            )}
             <div className="overflow-x-auto min-h-[300px]">
               <table className="w-full text-left text-sm">
                 <thead>

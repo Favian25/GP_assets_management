@@ -127,13 +127,6 @@ export default function AuthPage() {
               </form>
           </div>
 
-          {/* Bottom Link Area */}
-          <div className="bg-slate-50/80 px-8 py-5 border-t border-slate-100/60 text-center">
-            <p className="text-sm font-medium text-slate-400">
-              &copy; {new Date().getFullYear()} Galeria Production
-            </p>
-          </div>
-
         </div>
       </div>
     </div>

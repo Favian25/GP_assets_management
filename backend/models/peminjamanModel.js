@@ -61,7 +61,7 @@ const Peminjaman = {
       const [headerResult] = await connection.query(
         `INSERT INTO peminjaman 
           (kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, status, bukti_peminjaman, user_id)
-         VALUES (?, ?, ?, ?, ?, 'Pending', ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, 'Menunggu Persetujuan', ?, ?)`,
         [kode_pinjam, nama_peminjam, alasan_peminjaman || null, tanggal_peminjaman, yang_menyerahkan || null, bukti_peminjaman || null, headerData.user_id || null]
       );
 
@@ -149,29 +149,46 @@ const Peminjaman = {
     return result.affectedRows;
   },
 
-  // APPROVE peminjaman (Dikembalikan → Approved) + kembalikan stok
+  // APPROVE peminjaman (Menunggu Persetujuan → Sedang Dipinjam, ATAU Menunggu Verifikasi → Peminjaman Selesai)
   approve: async (id, approvedBy) => {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
 
-      // Update status
-      await connection.query(
-        "UPDATE peminjaman SET status = 'Approved', approved_by = ? WHERE id = ? AND status = 'Dikembalikan'",
-        [approvedBy, id]
-      );
+      // Cek status saat ini
+      const [headers] = await connection.query("SELECT status FROM peminjaman WHERE id = ?", [id]);
+      if (!headers[0]) throw new Error("Data tidak ditemukan");
+      
+      const currentStatus = headers[0].status;
 
-      // Ambil items dan kembalikan stok
-      const [items] = await connection.query(
-        "SELECT asset_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
-        [id]
-      );
-
-      for (const item of items) {
+      if (currentStatus === 'Menunggu Persetujuan') {
+        // Approval 1: Izinkan pinjam
         await connection.query(
-          "UPDATE assets SET jumlah = jumlah + ? WHERE id = ?",
-          [item.jumlah, item.asset_id]
+          "UPDATE peminjaman SET status = 'Sedang Dipinjam', approved_by = ? WHERE id = ?",
+          [approvedBy, id]
         );
+        // Tidak mengembalikan stok karena memang sedang dipinjam
+      } else if (currentStatus === 'Menunggu Verifikasi') {
+        // Approval 2: Barang kembali
+        await connection.query(
+          "UPDATE peminjaman SET status = 'Peminjaman Selesai', approved_by = ? WHERE id = ?",
+          [approvedBy, id]
+        );
+
+        // Ambil items dan kembalikan stok
+        const [items] = await connection.query(
+          "SELECT asset_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
+          [id]
+        );
+
+        for (const item of items) {
+          await connection.query(
+            "UPDATE assets SET jumlah = jumlah + ? WHERE id = ?",
+            [item.jumlah, item.asset_id]
+          );
+        }
+      } else {
+        throw new Error("Status saat ini tidak membutuhkan persetujuan.");
       }
 
       await connection.commit();
@@ -194,8 +211,8 @@ const Peminjaman = {
       const [headers] = await connection.query("SELECT status FROM peminjaman WHERE id = ?", [id]);
       if (!headers[0]) throw new Error("Data tidak ditemukan");
 
-      // Jika masih Pending, kembalikan stok
-      if (headers[0].status === "Pending") {
+      // Jika belum selesai, berarti stok masih ditahan, maka kembalikan stok
+      if (headers[0].status !== "Peminjaman Selesai") {
         const [items] = await connection.query(
           "SELECT asset_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
           [id]

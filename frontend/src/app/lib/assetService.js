@@ -159,7 +159,7 @@ export async function getDashboardStats() {
       id: `pjm-${p.id}`,
       date: p.createdAt,
       createdBy: p.createdByName || "User",
-      action: p.status === 'Pending' ? 'Peminjaman' : 'Pengembalian',
+      action: (p.status === 'Menunggu Persetujuan' || p.status === 'Sedang Dipinjam') ? 'Peminjaman' : 'Pengembalian',
       item: p.kodePinjam,
       target: p.namaPeminjam,
       type: "loan"

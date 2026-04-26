@@ -62,6 +62,7 @@ export default function KelolaUserPage() {
   const [editForm, setEditForm] = useState({ namaLengkap: "", password: "", role: "" });
   const [selectedRole, setSelectedRole] = useState("");
   const [lightboxImg, setLightboxImg] = useState(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
   const getBackendURL = () => {
     if (typeof window !== "undefined") {
@@ -86,10 +87,16 @@ export default function KelolaUserPage() {
   }, [router]);
 
   const fetchUsers = useCallback(async () => {
-    try { setLoading(true); setUsers(await getAllUsers()); }
+    try { 
+      if (!loading) setTableLoading(true);
+      setUsers(await getAllUsers()); 
+    }
     catch { showToast("Gagal memuat data user", "error"); }
-    finally { setLoading(false); }
-  }, []);
+    finally { 
+      setLoading(false); 
+      setTableLoading(false);
+    }
+  }, [loading]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -302,7 +309,19 @@ export default function KelolaUserPage() {
       </div>
 
       {/* Toolbar & Table Section */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-violet-500">
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
+        {/* Table Loading Overlay */}
+        {tableLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] transition-all animate-in fade-in duration-200">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-sm" />
+              <div className="flex flex-col items-center">
+                <p className="text-sm font-bold text-slate-700">Memperbarui Data User</p>
+                <p className="text-[10px] text-slate-400">Mohon tunggu sebentar...</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 border-b border-slate-300 bg-slate-50/50">
