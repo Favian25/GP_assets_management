@@ -10,6 +10,7 @@ const userRoutes = require("./routes/userRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const brandRoutes = require("./routes/brandRoutes");
+const aksesorisRoutes = require("./routes/aksesorisRoutes");
 
 const os = require("os");
 
@@ -54,6 +55,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/brands", brandRoutes);
+app.use("/api/aksesoris", aksesorisRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

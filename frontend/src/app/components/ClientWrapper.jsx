@@ -43,9 +43,9 @@ export default function ClientWrapper({ children }) {
       const ctx = getUserContext();
       const role = ctx?.role || "user";
 
-      // Halaman Kelola Aset (Daftar, Kategori, Merek): hanya super admin & admin
+      // Halaman Kelola Aset (Daftar, Kategori, Merek) & Aksesoris: hanya super admin & admin
       if (
-        (pathname.startsWith("/aset/daftar") || pathname.startsWith("/aset/kategori") || pathname.startsWith("/aset/merek")) 
+        (pathname.startsWith("/aset/daftar") || pathname.startsWith("/aset/kategori") || pathname.startsWith("/aset/merek") || pathname.startsWith("/aksesoris")) 
         && !["super admin", "admin"].includes(role)
       ) {
         router.replace("/");

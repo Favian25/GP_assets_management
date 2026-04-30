@@ -379,7 +379,7 @@ export default function PeminjamanAsetPage() {
                   <td className="px-5 py-3 text-slate-600 text-sm max-w-[160px] truncate">{item.alasanPeminjaman || "-"}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPeminjaman)}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPengembalian)}</td>
-                  <td className="px-5 py-3 text-center"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
+                  <td className="px-5 py-3 text-center"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide shadow-sm ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       {/* Detail */}

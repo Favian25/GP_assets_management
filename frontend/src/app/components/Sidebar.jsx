@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getUserContext } from "../lib/authService";
-import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight } from "lucide-react";
+import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu } from "lucide-react";
 
 export default function Sidebar({ isCollapsed, setIsCollapsed }) {
   const pathname = usePathname();
@@ -152,6 +152,26 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
             </div>
           )}
         </div>
+
+        {/* Aksesoris - Only Super Admin & Admin */}
+        {canSeeDaftarAset && (
+          <Link
+            href="/aksesoris"
+            className={`group flex items-center h-11 rounded-lg transition-all duration-300 ${
+              isActive("/aksesoris")
+                ? "bg-primary text-white"
+                : "text-slate-300 hover:bg-white/5 hover:text-white"
+            }`}
+            title={isCollapsed ? "Aksesoris" : ""}
+          >
+            <div className="flex w-12 h-full items-center justify-center shrink-0">
+              <Cpu className="h-5 w-5" />
+            </div>
+            <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100 ml-1"}`}>
+              Aksesoris
+            </span>
+          </Link>
+        )}
 
         {/* Kelola User - Only Super Admin & Admin */}
         {["super admin", "admin"].includes(userRole) && (

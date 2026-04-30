@@ -8,6 +8,7 @@ router.use(verifyToken, requireRole("admin", "super admin"));
 
 router.get("/", brandController.getAll);
 router.post("/", brandController.create);
+router.put("/:id", brandController.update);
 router.delete("/:id", brandController.delete);
 
 module.exports = router;

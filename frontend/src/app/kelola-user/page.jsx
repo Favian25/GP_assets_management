@@ -420,7 +420,7 @@ export default function KelolaUserPage() {
                   <td className="px-5 py-3 font-semibold text-slate-800">{user.namaLengkap}</td>
                   <td className="px-5 py-3 text-slate-600">{user.email}</td>
                   <td className="px-5 py-3">
-                    <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${getRoleBadge(user.role)}`}>{user.role}</span>
+                    <span className={`inline-block rounded-full border px-2.5 py-0.5 font-semibold capitalize shadow-sm ${getRoleBadge(user.role)}`}>{user.role}</span>
                   </td>
                   <td className="px-5 py-3 text-slate-500 text-sm">{formatDate(user.createdAt)}</td>
                   <td className="px-5 py-3">

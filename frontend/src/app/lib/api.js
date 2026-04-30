@@ -175,4 +175,55 @@ export function mapPeminjamanArrayToFrontend(backendArray) {
   return backendArray.map(mapPeminjamanToFrontend);
 }
 
+// ============================================================
+// Utility mapping untuk Aksesoris
+// ============================================================
+
+const aksesorisFieldMapToBackend = {
+  kodeAksesoris: "kode_aksesoris",
+  namaAksesoris: "nama_aksesoris",
+  kategori: "kategori",
+  merek: "merek",
+  model: "model",
+  jumlahUnit: "jumlah_unit",
+  jumlahTotal: "jumlah_total",
+  hargaAset: "harga_aset",
+  tanggalPembelian: "tanggal_pembelian",
+  kondisi: "kondisi",
+  lokasi: "lokasi",
+  gambar: "gambar",
+  keterangan: "keterangan",
+  userId: "user_id",
+};
+
+const aksesorisFieldMapToFrontend = Object.fromEntries(
+  Object.entries(aksesorisFieldMapToBackend).map(([fe, be]) => [be, fe])
+);
+
+export function mapAksesorisToFrontend(backendItem) {
+  if (!backendItem) return null;
+  const mapped = { id: backendItem.id };
+  for (const [beKey, feKey] of Object.entries(aksesorisFieldMapToFrontend)) {
+    if (beKey in backendItem) mapped[feKey] = backendItem[beKey];
+  }
+  if (backendItem.created_at) mapped.createdAt = backendItem.created_at;
+  if (backendItem.updated_at) mapped.updatedAt = backendItem.updated_at;
+  if (backendItem.created_by_name) mapped.createdByName = backendItem.created_by_name;
+  return mapped;
+}
+
+export function mapAksesorisToBackend(frontendItem) {
+  if (!frontendItem) return null;
+  const mapped = {};
+  for (const [feKey, beKey] of Object.entries(aksesorisFieldMapToBackend)) {
+    if (feKey in frontendItem) mapped[beKey] = frontendItem[feKey];
+  }
+  return mapped;
+}
+
+export function mapAksesorisArrayToFrontend(backendArray) {
+  if (!Array.isArray(backendArray)) return [];
+  return backendArray.map(mapAksesorisToFrontend);
+}
+
 export default api;
