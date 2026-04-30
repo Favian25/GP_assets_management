@@ -144,6 +144,11 @@ export async function getDashboardStats() {
   // Peringatan Stok Rendah (jumlah <= 3)
   const lowStockAssets = assets.filter(a => (parseInt(a.jumlah) || 0) <= 3);
 
+  // Peminjaman Aktif (belum selesai)
+  const activeLoans = peminjaman
+    .filter(p => p.status !== 'Peminjaman Selesai')
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
   // Aktivitas Terbaru (Gabungan Asset & Peminjaman)
   const activities = [
     ...assets.map(a => ({
@@ -177,6 +182,7 @@ export async function getDashboardStats() {
     dipinjam,
     activities,
     lowStockAssets,
+    activeLoans,
     recentAssets: assets.slice(0, 5),
   };
 }

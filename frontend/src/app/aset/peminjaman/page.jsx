@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
 import Image from "next/image";
-import { getAllPeminjaman, deletePeminjaman, searchPeminjaman, approvePeminjaman, downloadPeminjamanPDF } from "../../lib/peminjamanService";
+import { getAllPeminjaman, deletePeminjaman, searchPeminjaman, approvePeminjaman, downloadPeminjamanPDF, getPeminjamanById } from "../../lib/peminjamanService";
 import { getUserContext } from "../../lib/authService";
 import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, X, AlertTriangle, ChevronUp, ChevronDown, FileText } from "lucide-react";
 
@@ -116,6 +117,7 @@ const getStatusBadge = (status) => {
 
 export default function PeminjamanAsetPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -133,8 +135,10 @@ export default function PeminjamanAsetPage() {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [lightboxData, setLightboxData] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const ctx = getUserContext();
     if (ctx) {
       setUserRole(ctx.role || "user");
@@ -142,6 +146,11 @@ export default function PeminjamanAsetPage() {
       setCurrentUserId(ctx.id || null);
     }
   }, []);
+
+  useEffect(() => {
+    const q = searchParams?.get("search");
+    if (q) setSearch(q);
+  }, [searchParams]);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -152,6 +161,18 @@ export default function PeminjamanAsetPage() {
       showToast("PDF sedang diunduh...");
     } catch (err) {
       showToast("Gagal mengunduh PDF", "error");
+    }
+  };
+
+  const handleShowDetail = async (item) => {
+    try {
+      setTableLoading(true);
+      const detail = await getPeminjamanById(item.id);
+      setShowDetail(detail);
+    } catch (err) {
+      showToast("Gagal memuat detail peminjaman", "error");
+    } finally {
+      setTableLoading(false);
     }
   };
 
@@ -349,8 +370,8 @@ export default function PeminjamanAsetPage() {
             <tbody>
               {paginatedData.map((item, index) => (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="px-5 py-3 font-mono text-xs font-bold text-primary hover:underline cursor-pointer" onClick={() => setShowDetail(item)}>{item.kodePinjam}</td>
-                  <td className="px-5 py-3 text-slate-700 font-semibold hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.namaPeminjam}</td>
+                  <td className="px-5 py-3 font-mono text-xs font-bold text-primary hover:underline cursor-pointer" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
+                  <td className="px-5 py-3 text-slate-700 font-semibold hover:text-primary cursor-pointer truncate" onClick={() => handleShowDetail(item)}>{item.namaPeminjam}</td>
                   <td className="px-5 py-3 text-slate-600 max-w-[220px]">
                     <span className="inline-block bg-slate-200 text-slate-700 rounded-full px-2.5 py-0.5 text-xs font-semibold mr-1 shadow-sm border border-slate-300/60">{item.totalItems || 0} Alat</span>
                     <span className="text-slate-500 text-sm truncate block mt-1">{item.daftarAset || "-"}</span>
@@ -362,10 +383,16 @@ export default function PeminjamanAsetPage() {
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       {/* Detail */}
-                      <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>
+                      <button onClick={() => handleShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>
                       {/* Edit */}
                       {canEdit && (item.status === "Menunggu Persetujuan" || item.status === "Sedang Dipinjam") && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
-                        <button onClick={() => router.push(`/aset/peminjaman/edit/${item.id}`)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit / Pengembalian"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => {
+                          if (item.status === "Menunggu Persetujuan" && !["admin", "super admin"].includes(userRole.toLowerCase())) {
+                            showToast("Peminjaman belum disetujui, tidak dapat mengembalikan alat.", "error");
+                          } else {
+                            router.push(`/aset/peminjaman/edit/${item.id}`);
+                          }
+                        }} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit / Pengembalian"><Pencil className="h-4 w-4" /></button>
                       )}
                       {/* Approve */}
                       {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && (
@@ -386,164 +413,185 @@ export default function PeminjamanAsetPage() {
         <div className="border-t border-slate-200"><Pagination /></div>
       </div>
 
-      {/* Modal Detail */}
-      {showDetail && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDetail(null)}>
-          <div className="max-h-[90vh] w-full max-w-lg flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
-              <h2 className="text-lg font-bold text-blue-800">Detail Peminjaman</h2>
-              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
-              <div>
-                <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Peminjaman</h4>
-                <div className="space-y-2.5">
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">No. Peminjaman</span><span className="text-sm font-mono text-primary font-bold">{showDetail.kodePinjam}</span></div>
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Nama Peminjam</span><span className="text-sm text-slate-800">{showDetail.namaPeminjam}</span></div>
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Peminjaman</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPeminjaman)}</span></div>
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Yang Menyerahkan</span><span className="text-sm text-slate-800">{showDetail.yangMenyerahkan || "-"}</span></div>
-                  <div className="flex items-start gap-3">
-                    <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Alat Dipinjam</span>
-                    <div className="text-sm text-slate-800 flex-1">
-                      {showDetail.daftarAset ? (
-                        <ul className="list-disc pl-4 space-y-1">
-                          {showDetail.daftarAset.split(',').map((itemStr, i) => (
-                            <li key={i}>{itemStr.trim()}</li>
-                          ))}
-                        </ul>
-                      ) : "-"}
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Modal Detail */}
+          {showDetail && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDetail(null)}>
+              <div className="max-h-[90vh] w-full max-w-lg flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg font-bold text-blue-800">Detail Peminjaman</h2>
+                  <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
+                  <div>
+                    <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Peminjaman</h4>
+                    <div className="space-y-2.5">
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">No. Peminjaman</span><span className="text-sm font-mono text-primary font-bold">{showDetail.kodePinjam}</span></div>
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Nama Peminjam</span><span className="text-sm text-slate-800">{showDetail.namaPeminjam}</span></div>
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Peminjaman</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPeminjaman)}</span></div>
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Yang Menyerahkan</span><span className="text-sm text-slate-800">{showDetail.yangMenyerahkan || "-"}</span></div>
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Alasan</span><span className="text-sm text-slate-800">{showDetail.alasanPeminjaman || "-"}</span></div>
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Status</span><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusBadge(showDetail.status)}`}>{getStatusLabel(showDetail.status)}</span></div>
+                      
+                      <div className="flex flex-col gap-2 mt-2">
+                        <span className="text-sm font-semibold text-slate-600">Daftar Alat Dipinjam</span>
+                        {showDetail.items && showDetail.items.length > 0 ? (
+                          <div className="rounded-lg border border-slate-200 overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-slate-50 border-b border-slate-200">
+                                  <th className="px-4 py-2 text-left font-semibold text-slate-600 w-10">No</th>
+                                  <th className="px-4 py-2 text-left font-semibold text-slate-600">Nama Alat</th>
+                                  <th className="px-4 py-2 text-center font-semibold text-slate-600 w-32">Jumlah</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {showDetail.items.map((it, i) => (
+                                  <tr key={it.id || i} className="border-b border-slate-100 last:border-0">
+                                    <td className="px-4 py-2 text-slate-500">{i + 1}</td>
+                                    <td className="px-4 py-2 text-slate-700 font-medium">{it.namaAset}</td>
+                                    <td className="px-4 py-2 text-center font-semibold text-slate-700">{it.jumlah}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-slate-500">-</span>
+                        )}
+                      </div>
+                      
+                      {/* Bukti Peminjaman Images with Carousel */}
+                      {(() => {
+                        const paths = parseBuktiImages(showDetail.buktiPeminjaman);
+                        if (paths.length > 0) {
+                          return <ImageCarouselInner images={paths} title="Bukti Peminjaman" backendUrl={BACKEND_URL} onImageClick={(imgs, idx) => setLightboxData({ images: imgs, index: idx })} />;
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Alasan</span><span className="text-sm text-slate-800">{showDetail.alasanPeminjaman || "-"}</span></div>
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Status</span><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusBadge(showDetail.status)}`}>{getStatusLabel(showDetail.status)}</span></div>
+
+                  <hr className="border-slate-300" />
                   
-                  {/* Bukti Peminjaman Images with Carousel */}
-                  {(() => {
-                    const paths = parseBuktiImages(showDetail.buktiPeminjaman);
-                    if (paths.length > 0) {
-                      return <ImageCarouselInner images={paths} title="Bukti Peminjaman" backendUrl={BACKEND_URL} onImageClick={(imgs, idx) => setLightboxData({ images: imgs, index: idx })} />;
-                    }
-                    return null;
-                  })()}
-                </div>
-              </div>
+                  <div>
+                    <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Pengembalian</h4>
+                    <div className="space-y-2.5">
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Penerima Aset</span><span className="text-sm text-slate-800">{showDetail.penerimaAset || "-"}</span></div>
+                      <div className="flex items-start gap-3">
+                        <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Disetujui Oleh</span>
+                        {showDetail.approvedBy ? (
+                          <span className="text-sm text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shadow-sm">{showDetail.approvedBy}</span>
+                        ) : (
+                          <span className="text-sm text-slate-400 italic">Belum disetujui</span>
+                        )}
+                      </div>
 
-              <hr className="border-slate-300" />
-              
-              <div>
-                <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Pengembalian</h4>
-                <div className="space-y-2.5">
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
-                  <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Penerima Aset</span><span className="text-sm text-slate-800">{showDetail.penerimaAset || "-"}</span></div>
-                  <div className="flex items-start gap-3">
-                    <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Disetujui Oleh</span>
-                    {showDetail.approvedBy ? (
-                      <span className="text-sm text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shadow-sm">{showDetail.approvedBy}</span>
-                    ) : (
-                      <span className="text-sm text-slate-400 italic">Belum disetujui</span>
-                    )}
+                      {/* Bukti Pengembalian Images with Carousel */}
+                      {(() => {
+                        const paths = parseBuktiImages(showDetail.buktiPengembalian);
+                        if (paths.length > 0) {
+                          return <ImageCarouselInner images={paths} title="Bukti Pengembalian" backendUrl={BACKEND_URL} onImageClick={(imgs, idx) => setLightboxData({ images: imgs, index: idx })} />;
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </div>
-
-                  {/* Bukti Pengembalian Images with Carousel */}
-                  {(() => {
-                    const paths = parseBuktiImages(showDetail.buktiPengembalian);
-                    if (paths.length > 0) {
-                      return <ImageCarouselInner images={paths} title="Bukti Pengembalian" backendUrl={BACKEND_URL} onImageClick={(imgs, idx) => setLightboxData({ images: imgs, index: idx })} />;
-                    }
-                    return null;
-                  })()}
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+                  <button onClick={() => handleDownloadPDF(showDetail.id)} className="flex items-center cursor-pointer gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 shadow-sm">
+                    <FileText className="h-4 w-4" />
+                    Cetak PDF
+                  </button>
+                  <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm">Tutup</button>
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
-              <button onClick={() => handleDownloadPDF(showDetail.id)} className="flex items-center cursor-pointer gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 shadow-sm">
-                <FileText className="h-4 w-4" />
-                Cetak PDF
-              </button>
-              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm">Tutup</button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Lightbox Overlay */}
-      {lightboxData && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxData(null)}>
-          <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            {lightboxData.images.length > 1 && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length })); }}
-                className="rounded-full bg-white/10 p-3 text-white backdrop-blur-md hover:bg-white/20 transition-all border border-white/20"
-              >
-                <ChevronLeft className="h-8 w-8" />
-              </button>
-            )}
-            <div className="relative flex-1 h-full flex items-center justify-center">
-              <Image 
-                src={`${BACKEND_URL}${lightboxData.images[lightboxData.index]}`} 
-                alt="Full View" 
-                fill 
-                unoptimized 
-                className="object-contain drop-shadow-2xl" 
-              />
-            </div>
-            {lightboxData.images.length > 1 && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length })); }}
-                className="rounded-full bg-white/10 p-3 text-white backdrop-blur-md hover:bg-white/20 transition-all border border-white/20"
-              >
-                <ChevronRight className="h-8 w-8" />
-              </button>
-            )}
-            <button onClick={() => setLightboxData(null)} className="absolute top-0 right-0 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors border border-white/20 backdrop-blur-md"><X className="h-6 w-6" /></button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Delete Confirm */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteConfirm(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
-              <Trash2 className="h-6 w-6" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-800 text-center mb-1">Hapus Peminjaman?</h3>
-            <p className="text-sm text-slate-500 text-center mb-6">Apakah Anda yakin ingin menghapus data peminjaman #{showDeleteConfirm.kodePinjam}?</p>
-            <div className="flex items-center justify-center gap-3">
-              <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleDelete} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Hapus"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Approve Confirm */}
-      {showApproveConfirm && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowApproveConfirm(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-                <Check className="h-6 w-6" />
+          {/* Lightbox Overlay */}
+          {lightboxData && (
+            <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxData(null)}>
+              <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                {lightboxData.images.length > 1 && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length })); }}
+                    className="rounded-full bg-white/10 p-3 text-white backdrop-blur-md hover:bg-white/20 transition-all border border-white/20"
+                  >
+                    <ChevronLeft className="h-8 w-8" />
+                  </button>
+                )}
+                <div className="relative flex-1 h-full flex items-center justify-center">
+                  <Image 
+                    src={`${BACKEND_URL}${lightboxData.images[lightboxData.index]}`} 
+                    alt="Full View" 
+                    fill 
+                    unoptimized 
+                    className="object-contain drop-shadow-2xl" 
+                  />
+                </div>
+                {lightboxData.images.length > 1 && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length })); }}
+                    className="rounded-full bg-white/10 p-3 text-white backdrop-blur-md hover:bg-white/20 transition-all border border-white/20"
+                  >
+                    <ChevronRight className="h-8 w-8" />
+                  </button>
+                )}
+                <button onClick={() => setLightboxData(null)} className="absolute top-0 right-0 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors border border-white/20 backdrop-blur-md"><X className="h-6 w-6" /></button>
               </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">
-                {showApproveConfirm.status === 'Menunggu Persetujuan' ? 'Setujui Peminjaman?' : 'Setujui Pengembalian?'}
-              </h3>
-              <p className="text-sm text-slate-500 mb-1">
-                {showApproveConfirm.status === 'Menunggu Persetujuan' ? 'Setujui peminjaman' : 'Setujui pengembalian'} #{showApproveConfirm.kodePinjam}?
-              </p>
-              <p className="text-sm font-semibold text-slate-700">{showApproveConfirm.namaPeminjam}</p>
-              <p className="text-xs text-emerald-600 mt-3">
-                {showApproveConfirm.status === 'Menunggu Persetujuan' 
-                  ? 'Status akan berubah menjadi Sedang Dipinjam.' 
-                  : 'Stok aset akan dikembalikan ke inventaris.'}
-              </p>
             </div>
-            <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
-              <button onClick={() => setShowApproveConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleApprove} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
+          )}
+
+          {/* Modal Delete Confirm */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteConfirm(null)}>
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 text-center mb-1">Hapus Peminjaman?</h3>
+                <p className="text-sm text-slate-500 text-center mb-6">Apakah Anda yakin ingin menghapus data peminjaman #{showDeleteConfirm.kodePinjam}?</p>
+                <div className="flex items-center justify-center gap-3">
+                  <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={handleDelete} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Hapus"}</button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+
+          {/* Modal Approve Confirm */}
+          {showApproveConfirm && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowApproveConfirm(null)}>
+              <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 text-center">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                    <Check className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">
+                    {showApproveConfirm.status === 'Menunggu Persetujuan' ? 'Setujui Peminjaman?' : 'Setujui Pengembalian?'}
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-1">
+                    {showApproveConfirm.status === 'Menunggu Persetujuan' ? 'Setujui peminjaman' : 'Setujui pengembalian'} #{showApproveConfirm.kodePinjam}?
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700">{showApproveConfirm.namaPeminjam}</p>
+                  <p className="text-xs text-emerald-600 mt-3">
+                    {showApproveConfirm.status === 'Menunggu Persetujuan' 
+                      ? 'Status akan berubah menjadi Sedang Dipinjam.' 
+                      : 'Stok aset akan dikembalikan ke inventaris.'}
+                  </p>
+                </div>
+                <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
+                  <button onClick={() => setShowApproveConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={handleApprove} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>,
+        document.body
       )}
     </div>
   );

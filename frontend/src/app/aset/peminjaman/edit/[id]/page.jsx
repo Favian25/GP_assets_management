@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { getPeminjamanById, updatePeminjaman } from "../../../../lib/peminjamanService";
@@ -83,9 +84,17 @@ export default function EditPeminjamanPage() {
   const [buktiPreviews, setBuktiPreviews] = useState([]);
   const [existingBuktiPeminjaman, setExistingBuktiPeminjaman] = useState([]);
   const [lightboxData, setLightboxData] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 4000); return () => clearTimeout(t); } }, [toast]);
+  useEffect(() => {
+    setMounted(true);
+    const ctx = getUserContext();
+    setCurrentUserId(ctx?.id);
+    if (toast) { const t = setTimeout(() => setToast(null), 4000); return () => clearTimeout(t); } 
+  }, [toast]);
+  
   const showToast = (message, type = "success") => setToast({ message, type });
 
   const fetchData = useCallback(async () => {
@@ -161,6 +170,19 @@ export default function EditPeminjamanPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (status === "Menunggu Verifikasi") {
+      if (!tanggalPengembalian || !penerimaAset || !penerimaAset.trim()) {
+        showToast("Mohon lengkapi Tanggal Pengembalian dan Penerima Alat sebelum menyimpan", "error");
+        return;
+      }
+    } else {
+      if (!tanggalPengembalian && (!penerimaAset || !penerimaAset.trim()) && status === data?.status && buktiFiles.length === 0) {
+        showToast("Mohon isi atau ubah data pengembalian sebelum menyimpan", "error");
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       await updatePeminjaman(peminjamanId, {
@@ -214,7 +236,7 @@ export default function EditPeminjamanPage() {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Edit Pengembalian #{data.kodePinjam}</h1>
-          <p className="text-sm text-slate-500">Update data pengembalian aset</p>
+          <p className="text-sm text-slate-500">Update data pengembalian alat</p>
         </div>
       </div>
 
@@ -303,7 +325,7 @@ export default function EditPeminjamanPage() {
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
               <Package className="h-4 w-4 text-amber-500" />
-              Data Pengembalian (Dapat Diedit)
+              Data Pengembalian
             </h2>
           </div>
           <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -311,9 +333,10 @@ export default function EditPeminjamanPage() {
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Status <span className="text-rose-500">*</span></label>
               <select value={status} onChange={(e) => setStatus(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
-                <option value="Sedang Dipinjam">Sedang Dipinjam</option>
-                <option value="Menunggu Verifikasi">Menunggu Verifikasi (Dikembalikan)</option>
+                <option value={data?.status || ""}>{data?.status || "Pilih Status"}</option>
+                {data?.status !== "Menunggu Verifikasi" && (
+                  <option value="Menunggu Verifikasi">Pengembalian Alat</option>
+                )}
               </select>
             </div>
 
@@ -331,7 +354,7 @@ export default function EditPeminjamanPage() {
 
             {/* Bukti Pengembalian Upload */}
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Bukti Pengembalian <span className="text-xs text-slate-400 font-normal ml-1">(Opsional)</span></label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Bukti Pengembalian</label>
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
                 <input type="file" multiple accept="image/*" onChange={handleFileChange} ref={fileInputRef} className="hidden" id="bukti-pengembalian-upload" />
                 <label htmlFor="bukti-pengembalian-upload" className="cursor-pointer flex flex-col items-center justify-center">
@@ -379,8 +402,8 @@ export default function EditPeminjamanPage() {
     </div>
 
     {/* Lightbox Overlay */}
-    {lightboxData && (
-      <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxData(null)}>
+    {mounted && typeof document !== 'undefined' && lightboxData && createPortal(
+      <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxData(null)}>
         <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
           {lightboxData.images.length > 1 && (
             <button 
@@ -416,7 +439,8 @@ export default function EditPeminjamanPage() {
         <button className="absolute right-6 top-6 text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" onClick={() => setLightboxData(null)}>
           <X className="h-8 w-8" />
         </button>
-      </div>
+      </div>,
+      document.body
     )}
     </>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { getAllAssets, createAsset, updateAsset, deleteAsset, searchAssets, updateAssetKondisi } from "../../lib/assetService";
 import { getAllCategories, createCategory } from "../../lib/categoryService";
@@ -149,6 +150,9 @@ export default function DaftarAsetPage() {
   const [newMerekData, setNewMerekData] = useState({ nama: "" });
   const [newKondisi, setNewKondisi] = useState("");
   const [tableLoading, setTableLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -525,169 +529,174 @@ export default function DaftarAsetPage() {
         <div className="border-t border-slate-200"><Pagination /></div>
       </div>
 
-      {/* Modal Tambah */}
-      {showModal && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowModal(false)}>
-          <form onSubmit={handleCreate} className="max-h-[90vh] w-full max-w-2xl flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-50 px-6 py-4 rounded-t-2xl shrink-0">
-              <h2 className="text-lg font-bold text-emerald-800">Tambah Aset Baru</h2>
-              <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Modal Tambah */}
+          {showModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowModal(false)}>
+              <form onSubmit={handleCreate} className="max-h-[90vh] w-full max-w-2xl flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-50 px-6 py-4 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg font-bold text-emerald-800">Tambah Aset Baru</h2>
+                  <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="overflow-y-auto custom-scrollbar flex-1">
+                  {renderFormFields(formData, setFormData, (e) => handleImageSelect(e, setImageFile, setImagePreview), imagePreview, () => { setImageFile(null); setImagePreview(null); }, false)}
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+                  <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Aset"}</button>
+                </div>
+              </form>
             </div>
-            <div className="overflow-y-auto custom-scrollbar flex-1">
-              {renderFormFields(formData, setFormData, (e) => handleImageSelect(e, setImageFile, setImagePreview), imagePreview, () => { setImageFile(null); setImagePreview(null); }, false)}
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
-              <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Aset"}</button>
-            </div>
-          </form>
-        </div>
-      )}
+          )}
 
-      {/* Modal Detail */}
-      {showDetail && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDetail(null)}>
-          <div className="max-h-[90vh] w-full max-w-lg flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
-              <h2 className="text-lg font-bold text-blue-800">Detail Aset</h2>
-              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
-              {getImageUrl(showDetail.gambar) && (
-                <div className="flex justify-center">
-                  <div className="relative h-48 w-full max-w-[300px] cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all rounded-xl overflow-hidden border border-slate-200" onClick={() => setLightboxImg(getImageUrl(showDetail.gambar))}>
-                    <Image src={getImageUrl(showDetail.gambar)} alt={showDetail.namaAset} fill unoptimized className="object-contain" />
+          {/* Modal Detail */}
+          {showDetail && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDetail(null)}>
+              <div className="max-h-[90vh] w-full max-w-lg flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg font-bold text-blue-800">Detail Aset</h2>
+                  <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
+                  {getImageUrl(showDetail.gambar) && (
+                    <div className="flex justify-center">
+                      <div className="relative h-48 w-full max-w-[300px] cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all rounded-xl overflow-hidden border border-slate-200" onClick={() => setLightboxImg(getImageUrl(showDetail.gambar))}>
+                        <Image src={getImageUrl(showDetail.gambar)} alt={showDetail.namaAset} fill unoptimized className="object-contain" />
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Inventori</h4>
+                    <div className="space-y-2.5">
+                      {[
+                        ["Kode Aset", showDetail.kodeAset], 
+                        ["Nama Aset", showDetail.namaAset], 
+                        ["Pengguna", showDetail.pengguna], 
+                        ["Kategori", showDetail.kategori], 
+                        ["Merek", showDetail.merek], 
+                        ["Model", showDetail.model], 
+                        ["Jumlah", `${showDetail.jumlah ?? "-"} Tersisa dari Total ${showDetail.jumlahTotal ?? showDetail.jumlah ?? "-"}`], 
+                        ["Harga Aset", formatRupiah(showDetail.hargaAset)], 
+                        ["Tanggal Pembelian", showDetail.tanggalPembelian ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(showDetail.tanggalPembelian)) : "-"],
+                        ["Serial Number", showDetail.noSN], 
+                        ["Spesifikasi", showDetail.spesifikasi]
+                      ].map(([l, v]) => (
+                        <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
+                      ))}
+                    </div>
+                  </div>
+                  <hr className="border-slate-300" />
+                  <div>
+                    <h4 className="mb-3 text-sm font-bold text-slate-800">Lokasi Aset</h4>
+                    <div className="space-y-2.5">
+                      {[["Lokasi", showDetail.lokasiAset], ["Kondisi", showDetail.kondisi], ["Keterangan", showDetail.keterangan]].map(([l, v]) => (
+                        <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              )}
-              <div>
-                <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Inventori</h4>
-                <div className="space-y-2.5">
-                  {[
-                    ["Kode Aset", showDetail.kodeAset], 
-                    ["Nama Aset", showDetail.namaAset], 
-                    ["Pengguna", showDetail.pengguna], 
-                    ["Kategori", showDetail.kategori], 
-                    ["Merek", showDetail.merek], 
-                    ["Model", showDetail.model], 
-                    ["Jumlah", `${showDetail.jumlah ?? "-"} Tersisa dari Total ${showDetail.jumlahTotal ?? showDetail.jumlah ?? "-"}`], 
-                    ["Harga Aset", formatRupiah(showDetail.hargaAset)], 
-                    ["Tanggal Pembelian", showDetail.tanggalPembelian ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(showDetail.tanggalPembelian)) : "-"],
-                    ["Serial Number", showDetail.noSN], 
-                    ["Spesifikasi", showDetail.spesifikasi]
-                  ].map(([l, v]) => (
-                    <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
-                  ))}
-                </div>
-              </div>
-              <hr className="border-slate-300" />
-              <div>
-                <h4 className="mb-3 text-sm font-bold text-slate-800">Lokasi Aset</h4>
-                <div className="space-y-2.5">
-                  {[["Lokasi", showDetail.lokasiAset], ["Kondisi", showDetail.kondisi], ["Keterangan", showDetail.keterangan]].map(([l, v]) => (
-                    <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
-                  ))}
+                <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4 gap-3 bg-white rounded-b-2xl shrink-0">
+                  <button onClick={() => {openEdit(showDetail); setShowDetail(null);}} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 shadow-sm">Edit Aset</button>
+                  <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm">Tutup</button>
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4 gap-3 bg-white rounded-b-2xl shrink-0">
-              <button onClick={() => {openEdit(showDetail); setShowDetail(null);}} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 shadow-sm">Edit Aset</button>
-              <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm">Tutup</button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Modal Edit */}
-      {showEdit && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowEdit(null)}>
-          <form onSubmit={handleUpdate} className="max-h-[90vh] w-full max-w-2xl flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-100 bg-amber-50 px-6 py-4 rounded-t-2xl shrink-0">
-              <h2 className="text-lg font-bold text-amber-800">Edit Aset</h2>
-              <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+          {/* Modal Edit */}
+          {showEdit && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowEdit(null)}>
+              <form onSubmit={handleUpdate} className="max-h-[90vh] w-full max-w-2xl flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 bg-amber-50 px-6 py-4 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg font-bold text-amber-800">Edit Aset</h2>
+                  <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="overflow-y-auto custom-scrollbar flex-1">
+                  {renderFormFields(editFormData, setEditFormData, (e) => handleImageSelect(e, setEditImageFile, setEditImagePreview), editImagePreview, () => { setEditImageFile(null); setEditImagePreview(null); }, true)}
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+                  <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
+                </div>
+              </form>
             </div>
-            <div className="overflow-y-auto custom-scrollbar flex-1">
-              {renderFormFields(editFormData, setEditFormData, (e) => handleImageSelect(e, setEditImageFile, setEditImagePreview), editImagePreview, () => { setEditImageFile(null); setEditImagePreview(null); }, true)}
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
-              <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
-            </div>
-          </form>
-        </div>
-      )}
+          )}
 
-      {/* Modal Hapus */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteConfirm(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
-              <Trash2 className="h-6 w-6" />
-            </div>
-            <h3 className="mb-2 text-center text-lg font-bold text-slate-800">Hapus Aset?</h3>
-            <p className="mb-6 text-center text-sm text-slate-500">
-              Apakah Anda yakin ingin menghapus aset <strong>{showDeleteConfirm.namaAset}</strong>? Seluruh data riwayat terkait aset ini akan ikut terhapus.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleDelete} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Hapus Aset"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Kategori */}
-      {showKatModal && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKatModal(false)}>
-          <form onSubmit={handleCreateKat} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
-              <div className="space-y-4">
-                <InputField label="Nama Kategori" required placeholder="Contoh: Kamera" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({...d, nama: e.target.value}))} />
-                <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => setNewKatData(d => ({...d, kode_singkat: e.target.value.toUpperCase()}))} />
+          {/* Modal Hapus */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteConfirm(null)}>
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 text-center text-lg font-bold text-slate-800">Hapus Aset?</h3>
+                <p className="mb-6 text-center text-sm text-slate-500">
+                  Apakah Anda yakin ingin menghapus aset <strong>{showDeleteConfirm.namaAset}</strong>? Seluruh data riwayat terkait aset ini akan ikut terhapus.
+                </p>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={handleDelete} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Hapus Aset"}</button>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
-              <button type="button" onClick={() => setShowKatModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">Simpan</button>
-            </div>
-          </form>
-        </div>
-      )}
+          )}
 
-      {/* Modal Merek */}
-      {showMerekModal && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowMerekModal(false)}>
-          <form onSubmit={handleCreateMerek} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Merek Baru</h3>
-              <div className="space-y-4">
-                <InputField label="Nama Merek" required placeholder="Contoh: Sony" value={newMerekData.nama} onChange={(e) => setNewMerekData(d => ({...d, nama: e.target.value}))} />
+          {/* Modal Kategori */}
+          {showKatModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKatModal(false)}>
+              <form onSubmit={handleCreateKat} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
+                  <div className="space-y-4">
+                    <InputField label="Nama Kategori" required placeholder="Contoh: Kamera" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({...d, nama: e.target.value}))} />
+                    <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => setNewKatData(d => ({...d, kode_singkat: e.target.value.toUpperCase()}))} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+                  <button type="button" onClick={() => setShowKatModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">Simpan</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Modal Merek */}
+          {showMerekModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowMerekModal(false)}>
+              <form onSubmit={handleCreateMerek} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Merek Baru</h3>
+                  <div className="space-y-4">
+                    <InputField label="Nama Merek" required placeholder="Contoh: Sony" value={newMerekData.nama} onChange={(e) => setNewMerekData(d => ({...d, nama: e.target.value}))} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+                  <button type="button" onClick={() => setShowMerekModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">Simpan</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Modal Update Kondisi */}
+          {showKondisiModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKondisiModal(null)}>
+              <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">Ubah Kondisi Aset</h3>
+                  <p className="text-sm text-slate-500 mb-4 truncate">{showKondisiModal.namaAset}</p>
+                  <SelectField label="" value={newKondisi} onChange={(e) => setNewKondisi(e.target.value)} options={kondisiOptions} placeholder="Pilih Kondisi" />
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+                  <button onClick={() => setShowKondisiModal(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={handleUpdateKondisi} disabled={submitting} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-600">Update Kondisi</button>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
-              <button type="button" onClick={() => setShowMerekModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">Simpan</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Modal Update Kondisi */}
-      {showKondisiModal && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKondisiModal(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-1">Ubah Kondisi Aset</h3>
-              <p className="text-sm text-slate-500 mb-4 truncate">{showKondisiModal.namaAset}</p>
-              <SelectField label="" value={newKondisi} onChange={(e) => setNewKondisi(e.target.value)} options={kondisiOptions} placeholder="Pilih Kondisi" />
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
-              <button onClick={() => setShowKondisiModal(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleUpdateKondisi} disabled={submitting} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-600">Update Kondisi</button>
-            </div>
-          </div>
-        </div>
+          )}
+        </>,
+        document.body
       )}
     </div>
   );

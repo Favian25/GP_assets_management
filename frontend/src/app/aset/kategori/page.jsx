@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { getAllCategories, createCategory, deleteCategory } from "../../lib/categoryService";
 import { getAllBrands, createBrand, deleteBrand } from "../../lib/brandService";
 import { Plus, Trash2, X, Check, Tag, Bookmark, AlertTriangle } from "lucide-react";
@@ -23,6 +24,9 @@ export default function KategoriMerekPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -203,86 +207,91 @@ export default function KategoriMerekPage() {
 
       </div>
 
-      {/* Modal Tambah Kategori */}
-      {showModalKat && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowModalKat(false)}>
-          <form onSubmit={handleCreateKat} className="w-full max-w-md flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-50 px-6 py-4 rounded-t-2xl shrink-0">
-              <h2 className="text-lg font-bold text-emerald-800">Tambah Kategori</h2>
-              <button type="button" onClick={() => setShowModalKat(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Modal Tambah Kategori */}
+          {showModalKat && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowModalKat(false)}>
+              <form onSubmit={handleCreateKat} className="w-full max-w-md flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-50 px-6 py-4 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg font-bold text-emerald-800">Tambah Kategori</h2>
+                  <button type="button" onClick={() => setShowModalKat(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
+                    <input type="text" required placeholder="Contoh: Kamera" value={formKat.nama} onChange={(e) => setFormKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Singkat</label>
+                    <input type="text" required placeholder="Contoh: CAM" value={formKat.kode_singkat} onChange={(e) => setFormKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+                  <button type="button" onClick={() => setShowModalKat(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
+                </div>
+              </form>
             </div>
-            <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
-                <input type="text" required placeholder="Contoh: Kamera" value={formKat.nama} onChange={(e) => setFormKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Singkat</label>
-                <input type="text" required placeholder="Contoh: CAM" value={formKat.kode_singkat} onChange={(e) => setFormKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
-              <button type="button" onClick={() => setShowModalKat(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
-            </div>
-          </form>
-        </div>
-      )}
+          )}
 
-      {/* Modal Tambah Merek */}
-      {showModalMerek && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowModalMerek(false)}>
-          <form onSubmit={handleCreateMerek} className="w-full max-w-md flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-100 bg-amber-50 px-6 py-4 rounded-t-2xl shrink-0">
-              <h2 className="text-lg font-bold text-amber-800">Tambah Merek</h2>
-              <button type="button" onClick={() => setShowModalMerek(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+          {/* Modal Tambah Merek */}
+          {showModalMerek && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowModalMerek(false)}>
+              <form onSubmit={handleCreateMerek} className="w-full max-w-md flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 bg-amber-50 px-6 py-4 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg font-bold text-amber-800">Tambah Merek</h2>
+                  <button type="button" onClick={() => setShowModalMerek(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
+                    <input type="text" required placeholder="Contoh: Sony" value={formMerek.nama} onChange={(e) => setFormMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+                  <button type="button" onClick={() => setShowModalMerek(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
+                </div>
+              </form>
             </div>
-            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
-                <input type="text" required placeholder="Contoh: Sony" value={formMerek.nama} onChange={(e) => setFormMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+          )}
+
+          {/* Modal Hapus Kategori */}
+          {showDeleteKat && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteKat(null)}>
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100"><Trash2 className="h-7 w-7 text-rose-600" /></div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Kategori?</h3>
+                  <p className="text-sm font-semibold text-slate-700 mb-1">{showDeleteKat.nama}</p>
+                </div>
+                <div className="flex items-center justify-center gap-3 border-t border-slate-100 pt-4">
+                  <button onClick={() => setShowDeleteKat(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={handleDeleteKat} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
-              <button type="button" onClick={() => setShowModalMerek(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
-            </div>
-          </form>
-        </div>
-      )}
+          )}
 
-      {/* Modal Hapus Kategori */}
-      {showDeleteKat && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteKat(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100"><Trash2 className="h-7 w-7 text-rose-600" /></div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Kategori?</h3>
-              <p className="text-sm font-semibold text-slate-700 mb-1">{showDeleteKat.nama}</p>
+          {/* Modal Hapus Merek */}
+          {showDeleteMerek && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteMerek(null)}>
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100"><Trash2 className="h-7 w-7 text-rose-600" /></div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Merek?</h3>
+                  <p className="text-sm font-semibold text-slate-700 mb-1">{showDeleteMerek.nama}</p>
+                </div>
+                <div className="flex items-center justify-center gap-3 border-t border-slate-100 pt-4">
+                  <button onClick={() => setShowDeleteMerek(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={handleDeleteMerek} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-3 border-t border-slate-100 pt-4">
-              <button onClick={() => setShowDeleteKat(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleDeleteKat} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Hapus Merek */}
-      {showDeleteMerek && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteMerek(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100"><Trash2 className="h-7 w-7 text-rose-600" /></div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Merek?</h3>
-              <p className="text-sm font-semibold text-slate-700 mb-1">{showDeleteMerek.nama}</p>
-            </div>
-            <div className="flex items-center justify-center gap-3 border-t border-slate-100 pt-4">
-              <button onClick={() => setShowDeleteMerek(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleDeleteMerek} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
-            </div>
-          </div>
-        </div>
+          )}
+        </>,
+        document.body
       )}
     </div>
   );
