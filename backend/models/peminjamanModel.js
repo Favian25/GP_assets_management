@@ -19,9 +19,10 @@ const Peminjaman = {
     const [headers] = await db.query(
       `SELECT p.*, u.nama_lengkap as created_by_name,
         (SELECT COUNT(*) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id) AS total_items,
-        (SELECT GROUP_CONCAT(a.nama_aset SEPARATOR ', ') 
+        (SELECT GROUP_CONCAT(COALESCE(a.nama_aset, ak.nama_aksesoris) SEPARATOR ', ') 
          FROM peminjaman_items pi 
-         JOIN assets a ON pi.asset_id = a.id 
+         LEFT JOIN assets a ON pi.asset_id = a.id 
+         LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
          WHERE pi.peminjaman_id = p.id) AS daftar_aset
        FROM peminjaman p
        LEFT JOIN users u ON p.user_id = u.id
@@ -36,9 +37,13 @@ const Peminjaman = {
     if (!headers[0]) return null;
 
     const [items] = await db.query(
-      `SELECT pi.*, a.nama_aset, a.kode_aset, a.jumlah AS stok_tersedia
+      `SELECT pi.*, 
+              COALESCE(a.nama_aset, ak.nama_aksesoris) AS nama_aset, 
+              COALESCE(a.kode_aset, ak.kode_aksesoris) AS kode_aset, 
+              COALESCE(a.jumlah, ak.jumlah_unit) AS stok_tersedia
        FROM peminjaman_items pi
-       JOIN assets a ON pi.asset_id = a.id
+       LEFT JOIN assets a ON pi.asset_id = a.id
+       LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
        WHERE pi.peminjaman_id = ?`,
       [id]
     );
@@ -69,35 +74,53 @@ const Peminjaman = {
 
       // Insert items & kurangi stok
       for (const item of items) {
-        // Cek stok
-        const [stokRows] = await connection.query(
-          "SELECT jumlah FROM assets WHERE id = ? FOR UPDATE",
-          [item.asset_id]
-        );
+        if (item.asset_id) {
+          // Aset Utama
+          const [stokRows] = await connection.query(
+            "SELECT jumlah, nama_aset FROM assets WHERE id = ? FOR UPDATE",
+            [item.asset_id]
+          );
 
-        if (!stokRows[0]) {
-          throw new Error(`Aset dengan ID ${item.asset_id} tidak ditemukan`);
+          if (!stokRows[0]) throw new Error(`Aset dengan ID ${item.asset_id} tidak ditemukan`);
+
+          const stokSekarang = stokRows[0].jumlah || 0;
+          if (stokSekarang < item.jumlah) {
+            throw new Error(`Stok "${stokRows[0].nama_aset}" tidak mencukupi. Tersedia: ${stokSekarang}, Diminta: ${item.jumlah}`);
+          }
+
+          await connection.query(
+            "INSERT INTO peminjaman_items (peminjaman_id, asset_id, jumlah) VALUES (?, ?, ?)",
+            [peminjamanId, item.asset_id, item.jumlah]
+          );
+
+          await connection.query(
+            "UPDATE assets SET jumlah = jumlah - ? WHERE id = ?",
+            [item.jumlah, item.asset_id]
+          );
+        } else if (item.aksesoris_id) {
+          // Aksesoris
+          const [stokRows] = await connection.query(
+            "SELECT jumlah_unit, nama_aksesoris FROM aksesoris WHERE id = ? FOR UPDATE",
+            [item.aksesoris_id]
+          );
+
+          if (!stokRows[0]) throw new Error(`Aksesoris dengan ID ${item.aksesoris_id} tidak ditemukan`);
+
+          const stokSekarang = stokRows[0].jumlah_unit || 0;
+          if (stokSekarang < item.jumlah) {
+            throw new Error(`Stok "${stokRows[0].nama_aksesoris}" tidak mencukupi. Tersedia: ${stokSekarang}, Diminta: ${item.jumlah}`);
+          }
+
+          await connection.query(
+            "INSERT INTO peminjaman_items (peminjaman_id, aksesoris_id, jumlah) VALUES (?, ?, ?)",
+            [peminjamanId, item.aksesoris_id, item.jumlah]
+          );
+
+          await connection.query(
+            "UPDATE aksesoris SET jumlah_unit = jumlah_unit - ? WHERE id = ?",
+            [item.jumlah, item.aksesoris_id]
+          );
         }
-
-        const stokSekarang = stokRows[0].jumlah || 0;
-        if (stokSekarang < item.jumlah) {
-          // Ambil nama aset untuk pesan error yang informatif
-          const [asetInfo] = await connection.query("SELECT nama_aset FROM assets WHERE id = ?", [item.asset_id]);
-          const namaAset = asetInfo[0]?.nama_aset || `ID ${item.asset_id}`;
-          throw new Error(`Stok "${namaAset}" tidak mencukupi. Tersedia: ${stokSekarang}, Diminta: ${item.jumlah}`);
-        }
-
-        // Insert item
-        await connection.query(
-          "INSERT INTO peminjaman_items (peminjaman_id, asset_id, jumlah) VALUES (?, ?, ?)",
-          [peminjamanId, item.asset_id, item.jumlah]
-        );
-
-        // Kurangi stok aset
-        await connection.query(
-          "UPDATE assets SET jumlah = jumlah - ? WHERE id = ?",
-          [item.jumlah, item.asset_id]
-        );
       }
 
       await connection.commit();
@@ -177,15 +200,22 @@ const Peminjaman = {
 
         // Ambil items dan kembalikan stok
         const [items] = await connection.query(
-          "SELECT asset_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
+          "SELECT asset_id, aksesoris_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
           [id]
         );
 
         for (const item of items) {
-          await connection.query(
-            "UPDATE assets SET jumlah = jumlah + ? WHERE id = ?",
-            [item.jumlah, item.asset_id]
-          );
+          if (item.asset_id) {
+            await connection.query(
+              "UPDATE assets SET jumlah = jumlah + ? WHERE id = ?",
+              [item.jumlah, item.asset_id]
+            );
+          } else if (item.aksesoris_id) {
+            await connection.query(
+              "UPDATE aksesoris SET jumlah_unit = jumlah_unit + ? WHERE id = ?",
+              [item.jumlah, item.aksesoris_id]
+            );
+          }
         }
       } else {
         throw new Error("Status saat ini tidak membutuhkan persetujuan.");
@@ -214,14 +244,21 @@ const Peminjaman = {
       // Jika belum selesai, berarti stok masih ditahan, maka kembalikan stok
       if (headers[0].status !== "Peminjaman Selesai") {
         const [items] = await connection.query(
-          "SELECT asset_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
+          "SELECT asset_id, aksesoris_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
           [id]
         );
         for (const item of items) {
-          await connection.query(
-            "UPDATE assets SET jumlah = jumlah + ? WHERE id = ?",
-            [item.jumlah, item.asset_id]
-          );
+          if (item.asset_id) {
+            await connection.query(
+              "UPDATE assets SET jumlah = jumlah + ? WHERE id = ?",
+              [item.jumlah, item.asset_id]
+            );
+          } else if (item.aksesoris_id) {
+            await connection.query(
+              "UPDATE aksesoris SET jumlah_unit = jumlah_unit + ? WHERE id = ?",
+              [item.jumlah, item.aksesoris_id]
+            );
+          }
         }
       }
 
@@ -244,9 +281,10 @@ const Peminjaman = {
     const [rows] = await db.query(
       `SELECT p.*,
         (SELECT COUNT(*) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id) AS total_items,
-        (SELECT GROUP_CONCAT(a.nama_aset SEPARATOR ', ') 
+        (SELECT GROUP_CONCAT(COALESCE(a.nama_aset, ak.nama_aksesoris) SEPARATOR ', ') 
          FROM peminjaman_items pi 
-         JOIN assets a ON pi.asset_id = a.id 
+         LEFT JOIN assets a ON pi.asset_id = a.id 
+         LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
          WHERE pi.peminjaman_id = p.id) AS daftar_aset
        FROM peminjaman p
        WHERE p.kode_pinjam LIKE ? 
@@ -255,11 +293,12 @@ const Peminjaman = {
           OR p.penerima_aset LIKE ?
           OR EXISTS (
             SELECT 1 FROM peminjaman_items pi 
-            JOIN assets a ON pi.asset_id = a.id 
-            WHERE pi.peminjaman_id = p.id AND a.nama_aset LIKE ?
+            LEFT JOIN assets a ON pi.asset_id = a.id 
+            LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
+            WHERE pi.peminjaman_id = p.id AND (a.nama_aset LIKE ? OR ak.nama_aksesoris LIKE ?)
           )
        ORDER BY p.created_at DESC`,
-      [search, search, search, search, search]
+      [search, search, search, search, search, search]
     );
     return rows;
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { getAllAssets, createAsset, updateAsset, deleteAsset, searchAssets, updateAssetKondisi } from "../../lib/assetService";
@@ -120,6 +121,8 @@ function SortIcon({ columnKey, sortConfig }) {
 // =====================================================
 
 export default function DaftarAsetPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -153,6 +156,11 @@ export default function DaftarAsetPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const q = searchParams?.get("search");
+    if (q) setSearch(q);
+  }, [searchParams]);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -484,7 +492,7 @@ export default function DaftarAsetPage() {
                 <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlah")} className="cursor-pointer flex items-center">Jumlah <SortIcon columnKey="jumlah" sortConfig={sortConfig} /></button></th>
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
-                <th className="w-[150px] px-5 py-3 font-bold text-slate-700">Kondisi</th>
+                <th className="w-[150px] px-5 py-3 font-bold text-slate-700 text-center">Kondisi</th>
                 <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center">Aksi</th>
               </tr>
             </thead>
@@ -512,7 +520,7 @@ export default function DaftarAsetPage() {
                   </td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
-                  <td className="w-[150px] px-5 py-3"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-all ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
+                  <td className="w-[150px] px-5 py-3"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer inline-block rounded-full border px-2.5 py-0.5 text-xs text-center font-semibold tracking-wide uppercase transition-all ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
                   <td className="w-[110px] px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>

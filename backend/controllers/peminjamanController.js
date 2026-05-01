@@ -64,10 +64,10 @@ const peminjamanController = {
         return res.status(400).json({ success: false, message: "Minimal harus ada 1 barang yang dipinjam" });
       }
 
-      // Validasi setiap item punya asset_id dan jumlah
+      // Validasi setiap item punya asset_id atau aksesoris_id dan jumlah
       for (const item of itemsArray) {
-        if (!item.asset_id || !item.jumlah || item.jumlah < 1) {
-          return res.status(400).json({ success: false, message: "Setiap barang harus memiliki aset dan jumlah yang valid" });
+        if ((!item.asset_id && !item.aksesoris_id) || !item.jumlah || item.jumlah < 1) {
+          return res.status(400).json({ success: false, message: "Setiap barang harus memiliki aset/aksesoris dan jumlah yang valid" });
         }
       }
 
@@ -115,14 +115,26 @@ const peminjamanController = {
 
       // Cek stok rendah (≤ 3) untuk setiap item
       for (const item of itemsArray) {
-        const [assetRows] = await db.query('SELECT nama_aset, jumlah FROM assets WHERE id = ?', [item.asset_id]);
-        if (assetRows[0] && assetRows[0].jumlah <= 3) {
-          await Notification.create({
-            type: 'stok_rendah',
-            message: `Stok ${assetRows[0].nama_aset} tersisa ${assetRows[0].jumlah} unit`,
-            referenceId: item.asset_id,
-            targetRoles: 'super admin,admin',
-          });
+        if (item.asset_id) {
+          const [assetRows] = await db.query('SELECT nama_aset, jumlah FROM assets WHERE id = ?', [item.asset_id]);
+          if (assetRows[0] && assetRows[0].jumlah <= 3) {
+            await Notification.create({
+              type: 'stok_rendah_aset',
+              message: `Stok ${assetRows[0].nama_aset} tersisa ${assetRows[0].jumlah} unit`,
+              referenceId: item.asset_id,
+              targetRoles: 'super admin,admin',
+            });
+          }
+        } else if (item.aksesoris_id) {
+          const [aksRows] = await db.query('SELECT nama_aksesoris, jumlah_unit FROM aksesoris WHERE id = ?', [item.aksesoris_id]);
+          if (aksRows[0] && aksRows[0].jumlah_unit <= 3) {
+            await Notification.create({
+              type: 'stok_rendah_aks',
+              message: `Stok ${aksRows[0].nama_aksesoris} tersisa ${aksRows[0].jumlah_unit} unit`,
+              referenceId: item.aksesoris_id,
+              targetRoles: 'super admin,admin',
+            });
+          }
         }
       }
 
@@ -365,8 +377,8 @@ const peminjamanController = {
       const tableTop = doc.y;
       doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569');
       doc.text('No', 50, tableTop);
-      doc.text('Kode Aset', 85, tableTop);
-      doc.text('Nama Aset / Barang', 185, tableTop);
+      doc.text('Kode Item', 85, tableTop);
+      doc.text('Nama Item / Barang', 185, tableTop);
       doc.text('Qty', 485, tableTop, { align: 'right', width: 50 });
       
       doc.moveTo(50, doc.y + 12).lineTo(545, doc.y + 12).strokeColor('#1e293b').lineWidth(1.5).stroke();

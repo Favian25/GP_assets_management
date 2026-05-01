@@ -288,26 +288,32 @@ export default function KategoriMerekPage() {
             <table className="w-full text-left text-sm">
               <thead>
                   <tr className="border-t border-t-slate-300 border-b border-b-slate-300 bg-slate-50">
-                  <th className="px-5 py-3 font-bold text-slate-700 w-16 text-center text-xs uppercase tracking-wider">No</th>
-                  <th className="px-5 py-3 font-bold text-slate-700 text-xs uppercase tracking-wider">
+                  <th className="px-5 py-3 font-bold text-slate-700 w-16 text-center">No</th>
+                  <th className="px-5 py-3 font-bold text-slate-700">
                     <button onClick={() => handleSort("nama")} className="cursor-pointer flex items-center">
                       Nama Kategori <SortIcon columnKey="nama" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-40 text-xs uppercase tracking-wider">
+                  <th className="px-5 py-3 font-bold text-slate-700 w-40">
                     <button onClick={() => handleSort("kode_singkat")} className="cursor-pointer flex items-center">
                       Kode <SortIcon columnKey="kode_singkat" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-44 text-xs uppercase tracking-wider">
+                  <th className="px-5 py-3 font-bold text-slate-700 w-44">
                     Tipe
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 text-center w-32 text-xs uppercase tracking-wider">
-                    <button onClick={() => handleSort("qty")} className="cursor-pointer flex items-center justify-center">
-                      QTY <SortIcon columnKey="qty" />
+                  <th className="px-5 py-3 font-bold text-slate-700 text-center w-32 uppercase tracking-wider">
+                    <button onClick={() => handleSort("qty")} className="cursor-pointer flex items-center justify-center w-full group">
+                      {/* Balancing spacer to center text perfectly */}
+                      <span className="mr-1.5 inline-flex flex-col -space-y-1.5 opacity-0 w-3" aria-hidden="true">
+                        <ChevronUp className="h-3 w-3" />
+                        <ChevronDown className="h-3 w-3" />
+                      </span>
+                      QTY
+                      <SortIcon columnKey="qty" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-28 text-center text-xs uppercase tracking-wider">Aksi</th>
+                  <th className="px-5 py-3 font-bold text-slate-700 w-28 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -341,21 +347,27 @@ export default function KategoriMerekPage() {
             <table className="w-full text-left text-sm">
               <thead>
                   <tr className="border-t border-t-slate-300 border-b border-b-slate-300 bg-slate-50">
-                  <th className="px-5 py-3 font-bold text-slate-700 w-16 text-center text-xs uppercase tracking-wider">No</th>
-                  <th className="px-5 py-3 font-bold text-slate-700 text-xs uppercase tracking-wider">
+                  <th className="px-5 py-3 font-bold text-slate-700 w-16 text-center">No</th>
+                  <th className="px-5 py-3 font-bold text-slate-700">
                     <button onClick={() => handleSort("nama")} className="cursor-pointer flex items-center">
                       Nama Merek <SortIcon columnKey="nama" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-44 text-xs uppercase tracking-wider">
+                  <th className="px-5 py-3 font-bold text-slate-700 w-44">
                     Tipe
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 text-center w-36 text-xs uppercase tracking-wider">
-                    <button onClick={() => handleSort("qty")} className="cursor-pointer flex items-center justify-center">
-                      QTY <SortIcon columnKey="qty" />
+                  <th className="px-5 py-3 font-bold text-slate-700 text-center w-36 uppercase tracking-wider">
+                    <button onClick={() => handleSort("qty")} className="cursor-pointer flex items-center justify-center w-full group">
+                      {/* Balancing spacer to center text perfectly */}
+                      <span className="mr-1.5 inline-flex flex-col -space-y-1.5 opacity-0 w-3" aria-hidden="true">
+                        <ChevronUp className="h-3 w-3" />
+                        <ChevronDown className="h-3 w-3" />
+                      </span>
+                      QTY
+                      <SortIcon columnKey="qty" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-28 text-center text-xs uppercase tracking-wider">Aksi</th>
+                  <th className="px-5 py-3 font-bold text-slate-700 w-28 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody>

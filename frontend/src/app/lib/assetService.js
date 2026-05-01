@@ -4,6 +4,7 @@ import api, {
   mapAssetsToFrontend,
 } from "./api";
 import { getAllPeminjaman } from "./peminjamanService";
+import { getAllAksesoris } from "./aksesorisService";
 
 // ============================================================
 // Asset Service — Semua operasi CRUD & Search terhadap API
@@ -126,30 +127,55 @@ export async function searchAssets(keyword) {
  */
 export async function getDashboardStats() {
   const assets = await getAllAssets();
+  const aksesoris = await getAllAksesoris();
   const peminjaman = await getAllPeminjaman();
   
-  const total = assets.length;
-  const tersedia = assets.filter((a) => a.kondisi === "Siap Digunakan").length;
-  const maintenance = assets.filter((a) => a.kondisi === "Maintenance").length;
-  const rusak = assets.filter((a) => a.kondisi === "Rusak").length;
-  const dijual = assets.filter((a) => a.kondisi === "Dijual").length;
+  // Hitung statistik aset
+  const assetTotal = assets.length;
+  const assetTersedia = assets.filter((a) => a.kondisi === "Siap Digunakan").length;
+  const assetMaintenance = assets.filter((a) => a.kondisi === "Maintenance").length;
+  const assetRusak = assets.filter((a) => a.kondisi === "Rusak").length;
+  const assetDijual = assets.filter((a) => a.kondisi === "Dijual").length;
+  
+  // Hitung statistik aksesoris
+  const aksTotal = aksesoris.length;
+  const aksTersedia = aksesoris.filter((a) => a.kondisi === "Siap Digunakan").length;
+  const aksMaintenance = aksesoris.filter((a) => a.kondisi === "Maintenance").length;
+  const aksRusak = aksesoris.filter((a) => a.kondisi === "Rusak").length;
+
+  // Gabungkan total
+  const total = assetTotal + aksTotal;
+  const tersedia = assetTersedia + aksTersedia;
+  const maintenance = assetMaintenance + aksMaintenance;
+  const rusak = assetRusak + aksRusak;
   
   // Hitung jumlah unit yang sedang dipinjam (total - tersedia)
-  const dipinjam = assets.reduce((sum, a) => {
-    const total = parseInt(a.jumlahTotal) || 0;
-    const ready = parseInt(a.jumlah) || 0;
-    return sum + (total - ready);
+  const assetDipinjam = assets.reduce((sum, a) => {
+    const t = parseInt(a.jumlahTotal) || 0;
+    const r = parseInt(a.jumlah) || 0;
+    return sum + (t - r);
   }, 0);
 
+  const aksDipinjam = aksesoris.reduce((sum, a) => {
+    const t = parseInt(a.jumlahTotal) || 0;
+    const r = parseInt(a.jumlahUnit) || 0;
+    return sum + (t - r);
+  }, 0);
+
+  const dipinjam = assetDipinjam + aksDipinjam;
+
   // Peringatan Stok Rendah (jumlah <= 3)
-  const lowStockAssets = assets.filter(a => (parseInt(a.jumlah) || 0) <= 3);
+  const lowStockAssets = [
+    ...assets.filter(a => (parseInt(a.jumlah) || 0) <= 3),
+    ...aksesoris.filter(a => (parseInt(a.jumlahUnit) || 0) <= 3)
+  ];
 
   // Peminjaman Aktif (belum selesai)
   const activeLoans = peminjaman
     .filter(p => p.status !== 'Peminjaman Selesai')
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  // Aktivitas Terbaru (Gabungan Asset & Peminjaman)
+  // Aktivitas Terbaru (Gabungan Asset, Aksesoris & Peminjaman)
   const activities = [
     ...assets.map(a => ({
       id: `asset-${a.id}`,
@@ -159,6 +185,15 @@ export async function getDashboardStats() {
       item: a.namaAset,
       target: "-",
       type: "asset"
+    })),
+    ...aksesoris.map(a => ({
+      id: `aks-${a.id}`,
+      date: a.createdAt,
+      createdBy: a.createdByName || "Admin",
+      action: "Tambah Aksesoris",
+      item: a.namaAksesoris,
+      target: "-",
+      type: "aksesoris"
     })),
     ...peminjaman.map(p => ({
       id: `pjm-${p.id}`,
@@ -178,7 +213,7 @@ export async function getDashboardStats() {
     tersedia,
     maintenance,
     rusak,
-    diarsipkan: dijual,
+    diarsipkan: assetDijual,
     dipinjam,
     activities,
     lowStockAssets,

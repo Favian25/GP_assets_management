@@ -138,6 +138,7 @@ export function mapPeminjamanToFrontend(backendData) {
       ? backendData.items.map((item) => ({
           id: item.id,
           assetId: item.asset_id,
+          aksesorisId: item.aksesoris_id,
           namaAset: item.nama_aset,
           kodeAset: item.kode_aset,
           jumlah: item.jumlah,
@@ -163,7 +164,8 @@ export function mapPeminjamanToBackend(frontendData) {
   // Items
   if (frontendData.items) {
     mapped.items = frontendData.items.map((item) => ({
-      asset_id: item.assetId,
+      asset_id: item.assetId || null,
+      aksesoris_id: item.aksesorisId || null,
       jumlah: item.jumlah,
     }));
   }

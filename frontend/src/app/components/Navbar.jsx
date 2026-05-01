@@ -86,11 +86,23 @@ export default function Navbar({ isCollapsed }) {
       setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: 1 } : n));
     }
     setNotifOpen(false);
-    // Navigate ke halaman peminjaman jika tipe terkait peminjaman
+
+    // Extraction Logic
+    let searchKeyword = "";
     if (['peminjaman_baru', 'dikembalikan', 'approved'].includes(notif.type)) {
-      router.push("/aset/peminjaman");
-    } else if (notif.type === 'stok_rendah') {
-      router.push("/aset/daftar");
+      // Extract from: "... (PINJAM-001)" or "Peminjaman PINJAM-001 ..."
+      const match = notif.message.match(/\(([^)]+)\)/) || notif.message.match(/(?:Peminjaman\s)([A-Z0-9-]+)/i);
+      searchKeyword = match ? match[1] : "";
+      router.push(`/aset/peminjaman?search=${encodeURIComponent(searchKeyword)}`);
+    } else if (notif.type === 'stok_rendah_aset') {
+      // Extract from: "Stok Canon EOS R5 tersisa..."
+      const match = notif.message.match(/Stok\s(.*?)\stersisa/i);
+      searchKeyword = match ? match[1] : "";
+      router.push(`/aset/daftar?search=${encodeURIComponent(searchKeyword)}`);
+    } else if (notif.type === 'stok_rendah_aks') {
+      const match = notif.message.match(/Stok\s(.*?)\stersisa/i);
+      searchKeyword = match ? match[1] : "";
+      router.push(`/aksesoris?search=${encodeURIComponent(searchKeyword)}`);
     }
   };
 
@@ -101,6 +113,8 @@ export default function Navbar({ isCollapsed }) {
       dikembalikan: { bg: "bg-emerald-100", color: "text-emerald-600", component: CheckCircle2 },
       approved: { bg: "bg-violet-100", color: "text-violet-600", component: ShieldCheck },
       stok_rendah: { bg: "bg-amber-100", color: "text-amber-600", component: AlertTriangle },
+      stok_rendah_aset: { bg: "bg-amber-100", color: "text-amber-600", component: AlertTriangle },
+      stok_rendah_aks: { bg: "bg-amber-100", color: "text-amber-600", component: AlertTriangle },
     };
     return icons[type] || icons.peminjaman_baru;
   };

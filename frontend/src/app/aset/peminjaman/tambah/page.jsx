@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createPeminjaman, getNextKodePinjam } from "../../../lib/peminjamanService";
 import { getAllAssets } from "../../../lib/assetService";
+import { getAllAksesoris } from "../../../lib/aksesorisService";
 import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle } from "lucide-react";
 
 // Format Datetime for MySQL
@@ -16,14 +17,14 @@ const formatDatetimeForMySQL = (dateStr) => {
 };
 
 // Autocomplete component for each item row
-function AssetAutocompleteRow({ assetsList, value, onSelect, disabled }) {
-  const [query, setQuery] = useState(value?.namaAset || "");
+function AssetAutocompleteRow({ itemsList, value, onSelect, disabled }) {
+  const [query, setQuery] = useState(value?.namaItem || "");
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
   useEffect(() => {
-    setQuery(value?.namaAset || "");
-  }, [value?.namaAset]);
+    setQuery(value?.namaItem || "");
+  }, [value?.namaItem]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -35,11 +36,11 @@ function AssetAutocompleteRow({ assetsList, value, onSelect, disabled }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filtered = assetsList.filter(asset =>
-    asset.namaAset.toLowerCase().includes(query.toLowerCase()) ||
-    asset.kodeAset.toLowerCase().includes(query.toLowerCase()) ||
-    (asset.kategori || "").toLowerCase().includes(query.toLowerCase()) ||
-    (asset.merek || "").toLowerCase().includes(query.toLowerCase())
+  const filtered = itemsList.filter(item =>
+    (item.namaItem || "").toLowerCase().includes(query.toLowerCase()) ||
+    (item.kodeItem || "").toLowerCase().includes(query.toLowerCase()) ||
+    (item.kategori || "").toLowerCase().includes(query.toLowerCase()) ||
+    (item.merek || "").toLowerCase().includes(query.toLowerCase())
   ).slice(0, 8);
 
   return (
@@ -62,22 +63,27 @@ function AssetAutocompleteRow({ assetsList, value, onSelect, disabled }) {
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto rounded-lg bg-white border border-slate-200 shadow-xl">
           {filtered.length > 0 ? (
-            filtered.map(asset => (
+            filtered.map(item => (
               <div
-                key={asset.id}
+                key={`${item.itemType}-${item.id}`}
                 onClick={() => {
-                  setQuery(asset.namaAset);
+                  setQuery(item.namaItem);
                   setIsOpen(false);
-                  onSelect(asset);
+                  onSelect(item);
                 }}
                 className="cursor-pointer px-4 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0"
               >
-                <p className="text-sm font-semibold text-slate-800">{asset.namaAset}</p>
-                <p className="text-xs text-slate-500">{asset.kodeAset} • {asset.kategori} • Stok: {asset.jumlah ?? 0}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-800">{item.namaItem}</p>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase border ${item.itemType === 'asset' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-purple-50 text-purple-600 border-purple-200'}`}>
+                    {item.itemType === 'asset' ? 'Aset' : 'Aksesoris'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">{item.kodeItem} • {item.kategori} • Stok: {item.stok ?? 0}</p>
               </div>
             ))
           ) : (
-            <div className="px-4 py-3 text-sm text-slate-500 text-center">Aset tidak ditemukan</div>
+            <div className="px-4 py-3 text-sm text-slate-500 text-center">Item tidak ditemukan</div>
           )}
         </div>
       )}
@@ -93,10 +99,10 @@ export default function TambahPeminjamanPage() {
   const [yangMenyerahkan, setYangMenyerahkan] = useState("");
   const [tanggalPeminjaman, setTanggalPeminjaman] = useState("");
   const [alasanPeminjaman, setAlasanPeminjaman] = useState("");
-  const [items, setItems] = useState([{ assetId: "", namaAset: "", kodeAset: "", jumlah: 1, stokTersedia: 0 }]);
+  const [items, setItems] = useState([{ assetId: "", aksesorisId: "", namaItem: "", kodeItem: "", jumlah: 1, stokTersedia: 0, itemType: "asset" }]);
   const [buktiFiles, setBuktiFiles] = useState([]);
   const [buktiPreviews, setBuktiPreviews] = useState([]);
-  const [allAssets, setAllAssets] = useState([]);
+  const [borrowableItems, setBorrowableItems] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -129,9 +135,30 @@ export default function TambahPeminjamanPage() {
 
   const fetchInitialData = useCallback(async () => {
     try {
-      const [kode, assets] = await Promise.all([getNextKodePinjam(), getAllAssets()]);
+      const [kode, assets, aksesoris] = await Promise.all([getNextKodePinjam(), getAllAssets(), getAllAksesoris()]);
       setKodePinjam(kode);
-      setAllAssets(assets);
+      
+      const combined = [
+        ...assets.map(a => ({
+          id: a.id,
+          namaItem: a.namaAset,
+          kodeItem: a.kodeAset,
+          kategori: a.kategori,
+          merek: a.merek,
+          stok: a.jumlah,
+          itemType: 'asset'
+        })),
+        ...aksesoris.map(ak => ({
+          id: ak.id,
+          namaItem: ak.namaAksesoris,
+          kodeItem: ak.kodeAksesoris,
+          kategori: ak.kategori,
+          merek: ak.merek,
+          stok: ak.jumlahUnit,
+          itemType: 'aksesoris'
+        }))
+      ];
+      setBorrowableItems(combined);
     } catch (err) {
       console.error("Error fetching initial data:", err);
       showToast("Gagal memuat data awal", "error");
@@ -195,29 +222,36 @@ export default function TambahPeminjamanPage() {
     setItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
 
-  const selectAssetForItem = (index, asset) => {
-    if (!asset) {
-      setItems(prev => prev.map((item, i) => i === index ? { ...item, assetId: "", namaAset: "", kodeAset: "", stokTersedia: 0 } : item));
+  const selectAssetForItem = (index, itemData) => {
+    if (!itemData) {
+      setItems(prev => prev.map((it, i) => i === index ? { ...it, assetId: "", aksesorisId: "", namaItem: "", kodeItem: "", stokTersedia: 0 } : it));
       return;
     }
     // Alert jika stok kosong
-    if ((asset.jumlah ?? 0) <= 0) {
-      showToast(`Stok alat "${asset.namaAset}" kosong. Tidak dapat dipinjam.`, "error");
+    if ((itemData.stok ?? 0) <= 0) {
+      showToast(`Stok "${itemData.namaItem}" kosong. Tidak dapat dipinjam.`, "error");
       return;
     }
-    setItems(prev => prev.map((item, i) => i === index ? {
-      ...item,
-      assetId: asset.id,
-      namaAset: asset.namaAset,
-      kodeAset: asset.kodeAset,
-      stokTersedia: asset.jumlah ?? 0,
-    } : item));
+    setItems(prev => prev.map((it, i) => i === index ? {
+      ...it,
+      assetId: itemData.itemType === 'asset' ? itemData.id : "",
+      aksesorisId: itemData.itemType === 'aksesoris' ? itemData.id : "",
+      namaItem: itemData.namaItem,
+      kodeItem: itemData.kodeItem,
+      stokTersedia: itemData.stok ?? 0,
+      itemType: itemData.itemType
+    } : it));
   };
 
-  // Filter out already-selected assets from suggestions
-  const getAvailableAssets = (currentIndex) => {
-    const selectedIds = items.filter((_, i) => i !== currentIndex).map(item => item.assetId).filter(Boolean);
-    return allAssets.filter(asset => !selectedIds.includes(asset.id));
+  // Filter out already-selected items from suggestions
+  const getAvailableItems = (currentIndex) => {
+    const selectedAssetIds = items.filter((it, i) => i !== currentIndex && it.itemType === 'asset').map(it => it.assetId);
+    const selectedAksIds = items.filter((it, i) => i !== currentIndex && it.itemType === 'aksesoris').map(it => it.aksesorisId);
+    
+    return borrowableItems.filter(item => {
+      if (item.itemType === 'asset') return !selectedAssetIds.includes(item.id);
+      return !selectedAksIds.includes(item.id);
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -227,7 +261,7 @@ export default function TambahPeminjamanPage() {
       return;
     }
 
-    const validItems = items.filter(item => item.assetId && item.jumlah > 0);
+    const validItems = items.filter(item => (item.assetId || item.aksesorisId) && item.jumlah > 0);
     if (validItems.length === 0) {
       showToast("Minimal harus ada 1 alat yang dipinjam", "error");
       return;
@@ -236,7 +270,7 @@ export default function TambahPeminjamanPage() {
     // Validasi stok
     for (const item of validItems) {
       if (item.jumlah > item.stokTersedia) {
-        showToast(`Stok "${item.namaAset}" tidak cukup. Tersedia: ${item.stokTersedia}`, "error");
+        showToast(`Stok "${item.namaItem}" tidak cukup. Tersedia: ${item.stokTersedia}`, "error");
         return;
       }
     }
@@ -248,7 +282,11 @@ export default function TambahPeminjamanPage() {
         yangMenyerahkan,
         tanggalPeminjaman: formatDatetimeForMySQL(tanggalPeminjaman),
         alasanPeminjaman,
-        items: validItems.map(item => ({ assetId: item.assetId, jumlah: item.jumlah })),
+        items: validItems.map(item => ({ 
+          assetId: item.assetId || null, 
+          aksesorisId: item.aksesorisId || null,
+          jumlah: item.jumlah 
+        })),
       }, buktiFiles);
       showToast("Peminjaman berhasil ditambahkan!");
       localStorage.removeItem('tempPeminjaman');
@@ -353,11 +391,11 @@ export default function TambahPeminjamanPage() {
 
                 {/* Autocomplete Aset */}
                 <div className="flex-1 min-w-0">
-                  <label className="mb-1 block text-xs font-medium text-slate-500">Nama Alat/Aset</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-500">Nama Alat/Aksesoris</label>
                   <AssetAutocompleteRow
-                    assetsList={getAvailableAssets(index)}
-                    value={{ namaAset: item.namaAset }}
-                    onSelect={(asset) => selectAssetForItem(index, asset)}
+                    itemsList={getAvailableItems(index)}
+                    value={{ namaItem: item.namaItem }}
+                    onSelect={(itemData) => selectAssetForItem(index, itemData)}
                   />
                 </div>
 
@@ -372,8 +410,8 @@ export default function TambahPeminjamanPage() {
                 {/* Stok Info */}
                 <div className="w-20 shrink-0 text-center">
                   <label className="mb-1 block text-xs font-medium text-slate-500">Stok</label>
-                  <div className={`rounded-lg border px-2 py-2 text-sm font-semibold ${item.stokTersedia > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                    {item.assetId ? item.stokTersedia : "-"}
+                  <div className={`rounded-lg border px-2 py-2 text-sm font-semibold ${(item.assetId || item.aksesorisId) && item.stokTersedia > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                    {(item.assetId || item.aksesorisId) ? item.stokTersedia : "-"}
                   </div>
                 </div>
 
