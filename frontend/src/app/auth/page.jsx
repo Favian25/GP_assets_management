@@ -50,14 +50,11 @@ export default function AuthPage() {
 
         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
           
-          {/* Header */}
-          <div className="flex items-center justify-center pt-8 pb-6">
-            <div className="flex items-center gap-2 bg-slate-100 px-5 py-2 rounded-xl">
-              <LogIn className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-slate-800">
-                Login
-              </span>
-            </div>
+          {/* Bold Contrast LOGIN FORM Header */}
+          <div className="pt-8 pb-8 text-center">
+            <h1 className="text-2xl font-black uppercase tracking-widest">
+              <span className="text-slate-700">Login</span>
+            </h1>
           </div>
 
           <div className="px-8 pb-8">

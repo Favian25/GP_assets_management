@@ -7,7 +7,7 @@ import { getDashboardStats } from "./lib/assetService";
 import { 
   Package, CheckCircle2, AlertCircle, Settings, AlertTriangle, 
   RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus, 
-  Calendar, User, Clock, LayoutGrid
+  Calendar, User, Clock, LayoutGrid, Cpu
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -74,6 +74,13 @@ export default function DashboardPage() {
       link: "/aset",
     },
     {
+      title: "Aksesoris",
+      value: stats?.aksesorisTotal ?? 0,
+      icon: <Cpu />,
+      color: "bg-cyan-500",
+      link: "/aksesoris",
+    },
+    {
       title: "Siap Digunakan",
       value: stats?.tersedia ?? 0,
       icon: <CheckCircle2 />,
@@ -113,8 +120,8 @@ export default function DashboardPage() {
             Selamat datang di Sistem Pencatatan Asset Galeria Production
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {[1, 2, 3, 4, 5].map((i) => (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm animate-pulse">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-xl bg-slate-200" />
@@ -189,7 +196,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {statCards.map((stat, index) => (
           <Link
             key={index}

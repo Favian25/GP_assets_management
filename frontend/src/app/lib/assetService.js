@@ -130,39 +130,35 @@ export async function getDashboardStats() {
   const aksesoris = await getAllAksesoris();
   const peminjaman = await getAllPeminjaman();
   
-  // Hitung statistik aset
-  const assetTotal = assets.length;
-  const assetTersedia = assets.filter((a) => a.kondisi === "Siap Digunakan").length;
-  const assetMaintenance = assets.filter((a) => a.kondisi === "Maintenance").length;
-  const assetRusak = assets.filter((a) => a.kondisi === "Rusak").length;
-  const assetDijual = assets.filter((a) => a.kondisi === "Dijual").length;
-  
-  // Hitung statistik aksesoris
-  const aksTotal = aksesoris.length;
-  const aksTersedia = aksesoris.filter((a) => a.kondisi === "Siap Digunakan").length;
-  const aksMaintenance = aksesoris.filter((a) => a.kondisi === "Maintenance").length;
-  const aksRusak = aksesoris.filter((a) => a.kondisi === "Rusak").length;
+  // ── Total Aset: jumlah keseluruhan aset KECUALI yang kondisinya "Dijual" ──
+  const totalAset = assets
+    .filter(a => a.kondisi !== "Dijual")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
-  // Gabungkan total
-  const total = assetTotal + aksTotal;
-  const tersedia = assetTersedia + aksTersedia;
-  const maintenance = assetMaintenance + aksMaintenance;
-  const rusak = assetRusak + aksRusak;
-  
-  // Hitung jumlah unit yang sedang dipinjam (total - tersedia)
-  const assetDipinjam = assets.reduce((sum, a) => {
-    const t = parseInt(a.jumlahTotal) || 0;
-    const r = parseInt(a.jumlah) || 0;
-    return sum + (t - r);
-  }, 0);
+  // ── Aksesoris: jumlah keseluruhan aksesoris KECUALI yang kondisinya "Dijual" ──
+  const totalAksesoris = aksesoris
+    .filter(a => a.kondisi !== "Dijual")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
-  const aksDipinjam = aksesoris.reduce((sum, a) => {
-    const t = parseInt(a.jumlahTotal) || 0;
-    const r = parseInt(a.jumlahUnit) || 0;
-    return sum + (t - r);
-  }, 0);
+  // ── Siap Digunakan: ASET SAJA yang kondisinya "Siap Digunakan", ambil stok tersedia (jumlah) ──
+  const tersedia = assets
+    .filter(a => a.kondisi === "Siap Digunakan")
+    .reduce((sum, a) => sum + (parseInt(a.jumlah) || 0), 0);
 
-  const dipinjam = assetDipinjam + aksDipinjam;
+  // ── Rusak: jumlah unit ASET SAJA yang kondisinya "Rusak" ──
+  const rusak = assets
+    .filter(a => a.kondisi === "Rusak")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+
+  // ── Maintenance: jumlah unit ASET SAJA yang kondisinya "Maintenance" ──
+  const maintenance = assets
+    .filter(a => a.kondisi === "Maintenance")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+
+  // ── Aset Dipinjam: jumlah unit aset yang sedang terpinjam (selisih total - tersedia) ──
+  const dipinjam = assets
+    .filter(a => a.kondisi === "Siap Digunakan")
+    .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlah) || 0)), 0);
 
   // Peringatan Stok Rendah (jumlah <= 3)
   const lowStockAssets = [
@@ -209,11 +205,11 @@ export async function getDashboardStats() {
   .slice(0, 25);
 
   return {
-    total,
+    total: totalAset,
+    aksesorisTotal: totalAksesoris,
     tersedia,
     maintenance,
     rusak,
-    diarsipkan: assetDijual,
     dipinjam,
     activities,
     lowStockAssets,

@@ -35,7 +35,7 @@ function InputField({ label, required, value, onChange, placeholder, type = "tex
       <label className="mb-1.5 block text-sm font-medium text-slate-700">
         {label} {required && <span className="text-rose-500">*</span>}
       </label>
-      <input type={type} placeholder={placeholder} value={value} onChange={onChange}
+      <input type={type} placeholder={placeholder} value={value} onChange={onChange} required={required} onInvalid={(e) => required && e.target.setCustomValidity(`${label} wajib diisi`)} onInput={(e) => required && e.target.setCustomValidity("")}
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
     </div>
   );
@@ -425,11 +425,12 @@ export default function AksesorisPage() {
   return (
     <div>
       {/* Toast */}
-      {toast && (
-        <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+      {mounted && typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-9999 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
           {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Lightbox */}
@@ -518,7 +519,7 @@ export default function AksesorisPage() {
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.merek}</td>
-                  <td className="w-[150px] px-5 py-3"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer inline-block rounded-full border px-2.5 py-0.5 text-xs text-center font-semibold tracking-wide uppercase transition-all ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
+                  <td className="w-[150px] px-5 py-3 text-center"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer block w-full rounded-full border py-1 text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
                   <td className="w-[110px] px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>

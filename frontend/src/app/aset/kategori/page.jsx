@@ -217,11 +217,12 @@ export default function KategoriMerekPage() {
   return (
     <div>
       {/* Toast */}
-      {toast && (
-        <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+      {mounted && typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-9999 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
           {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -299,7 +300,7 @@ export default function KategoriMerekPage() {
                       Kode <SortIcon columnKey="kode_singkat" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-44">
+                  <th className="px-5 py-3 font-bold text-center text-slate-700 w-44">
                     Tipe
                   </th>
                   <th className="px-5 py-3 font-bold text-slate-700 text-center w-32 uppercase tracking-wider">
@@ -324,8 +325,8 @@ export default function KategoriMerekPage() {
                     <td className="px-5 py-3">
                       <span className="inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase border-blue-500 bg-blue-50 text-blue-700 shadow-sm">{item.kode_singkat}</span>
                     </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
+                    <td className="px-5 py-3 text-center">
+                      <span className={`block w-full rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
                         {item.tipe}
                       </span>
                     </td>
@@ -353,7 +354,7 @@ export default function KategoriMerekPage() {
                       Nama Merek <SortIcon columnKey="nama" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-44">
+                  <th className="px-5 py-3 font-bold text-center text-slate-700 w-44">
                     Tipe
                   </th>
                   <th className="px-5 py-3 font-bold text-slate-700 text-center w-36 uppercase tracking-wider">
@@ -375,8 +376,8 @@ export default function KategoriMerekPage() {
                   <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                     <td className="px-5 py-3 text-center text-slate-500 font-medium">{startIndex + index + 1}</td>
                     <td className="px-5 py-3 font-bold text-slate-700 text-sm">{item.nama}</td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
+                    <td className="px-5 py-3 text-center">
+                      <span className={`block w-full rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
                         {item.tipe}
                       </span>
                     </td>
@@ -421,11 +422,11 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
-                    <input type="text" required placeholder="Contoh: Kamera" value={formKat.nama} onChange={(e) => setFormKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <input type="text" required placeholder="Contoh: Kamera" value={formKat.nama} onChange={(e) => setFormKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Singkat</label>
-                    <input type="text" required placeholder="Contoh: CAM" value={formKat.kode_singkat} onChange={(e) => setFormKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <input type="text" required placeholder="Contoh: CAM" value={formKat.kode_singkat} onChange={(e) => setFormKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Kode singkat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
@@ -454,7 +455,7 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
-                    <input type="text" required placeholder="Contoh: Sony" value={formMerek.nama} onChange={(e) => setFormMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <input type="text" required placeholder="Contoh: Sony" value={formMerek.nama} onChange={(e) => setFormMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
@@ -480,11 +481,11 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
-                    <input type="text" required value={showEditKat.nama} onChange={(e) => setShowEditKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <input type="text" required value={showEditKat.nama} onChange={(e) => setShowEditKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Singkat</label>
-                    <input type="text" required value={showEditKat.kode_singkat} onChange={(e) => setShowEditKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <input type="text" required value={showEditKat.kode_singkat} onChange={(e) => setShowEditKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Kode singkat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
@@ -510,7 +511,7 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
-                    <input type="text" required value={showEditMerek.nama} onChange={(e) => setShowEditMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <input type="text" required value={showEditMerek.nama} onChange={(e) => setShowEditMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">

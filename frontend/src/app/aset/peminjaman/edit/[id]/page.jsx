@@ -146,11 +146,6 @@ export default function EditPeminjamanPage() {
         isValid = false;
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        showToast(`Ukuran ${file.name} melebihi 5MB`, "error");
-        isValid = false;
-        return;
-      }
       filesToAdd.push(file);
     });
 
@@ -172,13 +167,14 @@ export default function EditPeminjamanPage() {
     e.preventDefault();
 
     if (status === "Menunggu Verifikasi") {
-      if (!tanggalPengembalian || !penerimaAset || !penerimaAset.trim()) {
-        showToast("Mohon lengkapi Tanggal Pengembalian dan Penerima Alat sebelum menyimpan", "error");
+      if (!tanggalPengembalian || !penerimaAset || !penerimaAset.trim() || buktiFiles.length === 0) {
+        showToast("Mohon lengkapi Tanggal Pengembalian, Penerima Alat, dan Bukti Pengembalian (minimal 1 gambar) sebelum menyimpan", "error");
         return;
       }
     } else {
+      // Logic for editing in other statuses if needed
       if (!tanggalPengembalian && (!penerimaAset || !penerimaAset.trim()) && status === data?.status && buktiFiles.length === 0) {
-        showToast("Mohon isi atau ubah data pengembalian sebelum menyimpan", "error");
+        showToast("Mohon isi atau ubah data sebelum menyimpan", "error");
         return;
       }
     }
@@ -222,11 +218,12 @@ export default function EditPeminjamanPage() {
     <>
     <div className="max-w-4xl mx-auto">
       {/* Toast */}
-      {toast && (
-        <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+      {typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-9999 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
           {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Header */}
@@ -341,26 +338,28 @@ export default function EditPeminjamanPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Pengembalian</label>
-              <input type="datetime-local" value={tanggalPengembalian} onChange={(e) => setTanggalPengembalian(e.target.value)}
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Pengembalian <span className="text-rose-500">*</span></label>
+              <input type="datetime-local" value={tanggalPengembalian} onChange={(e) => setTanggalPengembalian(e.target.value)} required
+                onInvalid={(e) => e.target.setCustomValidity("Tanggal pengembalian wajib diisi")} onInput={(e) => e.target.setCustomValidity("")}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Penerima Alat</label>
-              <input type="text" placeholder="Siapa yang menerima alat yang dikembalikan" value={penerimaAset} onChange={(e) => setPenerimaAset(e.target.value)}
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Penerima Alat <span className="text-rose-500">*</span></label>
+              <input type="text" placeholder="Siapa yang menerima alat yang dikembalikan" value={penerimaAset} onChange={(e) => setPenerimaAset(e.target.value)} required
+                onInvalid={(e) => e.target.setCustomValidity("Penerima alat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
 
             {/* Bukti Pengembalian Upload */}
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Bukti Pengembalian</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Bukti Pengembalian <span className="text-rose-500">*</span></label>
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
                 <input type="file" multiple accept="image/*" onChange={handleFileChange} ref={fileInputRef} className="hidden" id="bukti-pengembalian-upload" />
                 <label htmlFor="bukti-pengembalian-upload" className="cursor-pointer flex flex-col items-center justify-center">
                   <Plus className="h-8 w-8 text-slate-300 mb-2" />
                   <span className="text-sm font-medium text-slate-600">Klik untuk upload bukti pengembalian</span>
-                  <span className="text-xs text-slate-400 mt-1">Maks. 5 file (JPG/PNG), masing-masing maks 5MB</span>
+                  <span className="text-xs text-slate-400 mt-1">Maks. 5 file (JPG/PNG)</span>
                 </label>
               </div>
 

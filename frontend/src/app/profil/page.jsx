@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getUserContext, updateUserContext } from "../lib/authService";
@@ -51,10 +52,6 @@ export default function ProfilPage() {
   const handleFotoSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        showToast("Ukuran foto profil maksimal 2 MB", "error");
-        return;
-      }
       setFotoFile(file);
       setRemoveFoto(false);
       setFotoPreview(URL.createObjectURL(file));
@@ -222,11 +219,12 @@ export default function ProfilPage() {
   return (
     <div>
       {/* Toast */}
-      {toast && (
-        <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+      {typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-9999 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
           {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="mb-6">

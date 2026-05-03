@@ -68,14 +68,8 @@ app.get("/", (req, res) => {
   });
 });
 
-// Error handling middleware (untuk multer errors)
+// Error handling middleware (untuk multer errors dan lainnya)
 app.use((err, req, res, next) => {
-  if (err.code === "LIMIT_FILE_SIZE") {
-    return res.status(400).json({
-      success: false,
-      message: "Ukuran file maksimal 2MB",
-    });
-  }
   if (err.message) {
     return res.status(400).json({
       success: false,

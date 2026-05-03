@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createPeminjaman, getNextKodePinjam } from "../../../lib/peminjamanService";
@@ -41,7 +42,16 @@ function AssetAutocompleteRow({ itemsList, value, onSelect, disabled }) {
     (item.kodeItem || "").toLowerCase().includes(query.toLowerCase()) ||
     (item.kategori || "").toLowerCase().includes(query.toLowerCase()) ||
     (item.merek || "").toLowerCase().includes(query.toLowerCase())
-  ).slice(0, 8);
+  ).slice(0, 15);
+
+  const getKondisiBadge = (kondisi) => {
+    switch(kondisi) {
+      case "Siap Digunakan": return "bg-emerald-50 text-emerald-600 border-emerald-200";
+      case "Rusak": return "bg-rose-50 text-rose-600 border-rose-200";
+      case "Maintenance": return "bg-amber-50 text-amber-600 border-amber-200";
+      default: return "bg-slate-50 text-slate-600 border-slate-200";
+    }
+  };
 
   return (
     <div className="relative" ref={wrapperRef}>
@@ -61,27 +71,46 @@ function AssetAutocompleteRow({ itemsList, value, onSelect, disabled }) {
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-slate-50 disabled:cursor-not-allowed"
       />
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto rounded-lg bg-white border border-slate-200 shadow-xl">
+        <div className="absolute z-50 w-full mt-1 max-h-64 overflow-y-auto rounded-lg bg-white border border-slate-200 shadow-xl">
           {filtered.length > 0 ? (
-            filtered.map(item => (
-              <div
-                key={`${item.itemType}-${item.id}`}
-                onClick={() => {
-                  setQuery(item.namaItem);
-                  setIsOpen(false);
-                  onSelect(item);
-                }}
-                className="cursor-pointer px-4 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-0"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-800">{item.namaItem}</p>
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase border ${item.itemType === 'asset' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-purple-50 text-purple-600 border-purple-200'}`}>
-                    {item.itemType === 'asset' ? 'Aset' : 'Aksesoris'}
-                  </span>
+            filtered.map(item => {
+              const isAvailable = item.kondisi === "Siap Digunakan";
+              return (
+                <div
+                  key={`${item.itemType}-${item.id}`}
+                  onClick={() => {
+                    if (!isAvailable) return;
+                    setQuery(item.namaItem);
+                    setIsOpen(false);
+                    onSelect(item);
+                  }}
+                  className={`px-4 py-2 border-b border-slate-100 last:border-0 transition-colors ${isAvailable ? 'cursor-pointer hover:bg-slate-50' : 'cursor-not-allowed bg-slate-50/50 opacity-60'}`}
+                >
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className={`text-sm font-semibold ${isAvailable ? 'text-slate-800' : 'text-slate-400'}`}>{item.namaItem}</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase border ${item.itemType === 'asset' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-purple-50 text-purple-600 border-purple-200'}`}>
+                        {item.itemType === 'asset' ? 'Aset' : 'Aksesoris'}
+                      </span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase border ${getKondisiBadge(item.kondisi)}`}>
+                        {item.kondisi}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-slate-500 font-medium">{item.kodeItem} • {item.kategori}</p>
+                    <p className={`text-[11px] font-bold ${item.stok > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      Stok: {item.stok ?? 0}
+                    </p>
+                  </div>
+                  {!isAvailable && (
+                    <p className="mt-1 text-[10px] text-rose-500 font-bold italic">
+                      * Tidak dapat dipinjam ({item.kondisi})
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-slate-500">{item.kodeItem} • {item.kategori} • Stok: {item.stok ?? 0}</p>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="px-4 py-3 text-sm text-slate-500 text-center">Item tidak ditemukan</div>
           )}
@@ -139,24 +168,30 @@ export default function TambahPeminjamanPage() {
       setKodePinjam(kode);
       
       const combined = [
-        ...assets.map(a => ({
-          id: a.id,
-          namaItem: a.namaAset,
-          kodeItem: a.kodeAset,
-          kategori: a.kategori,
-          merek: a.merek,
-          stok: a.jumlah,
-          itemType: 'asset'
-        })),
-        ...aksesoris.map(ak => ({
-          id: ak.id,
-          namaItem: ak.namaAksesoris,
-          kodeItem: ak.kodeAksesoris,
-          kategori: ak.kategori,
-          merek: ak.merek,
-          stok: ak.jumlahUnit,
-          itemType: 'aksesoris'
-        }))
+        ...assets
+          .filter(a => a.kondisi !== "Dijual")
+          .map(a => ({
+            id: a.id,
+            namaItem: a.namaAset,
+            kodeItem: a.kodeAset,
+            kategori: a.kategori,
+            merek: a.merek,
+            stok: a.jumlah,
+            kondisi: a.kondisi,
+            itemType: 'asset'
+          })),
+        ...aksesoris
+          .filter(ak => ak.kondisi !== "Dijual")
+          .map(ak => ({
+            id: ak.id,
+            namaItem: ak.namaAksesoris,
+            kodeItem: ak.kodeAksesoris,
+            kategori: ak.kategori,
+            merek: ak.merek,
+            stok: ak.jumlahUnit,
+            kondisi: ak.kondisi,
+            itemType: 'aksesoris'
+          }))
       ];
       setBorrowableItems(combined);
     } catch (err) {
@@ -181,11 +216,6 @@ export default function TambahPeminjamanPage() {
     newFiles.forEach(file => {
       if (!validTypes.includes(file.type)) {
         showToast("Format file tidak didukung (harus JPG/PNG)", "error");
-        isValid = false;
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        showToast(`Ukuran ${file.name} melebihi 5MB`, "error");
         isValid = false;
         return;
       }
@@ -227,6 +257,13 @@ export default function TambahPeminjamanPage() {
       setItems(prev => prev.map((it, i) => i === index ? { ...it, assetId: "", aksesorisId: "", namaItem: "", kodeItem: "", stokTersedia: 0 } : it));
       return;
     }
+    
+    // Alert jika bukan Siap Digunakan
+    if (itemData.kondisi !== "Siap Digunakan") {
+      showToast(`Item "${itemData.namaItem}" dalam kondisi ${itemData.kondisi} dan tidak dapat dipinjam.`, "error");
+      return;
+    }
+
     // Alert jika stok kosong
     if ((itemData.stok ?? 0) <= 0) {
       showToast(`Stok "${itemData.namaItem}" kosong. Tidak dapat dipinjam.`, "error");
@@ -301,11 +338,12 @@ export default function TambahPeminjamanPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Toast */}
-      {toast && (
-        <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+      {typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-9999 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
           {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Header */}
@@ -450,8 +488,8 @@ export default function TambahPeminjamanPage() {
                 <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
                   <Plus className="h-6 w-6 text-emerald-600" />
                 </div>
-                <h3 className="text-sm font-semibold text-slate-700">Klik untuk upload bukti peminjaman</h3>
-                <p className="text-xs text-slate-500 mt-1">Maks. 5 gambar (JPG/PNG), masing-masing maks 5MB</p>
+                <span className="text-sm font-medium text-slate-600">Klik untuk upload bukti peminjaman</span>
+                <p className="text-xs text-slate-500 mt-1">Maks. 5 gambar (JPG/PNG)</p>
               </label>
             </div>
 

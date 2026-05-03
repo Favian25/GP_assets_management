@@ -307,11 +307,12 @@ export default function PeminjamanAsetPage() {
   return (
     <div>
       {/* Toast */}
-      {toast && (
-        <div className={`fixed top-20 right-6 z-100 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+      {typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-9999 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
           {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {toast.message}
-        </div>
+        </div>,
+        document.body
       )}
       {/* Header */}
       <div className="mb-6">
@@ -379,7 +380,7 @@ export default function PeminjamanAsetPage() {
                   <td className="px-5 py-3 text-slate-600 text-sm max-w-[160px] truncate">{item.alasanPeminjaman || "-"}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPeminjaman)}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPengembalian)}</td>
-                  <td className="px-5 py-3 text-center"><span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide shadow-sm ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
+                  <td className="px-5 py-3 text-center"><span className={`block w-full rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       {/* Detail */}
