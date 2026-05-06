@@ -3,6 +3,7 @@ const Category = require("../models/categoryModel");
 const path = require("path");
 const fs = require("fs");
 const { optimizeImage } = require("../utils/imageOptimizer");
+const AuditLog = require("../models/auditModel");
 
 const aksesorisController = {
   // GET /api/aksesoris
@@ -85,6 +86,16 @@ const aksesorisController = {
       }
 
       const newItem = await Aksesoris.create(data);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'CREATE',
+        entityType: 'Aksesoris',
+        entityId: newItem.insertId,
+        details: `Menambahkan aksesoris: ${data.nama_aksesoris} (${data.kode_aksesoris})`
+      });
+
       res.status(201).json({
         success: true,
         message: "Aksesoris berhasil ditambahkan",
@@ -166,6 +177,16 @@ const aksesorisController = {
       }
 
       const updated = await Aksesoris.getById(id);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'UPDATE',
+        entityType: 'Aksesoris',
+        entityId: id,
+        details: `Memperbarui aksesoris: ${updated.nama_aksesoris} (${updated.kode_aksesoris})`
+      });
+
       res.json({
         success: true,
         message: "Aksesoris berhasil diperbarui",
@@ -211,6 +232,15 @@ const aksesorisController = {
         }
       }
 
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'DELETE',
+        entityType: 'Aksesoris',
+        entityId: id,
+        details: `Menghapus aksesoris: ${existing.nama_aksesoris} (${existing.kode_aksesoris})`
+      });
+
       res.json({
         success: true,
         message: "Aksesoris berhasil dihapus",
@@ -244,6 +274,15 @@ const aksesorisController = {
       if (affectedRows === 0) {
         return res.status(400).json({ success: false, message: "Kondisi gagal diperbarui" });
       }
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'UPDATE',
+        entityType: 'Aksesoris',
+        entityId: id,
+        details: `Mengubah kondisi aksesoris ${existing.kode_aksesoris} menjadi: ${kondisi}`
+      });
 
       res.json({ success: true, message: "Kondisi aksesoris berhasil diperbarui" });
     } catch (error) {

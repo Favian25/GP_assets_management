@@ -4,7 +4,7 @@ const db = require("../config/db");
 const path = require("path");
 const fs = require("fs");
 const { optimizeImage } = require("../utils/imageOptimizer");
-
+const AuditLog = require("../models/auditModel");
 const peminjamanController = {
   // GET semua data
   getAllPeminjaman: async (req, res) => {
@@ -138,6 +138,15 @@ const peminjamanController = {
         }
       }
 
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'CREATE',
+        entityType: 'Peminjaman',
+        entityId: result.insertId,
+        details: `Membuat peminjaman baru (${kode_pinjam}) untuk ${nama_peminjam}`
+      });
+
       res.status(201).json({ success: true, message: "Peminjaman berhasil ditambahkan", data: result });
     } catch (error) {
       console.error("Error create peminjaman:", error);
@@ -197,6 +206,15 @@ const peminjamanController = {
         });
       }
 
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'UPDATE',
+        entityType: 'Peminjaman',
+        entityId: id,
+        details: `Memperbarui peminjaman: ${checkData.kode_pinjam}`
+      });
+
       res.status(200).json({ success: true, message: "Data peminjaman berhasil diperbarui" });
     } catch (error) {
       console.error("Error update peminjaman:", error);
@@ -230,6 +248,15 @@ const peminjamanController = {
         targetRoles: 'super admin,admin,supervisor,user',
       });
 
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'UPDATE',
+        entityType: 'Peminjaman',
+        entityId: id,
+        details: `Melakukan approve/verifikasi peminjaman: ${checkData.kode_pinjam}`
+      });
+
       res.status(200).json({ success: true, message: "Peminjaman berhasil di-approve" });
     } catch (error) {
       console.error("Error approve peminjaman:", error);
@@ -259,6 +286,15 @@ const peminjamanController = {
       }
 
       await Peminjaman.delete(id);
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'DELETE',
+        entityType: 'Peminjaman',
+        entityId: id,
+        details: `Menghapus peminjaman: ${checkData.kode_pinjam}`
+      });
+
       res.status(200).json({ success: true, message: "Data peminjaman berhasil dihapus" });
     } catch (error) {
       console.error("Error delete peminjaman:", error);

@@ -47,6 +47,10 @@ app.use(express.urlencoded({ extended: true }));
 // Static files (untuk akses gambar yang di-upload)
 app.use(express.static(path.join(__dirname, "public")));
 
+const auditRoutes = require("./routes/auditRoutes");
+
+// ... (other route imports)
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/assets", assetRoutes);
@@ -56,6 +60,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/aksesoris", aksesorisRoutes);
+app.use("/api/audit", auditRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

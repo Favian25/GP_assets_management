@@ -3,6 +3,7 @@ const Category = require("../models/categoryModel"); // Tambahkan ini
 const path = require("path");
 const fs = require("fs");
 const { optimizeImage } = require("../utils/imageOptimizer");
+const AuditLog = require("../models/auditModel");
 
 const assetController = {
   // GET /api/assets
@@ -85,6 +86,16 @@ const assetController = {
       }
 
       const newAsset = await Asset.create(data);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'CREATE',
+        entityType: 'Aset',
+        entityId: newAsset.insertId,
+        details: `Menambahkan aset: ${data.nama_aset} (${data.kode_aset})`
+      });
+
       res.status(201).json({
         success: true,
         message: "Aset berhasil ditambahkan",
@@ -172,6 +183,16 @@ const assetController = {
       }
 
       const updated = await Asset.getById(id);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'UPDATE',
+        entityType: 'Aset',
+        entityId: id,
+        details: `Memperbarui aset: ${updated.nama_aset} (${updated.kode_aset})`
+      });
+
       res.json({
         success: true,
         message: "Aset berhasil diperbarui",
@@ -219,6 +240,15 @@ const assetController = {
         }
       }
 
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'DELETE',
+        entityType: 'Aset',
+        entityId: id,
+        details: `Menghapus aset: ${existing.nama_aset} (${existing.kode_aset})`
+      });
+
       res.json({
         success: true,
         message: "Aset berhasil dihapus",
@@ -252,6 +282,15 @@ const assetController = {
       if (affectedRows === 0) {
         return res.status(400).json({ success: false, message: "Kondisi gagal diperbarui" });
       }
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'UPDATE',
+        entityType: 'Aset',
+        entityId: id,
+        details: `Mengubah kondisi aset ${existing.kode_aset} menjadi: ${kondisi}`
+      });
 
       res.json({ success: true, message: "Kondisi aset berhasil diperbarui" });
     } catch (error) {

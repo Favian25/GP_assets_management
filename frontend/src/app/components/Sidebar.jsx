@@ -5,11 +5,12 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getUserContext } from "../lib/authService";
-import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu } from "lucide-react";
+import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu, BarChart2, ShieldAlert, Activity } from "lucide-react";
 
 export default function Sidebar({ isCollapsed, setIsCollapsed }) {
   const pathname = usePathname();
   const [asetOpen, setAsetOpen] = useState(pathname.startsWith("/aset"));
+  const [reportsOpen, setReportsOpen] = useState(pathname.startsWith("/reports"));
   const [userRole, setUserRole] = useState("user");
 
   useEffect(() => {
@@ -17,10 +18,15 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
     if (ctx) setUserRole(ctx.role || "user");
   }, []);
 
-  // Tutup grup aset jika sidebar di-collapse, tapi buka jika sedang di halaman aset
+  // Tutup grup jika sidebar di-collapse, tapi buka jika sedang di halaman terkait
   useEffect(() => {
-    if (isCollapsed) setAsetOpen(false);
-    else if (pathname.startsWith("/aset")) setAsetOpen(true);
+    if (isCollapsed) {
+      setAsetOpen(false);
+      setReportsOpen(false);
+    } else {
+      if (pathname.startsWith("/aset")) setAsetOpen(true);
+      if (pathname.startsWith("/reports")) setReportsOpen(true);
+    }
   }, [isCollapsed, pathname]);
 
   const isActive = (path) => pathname === path;
@@ -171,6 +177,65 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
               Aksesoris
             </span>
           </Link>
+        )}
+
+        {/* Laporan Group - Only Super Admin & Admin */}
+        {["super admin", "admin"].includes(userRole) && (
+          <div>
+            <button
+              onClick={() => {
+                if (isCollapsed) {
+                  setIsCollapsed(false);
+                  setReportsOpen(true);
+                } else {
+                  setReportsOpen(!reportsOpen);
+                }
+              }}
+              className={`group flex w-full items-center h-11 rounded-lg transition-all duration-300 ${
+                pathname.startsWith("/reports")
+                  ? "bg-white/10 text-white"
+                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+              }`}
+              title={isCollapsed ? "Laporan" : ""}
+            >
+              <div className="flex w-12 h-full items-center justify-center shrink-0">
+                <BarChart2 className="h-5 w-5" />
+              </div>
+              <span className={`flex-1 text-left whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100 ml-1"}`}>
+                Laporan
+              </span>
+              {!isCollapsed && (
+                <ChevronRight className={`h-4 w-4 mr-3 transition-transform duration-300 ${reportsOpen ? "rotate-90" : ""}`} />
+              )}
+            </button>
+
+            {reportsOpen && !isCollapsed && (
+              <div className="mt-1 ml-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                {[
+                  { name: "Aktivitas", href: "/reports/aktivitas", icon: Activity },
+                  { name: "Aset", href: "/reports/aset", icon: Package },
+                  { name: "Aksesoris", href: "/reports/aksesoris", icon: Cpu },
+                  { name: "Peminjaman", href: "/reports/peminjaman", icon: ClipboardList },
+                  { name: "Audit Log", href: "/reports/audit", icon: ShieldAlert },
+                ].map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center h-10 rounded-lg transition-all duration-300 ${
+                      isActive(item.href)
+                        ? "bg-primary text-white"
+                        : "text-slate-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex w-12 h-full items-center justify-center shrink-0">
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <span className="text-[13px] whitespace-nowrap">{item.name}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Kelola User - Only Super Admin & Admin */}
