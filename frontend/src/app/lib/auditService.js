@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { mapAuditLogArrayToFrontend } from './api';
 
 const getBackendURL = () => {
   if (typeof window !== "undefined") {
@@ -20,7 +21,7 @@ export const getAuditLogs = async (params = {}) => {
   try {
     const query = new URLSearchParams(params).toString();
     const res = await axios.get(`${BACKEND_URL}/api/audit?${query}`, getAuthHeaders());
-    return res.data.data;
+    return mapAuditLogArrayToFrontend(res.data.data || []);
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Gagal memuat audit log');
   }

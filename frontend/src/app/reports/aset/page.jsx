@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getAllAssets } from "../../lib/assetService";
 import { exportToPDF, exportToExcel } from "../../lib/exportUtils";
-import { Search, FileText, Download, Filter, Package, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, FileText, Download, Filter, Package, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown, RotateCcw, MapPin, Tag, Printer } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 25, 50, 100];
 
@@ -24,7 +24,11 @@ export default function AsetReportPage() {
   const [search, setSearch] = useState("");
   const [kategoriFilter, setKategoriFilter] = useState("");
   const [kondisiFilter, setKondisiFilter] = useState("");
+  const [merekFilter, setMerekFilter] = useState("");
+  const [lokasiFilter, setLokasiFilter] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
   
   // Pagination & Sorting State
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +37,15 @@ export default function AsetReportPage() {
 
   useEffect(() => {
     fetchData();
+    
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchData = async () => {
@@ -53,6 +66,15 @@ export default function AsetReportPage() {
     setSortConfig({ key, direction });
   };
 
+  const resetFilters = () => {
+    setSearch("");
+    setKategoriFilter("");
+    setKondisiFilter("");
+    setMerekFilter("");
+    setLokasiFilter("");
+    setCurrentPage(1);
+  };
+
   const filteredAssets = useMemo(() => {
     let result = [...assets];
     if (search) {
@@ -60,7 +82,8 @@ export default function AsetReportPage() {
       result = result.filter(a => 
         a.namaAset?.toLowerCase().includes(s) || 
         a.kodeAset?.toLowerCase().includes(s) ||
-        a.merek?.toLowerCase().includes(s)
+        a.merek?.toLowerCase().includes(s) ||
+        a.model?.toLowerCase().includes(s)
       );
     }
     if (kategoriFilter) {
@@ -68,6 +91,12 @@ export default function AsetReportPage() {
     }
     if (kondisiFilter) {
       result = result.filter(a => a.kondisi === kondisiFilter);
+    }
+    if (merekFilter) {
+      result = result.filter(a => a.merek === merekFilter);
+    }
+    if (lokasiFilter) {
+      result = result.filter(a => a.lokasiAset === lokasiFilter);
     }
 
     if (sortConfig.key) {
@@ -81,7 +110,7 @@ export default function AsetReportPage() {
     }
 
     return result;
-  }, [assets, search, kategoriFilter, kondisiFilter, sortConfig]);
+  }, [assets, search, kategoriFilter, kondisiFilter, merekFilter, lokasiFilter, sortConfig]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredAssets.length / itemsPerPage);
@@ -109,12 +138,13 @@ export default function AsetReportPage() {
     { header: "Kondisi", dataKey: "kondisi" },
     { header: "Tersedia", dataKey: "jumlah" },
     { header: "Total Unit", dataKey: "jumlahTotal" },
-    { header: "Lokasi", dataKey: "lokasi" }
+    { header: "Lokasi", dataKey: "lokasiAset" }
   ];
 
   const handleExportPDF = () => {
     try {
       setExporting(true);
+      setShowExportMenu(false);
       exportToPDF(getColumns(), filteredAssets, "Laporan_Aset.pdf", "Laporan Inventaris Aset");
     } catch (err) {
       alert("Gagal mengekspor: " + err.message);
@@ -126,6 +156,7 @@ export default function AsetReportPage() {
   const handleExportExcel = () => {
     try {
       setExporting(true);
+      setShowExportMenu(false);
       exportToExcel(getColumns(), filteredAssets, "Laporan_Aset.xlsx");
     } catch (err) {
       alert("Gagal mengekspor: " + err.message);
@@ -173,57 +204,113 @@ export default function AsetReportPage() {
           <Package className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-bold text-slate-800">Laporan Inventaris Aset</h2>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="relative" ref={exportMenuRef}>
           <button
-            onClick={handleExportPDF}
+            onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={exporting || loading || filteredAssets.length === 0}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <FileText className="h-4 w-4" /> PDF
+            <Printer className="h-4 w-4" /> 
+            <span>Cetak Laporan</span>
+            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showExportMenu ? "rotate-180" : ""}`} />
           </button>
-          <button
-            onClick={handleExportExcel}
-            disabled={exporting || loading || filteredAssets.length === 0}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-green-50 text-green-600 rounded-lg border border-green-200 hover:bg-green-100 transition-colors disabled:opacity-50"
-          >
-            <Download className="h-4 w-4" /> Excel
-          </button>
+          
+          {showExportMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-50"
+              >
+                <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-bold">Format PDF</span>
+                  <span className="text-[10px] text-slate-400 text-left">Dokumen digital siap cetak</span>
+                </div>
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                  <Download className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-bold">Format Excel</span>
+                  <span className="text-[10px] text-slate-400 text-left">Olah data di spreadsheet</span>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="p-5 flex flex-col sm:flex-row gap-4 bg-white border-b border-slate-300">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Cari aset..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
-          />
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select
-              value={kategoriFilter}
-              onChange={(e) => { setKategoriFilter(e.target.value); setCurrentPage(1); }}
-              className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
-            >
-              <option value="">Semua Kategori</option>
-              {getUniqueValues('kategori').map(k => <option key={k} value={k}>{k}</option>)}
-            </select>
+      {/* Advanced Filter Section */}
+      <div className="p-5 flex flex-col gap-4 bg-white border-b border-slate-300">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari nama, kode, atau model aset..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              className="w-full pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
+            />
           </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select
-              value={kondisiFilter}
-              onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
-              className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+          <div className="flex flex-wrap gap-2">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={kategoriFilter}
+                onChange={(e) => { setKategoriFilter(e.target.value); setCurrentPage(1); }}
+                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Kategori</option>
+                {getUniqueValues('kategori').map(k => <option key={k} value={k}>{k}</option>)}
+              </select>
+            </div>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={merekFilter}
+                onChange={(e) => { setMerekFilter(e.target.value); setCurrentPage(1); }}
+                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Merek</option>
+                {getUniqueValues('merek').map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={lokasiFilter}
+                onChange={(e) => { setLokasiFilter(e.target.value); setCurrentPage(1); }}
+                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Lokasi</option>
+                {getUniqueValues('lokasiAset').map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={kondisiFilter}
+                onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
+                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Kondisi</option>
+                {getUniqueValues('kondisi').map(k => <option key={k} value={k}>{k}</option>)}
+              </select>
+            </div>
+            <button 
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              title="Reset Filter"
             >
-              <option value="">Semua Kondisi</option>
-              {getUniqueValues('kondisi').map(k => <option key={k} value={k}>{k}</option>)}
-            </select>
+              <RotateCcw className="h-4 w-4" /> Reset
+            </button>
           </div>
         </div>
       </div>
@@ -234,7 +321,7 @@ export default function AsetReportPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-300">
+              <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                 <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
                   <button onClick={() => handleSort("kodeAset")} className="flex items-center uppercase text-xs">
                     Kode <SortIcon columnKey="kodeAset" sortConfig={sortConfig} />
@@ -251,29 +338,45 @@ export default function AsetReportPage() {
                   </button>
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Kondisi</th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Stok (Tersedia / Total)</th>
+                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Stok</th>
+                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
+                   <button onClick={() => handleSort("lokasiAset")} className="flex items-center uppercase text-xs">
+                    Lokasi <SortIcon columnKey="lokasiAset" sortConfig={sortConfig} />
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
-                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
+                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
               ) : paginatedData.length === 0 ? (
-                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
+                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
               ) : (
                 paginatedData.map((asset, index) => (
-                  <tr key={asset.id} className={`hover:bg-slate-50 transition-colors ${index % 2 === 0 ? "bg-slate-50/30" : "bg-white"}`}>
+                  <tr key={asset.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                     <td className="px-5 py-3 text-primary font-mono font-bold text-xs">{asset.kodeAset}</td>
-                    <td className="px-5 py-3 text-slate-700 font-medium">{asset.namaAset}</td>
-                    <td className="px-5 py-3 text-slate-600">{asset.kategori}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-slate-700 font-medium text-sm">{asset.namaAset}</span>
+                        <span className="text-[10px] text-slate-400 uppercase tracking-tighter font-semibold">{asset.merek} {asset.model}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-slate-600 text-sm">{asset.kategori}</td>
                     <td className="px-5 py-3 text-center">
                       <span className={`inline-block px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide shadow-sm ${getKondisiBadge(asset.kondisi)}`}>
                         {asset.kondisi}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-emerald-600">{asset.jumlah}</span>
-                        <span className="text-[10px] text-slate-400">DARI {asset.jumlahTotal} UNIT</span>
+                      <div className="flex flex-col leading-tight">
+                        <span className="font-bold text-emerald-600 text-sm">{asset.jumlah}</span>
+                        <span className="text-[10px] text-slate-400 uppercase tracking-tighter font-semibold">DARI {asset.jumlahTotal} UNIT</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-1 text-slate-600">
+                        <MapPin className="h-3 w-3 text-slate-400" />
+                        <span className="text-xs font-medium">{asset.lokasiAset || "-"}</span>
                       </div>
                     </td>
                   </tr>

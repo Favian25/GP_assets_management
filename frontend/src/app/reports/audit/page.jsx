@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getAuditLogs } from "../../lib/auditService";
 import { exportToPDF, exportToExcel } from "../../lib/exportUtils";
-import { Search, FileText, Download, Filter, ShieldAlert, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown, Calendar, User, Activity } from "lucide-react";
+import { Search, FileText, Download, Filter, ShieldAlert, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown, Calendar, User, Activity, XCircle, RotateCcw, Printer } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 25, 50, 100];
 
@@ -24,7 +24,11 @@ export default function AuditReportPage() {
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("");
   const [entityFilter, setEntityFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
 
   // Pagination & Sorting State
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +37,15 @@ export default function AuditReportPage() {
 
   useEffect(() => {
     fetchData();
+    
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchData = async () => {
@@ -53,23 +66,54 @@ export default function AuditReportPage() {
     setSortConfig({ key, direction });
   };
 
+  const resetFilters = () => {
+    setSearch("");
+    setActionFilter("");
+    setEntityFilter("");
+    setStartDate("");
+    setEndDate("");
+    setCurrentPage(1);
+  };
+
   const filteredData = useMemo(() => {
     let result = [...logs];
+    
+    // Search filter
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(log => 
         log.userName?.toLowerCase().includes(s) || 
         log.details?.toLowerCase().includes(s) ||
-        log.entityId?.toString().includes(s)
+        log.entityId?.toString().includes(s) ||
+        log.entityType?.toLowerCase().includes(s)
       );
     }
+    
+    // Action filter
     if (actionFilter) {
       result = result.filter(log => log.action === actionFilter);
     }
+    
+    // Entity filter
     if (entityFilter) {
       result = result.filter(log => log.entityType === entityFilter);
     }
 
+    // Date range filter
+    if (startDate) {
+      result = result.filter(log => {
+        const d = new Date(log.createdAt || log.created_at);
+        return d >= new Date(startDate + "T00:00:00");
+      });
+    }
+    if (endDate) {
+      result = result.filter(log => {
+        const d = new Date(log.createdAt || log.created_at);
+        return d <= new Date(endDate + "T23:59:59");
+      });
+    }
+
+    // Sorting
     if (sortConfig.key) {
       result.sort((a, b) => {
         const aVal = a[sortConfig.key] || "";
@@ -81,7 +125,7 @@ export default function AuditReportPage() {
     }
 
     return result;
-  }, [logs, search, actionFilter, entityFilter, sortConfig]);
+  }, [logs, search, actionFilter, entityFilter, startDate, endDate, sortConfig]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -113,10 +157,16 @@ export default function AuditReportPage() {
   const handleExportPDF = () => {
     try {
       setExporting(true);
-      const dataToExport = filteredData.map(log => ({
-        ...log,
-        formattedDate: new Date(log.createdAt).toLocaleString("id-ID")
-      }));
+      setShowExportMenu(false);
+      const dataToExport = filteredData.map(log => {
+        const d = log.createdAt || log.created_at;
+        return {
+          ...log,
+          formattedDate: d && !isNaN(new Date(d).getTime()) 
+            ? new Date(d).toLocaleString("id-ID") 
+            : "-"
+        };
+      });
       exportToPDF(getColumns(), dataToExport, "Laporan_AuditLog.pdf", "Audit Log Sistem");
     } catch (err) {
       alert("Gagal mengekspor: " + err.message);
@@ -128,10 +178,16 @@ export default function AuditReportPage() {
   const handleExportExcel = () => {
     try {
       setExporting(true);
-      const dataToExport = filteredData.map(log => ({
-        ...log,
-        formattedDate: new Date(log.createdAt).toLocaleString("id-ID")
-      }));
+      setShowExportMenu(false);
+      const dataToExport = filteredData.map(log => {
+        const d = log.createdAt || log.created_at;
+        return {
+          ...log,
+          formattedDate: d && !isNaN(new Date(d).getTime()) 
+            ? new Date(d).toLocaleString("id-ID") 
+            : "-"
+        };
+      });
       exportToExcel(getColumns(), dataToExport, "Laporan_AuditLog.xlsx");
     } catch (err) {
       alert("Gagal mengekspor: " + err.message);
@@ -179,57 +235,107 @@ export default function AuditReportPage() {
           <ShieldAlert className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-bold text-slate-800">Audit Log Sistem</h2>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="relative" ref={exportMenuRef}>
           <button
-            onClick={handleExportPDF}
+            onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={exporting || loading || filteredData.length === 0}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <FileText className="h-4 w-4" /> PDF
+            <Printer className="h-4 w-4" /> 
+            <span>Cetak Laporan</span>
+            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showExportMenu ? "rotate-180" : ""}`} />
           </button>
-          <button
-            onClick={handleExportExcel}
-            disabled={exporting || loading || filteredData.length === 0}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-green-50 text-green-600 rounded-lg border border-green-200 hover:bg-green-100 transition-colors disabled:opacity-50"
-          >
-            <Download className="h-4 w-4" /> Excel
-          </button>
+          
+          {showExportMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-50"
+              >
+                <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-bold">Format PDF</span>
+                  <span className="text-[10px] text-slate-400 text-left">Dokumen digital siap cetak</span>
+                </div>
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                  <Download className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-bold">Format Excel</span>
+                  <span className="text-[10px] text-slate-400 text-left">Olah data di spreadsheet</span>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="p-5 flex flex-col sm:flex-row gap-4 bg-white border-b border-slate-300">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Cari user atau detail..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
-          />
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select
-              value={actionFilter}
-              onChange={(e) => { setActionFilter(e.target.value); setCurrentPage(1); }}
-              className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
-            >
-              <option value="">Semua Aksi</option>
-              {getUniqueValues('action').map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
+      {/* Advanced Filter Section */}
+      <div className="p-5 flex flex-col gap-4 bg-white border-b border-slate-300">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari user, detail, atau entitas..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              className="w-full pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
+            />
           </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select
-              value={entityFilter}
-              onChange={(e) => { setEntityFilter(e.target.value); setCurrentPage(1); }}
-              className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 px-3 py-2 border-2 border-slate-200 rounded-lg bg-slate-50/50">
+              <Calendar className="h-4 w-4 text-slate-400" />
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                className="bg-transparent text-xs text-slate-700 focus:outline-none" 
+              />
+              <span className="text-slate-300">|</span>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
+                className="bg-transparent text-xs text-slate-700 focus:outline-none" 
+              />
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={actionFilter}
+                onChange={(e) => { setActionFilter(e.target.value); setCurrentPage(1); }}
+                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Aksi</option>
+                {getUniqueValues('action').map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={entityFilter}
+                onChange={(e) => { setEntityFilter(e.target.value); setCurrentPage(1); }}
+                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Modul</option>
+                {getUniqueValues('entityType').map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <button 
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              title="Reset Filter"
             >
-              <option value="">Semua Modul</option>
-              {getUniqueValues('entityType').map(e => <option key={e} value={e}>{e}</option>)}
-            </select>
+              <RotateCcw className="h-4 w-4" /> Reset
+            </button>
           </div>
         </div>
       </div>
@@ -240,7 +346,7 @@ export default function AuditReportPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-300">
+              <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                 <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
                   <button onClick={() => handleSort("createdAt")} className="flex items-center uppercase text-xs">
                     Waktu <SortIcon columnKey="createdAt" sortConfig={sortConfig} />
@@ -253,26 +359,35 @@ export default function AuditReportPage() {
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Aksi</th>
                 <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">Modul</th>
+                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Entitas</th>
                 <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">Detail Aktivitas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
-                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
+                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
               ) : paginatedData.length === 0 ? (
-                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
+                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
               ) : (
                 paginatedData.map((log, index) => (
-                  <tr key={log.id} className={`hover:bg-slate-50 transition-colors ${index % 2 === 0 ? "bg-slate-50/30" : "bg-white"}`}>
+                  <tr key={log.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                     <td className="px-5 py-3 text-slate-500 text-xs">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-slate-700">{new Date(log.createdAt).toLocaleDateString("id-ID")}</span>
-                        <span>{new Date(log.createdAt).toLocaleTimeString("id-ID")} WIB</span>
+                      <div className="flex flex-col leading-tight">
+                        <span className="font-semibold text-slate-700">
+                          {(log.createdAt || log.created_at) && !isNaN(new Date(log.createdAt || log.created_at).getTime()) 
+                            ? new Date(log.createdAt || log.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) 
+                            : "-"}
+                        </span>
+                        <span className="text-xs text-slate-400 font-medium mt-0.5">
+                          {(log.createdAt || log.created_at) && !isNaN(new Date(log.createdAt || log.created_at).getTime()) 
+                            ? new Date(log.createdAt || log.created_at).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) + " WIB" 
+                            : ""}
+                        </span>
                       </div>
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-7 w-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-[10px] font-bold">
+                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold border border-primary/20">
                           {log.userName?.substring(0, 2).toUpperCase()}
                         </div>
                         <span className="text-slate-700 font-medium">{log.userName}</span>
@@ -285,6 +400,9 @@ export default function AuditReportPage() {
                     </td>
                     <td className="px-5 py-3">
                       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{log.entityType}</span>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                       <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded font-mono text-[10px]">#{log.entityId}</span>
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-sm whitespace-normal min-w-[250px]">{log.details}</td>
                   </tr>

@@ -228,4 +228,23 @@ export function mapAksesorisArrayToFrontend(backendArray) {
   return backendArray.map(mapAksesorisToFrontend);
 }
 
+export function mapAuditLogToFrontend(log) {
+  if (!log) return null;
+  return {
+    id: log.id,
+    userId: log.user_id,
+    userName: log.user_name,
+    action: log.action,
+    entityType: log.entity_type,
+    entityId: log.entity_id,
+    details: log.details,
+    createdAt: log.created_at
+  };
+}
+
+export function mapAuditLogArrayToFrontend(logs) {
+  if (!Array.isArray(logs)) return [];
+  return logs.map(mapAuditLogToFrontend);
+}
+
 export default api;

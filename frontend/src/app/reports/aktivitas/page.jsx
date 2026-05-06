@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getAllAssets } from "../../lib/assetService";
 import { getAllAksesoris } from "../../lib/aksesorisService";
 import { getAllPeminjaman } from "../../lib/peminjamanService";
 import { exportToPDF, exportToExcel } from "../../lib/exportUtils";
-import { Search, FileText, Download, Filter, Activity, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown, Calendar, User, LayoutGrid } from "lucide-react";
+import { Search, FileText, Download, Filter, Activity, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown, Calendar, User, LayoutGrid, RotateCcw, Printer } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 25, 50, 100];
 
@@ -25,7 +25,11 @@ export default function AktivitasReportPage() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
 
   // Pagination & Sorting State
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,6 +38,15 @@ export default function AktivitasReportPage() {
 
   useEffect(() => {
     fetchData();
+    
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchData = async () => {
@@ -89,6 +102,14 @@ export default function AktivitasReportPage() {
     setSortConfig({ key, direction });
   };
 
+  const resetFilters = () => {
+    setSearch("");
+    setTypeFilter("");
+    setStartDate("");
+    setEndDate("");
+    setCurrentPage(1);
+  };
+
   const filteredData = useMemo(() => {
     let result = [...activities];
     if (search) {
@@ -104,6 +125,19 @@ export default function AktivitasReportPage() {
       result = result.filter(a => a.type === typeFilter);
     }
 
+    if (startDate) {
+      result = result.filter(a => {
+        const d = new Date(a.date);
+        return d >= new Date(startDate + "T00:00:00");
+      });
+    }
+    if (endDate) {
+      result = result.filter(a => {
+        const d = new Date(a.date);
+        return d <= new Date(endDate + "T23:59:59");
+      });
+    }
+
     if (sortConfig.key) {
       result.sort((a, b) => {
         const aVal = a[sortConfig.key] || "";
@@ -115,7 +149,7 @@ export default function AktivitasReportPage() {
     }
 
     return result;
-  }, [activities, search, typeFilter, sortConfig]);
+  }, [activities, search, typeFilter, startDate, endDate, sortConfig]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -148,12 +182,14 @@ export default function AktivitasReportPage() {
   const handleExportPDF = () => {
     try {
       setExporting(true);
+      setShowExportMenu(false);
       const dataToExport = filteredData.map(a => {
-        const d = new Date(a.date);
+        const d = a.date ? new Date(a.date) : null;
+        const isValid = d && !isNaN(d.getTime());
         return {
           ...a,
-          formattedDate: d.toLocaleDateString("id-ID"),
-          formattedTime: d.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) + " WIB"
+          formattedDate: isValid ? d.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }) : "-",
+          formattedTime: isValid ? d.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) + " WIB" : "-"
         };
       });
       exportToPDF(getColumns(), dataToExport, "Laporan_Aktivitas.pdf", "Laporan Aktivitas Operasional");
@@ -167,12 +203,14 @@ export default function AktivitasReportPage() {
   const handleExportExcel = () => {
     try {
       setExporting(true);
+      setShowExportMenu(false);
       const dataToExport = filteredData.map(a => {
-        const d = new Date(a.date);
+        const d = a.date ? new Date(a.date) : null;
+        const isValid = d && !isNaN(d.getTime());
         return {
           ...a,
-          formattedDate: d.toLocaleDateString("id-ID"),
-          formattedTime: d.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) + " WIB"
+          formattedDate: isValid ? d.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }) : "-",
+          formattedTime: isValid ? d.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) + " WIB" : "-"
         };
       });
       exportToExcel(getColumns(), dataToExport, "Laporan_Aktivitas.xlsx");
@@ -184,8 +222,12 @@ export default function AktivitasReportPage() {
   };
 
   const formatActivityDate = (dateStr) => {
-    const d = new Date(dateStr);
-    const datePart = new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(d);
+    const dStr = dateStr || "";
+    if (!dStr) return { datePart: "-", timePart: "" };
+    const d = new Date(dStr);
+    if (isNaN(d.getTime())) return { datePart: "-", timePart: "" };
+    
+    const datePart = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(d);
     const timePart = new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" }).format(d) + " WIB";
     return { datePart, timePart };
   };
@@ -219,46 +261,95 @@ export default function AktivitasReportPage() {
           <Activity className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-bold text-slate-800">Laporan Aktivitas Operasional</h2>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="relative" ref={exportMenuRef}>
           <button
-            onClick={handleExportPDF}
+            onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={exporting || loading || filteredData.length === 0}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <FileText className="h-4 w-4" /> PDF
+            <Printer className="h-4 w-4" /> 
+            <span>Cetak Laporan</span>
+            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showExportMenu ? "rotate-180" : ""}`} />
           </button>
-          <button
-            onClick={handleExportExcel}
-            disabled={exporting || loading || filteredData.length === 0}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-green-50 text-green-600 rounded-lg border border-green-200 hover:bg-green-100 transition-colors disabled:opacity-50"
-          >
-            <Download className="h-4 w-4" /> Excel
-          </button>
+          
+          {showExportMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-50"
+              >
+                <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-bold">Format PDF</span>
+                  <span className="text-[10px] text-slate-400 text-left">Dokumen digital siap cetak</span>
+                </div>
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                  <Download className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-bold">Format Excel</span>
+                  <span className="text-[10px] text-slate-400 text-left">Olah data di spreadsheet</span>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="p-5 flex flex-col sm:flex-row gap-4 bg-white border-b border-slate-300">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Cari aktivitas, user, atau item..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
-          />
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select
-              value={typeFilter}
-              onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
-              className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+      <div className="p-5 flex flex-col gap-4 bg-white border-b border-slate-300">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari aktivitas, user, atau item..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              className="w-full pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 px-3 py-2 border-2 border-slate-200 rounded-lg bg-slate-50/50">
+              <Calendar className="h-4 w-4 text-slate-400" />
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                className="bg-transparent text-xs text-slate-700 focus:outline-none" 
+              />
+              <span className="text-slate-300">|</span>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
+                className="bg-transparent text-xs text-slate-700 focus:outline-none" 
+              />
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={typeFilter}
+                onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
+                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Modul</option>
+                {getUniqueValues('type').map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <button 
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              title="Reset Filter"
             >
-              <option value="">Semua Modul</option>
-              {getUniqueValues('type').map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+              <RotateCcw className="h-4 w-4" /> Reset
+            </button>
           </div>
         </div>
       </div>
@@ -269,7 +360,7 @@ export default function AktivitasReportPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-300">
+              <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                 <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
                   <button onClick={() => handleSort("date")} className="flex items-center uppercase text-xs">
                     Tanggal <SortIcon columnKey="date" sortConfig={sortConfig} />
@@ -280,7 +371,7 @@ export default function AktivitasReportPage() {
                     Dibuat Oleh <SortIcon columnKey="createdBy" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">Aksi</th>
+                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Aksi</th>
                 <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
                   <button onClick={() => handleSort("item")} className="flex items-center uppercase text-xs">
                     Item <SortIcon columnKey="item" sortConfig={sortConfig} />
@@ -298,17 +389,22 @@ export default function AktivitasReportPage() {
                 paginatedData.map((activity, index) => {
                   const { datePart, timePart } = formatActivityDate(activity.date);
                   return (
-                    <tr key={activity.id} className={`hover:bg-slate-50 transition-colors ${index % 2 === 0 ? "bg-slate-50/30" : "bg-white"}`}>
-                      <td className="px-5 py-3 text-slate-500 font-medium">
+                    <tr key={activity.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
+                      <td className="px-5 py-3 text-slate-500 font-medium text-xs">
                         <div className="flex flex-col leading-tight">
-                          <span className="text-slate-700 font-medium">{datePart}</span>
-                          <span className="text-xs text-slate-400">{timePart}</span>
+                          <span className="text-slate-700 font-semibold">{datePart}</span>
+                          <span className="text-xs text-slate-400 font-medium mt-0.5">{timePart}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
-                        <span className="text-sm font-medium text-blue-600">{activity.createdBy}</span>
+                      <td className="px-5 py-3 text-sm">
+                        <div className="flex items-center gap-2">
+                           <div className="h-7 w-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-bold border border-blue-200">
+                            {activity.createdBy?.substring(0, 2).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-slate-700">{activity.createdBy}</span>
+                        </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 text-center">
                         <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full border shadow-sm ${
                           activity.action === 'Peminjaman' ? 'bg-amber-50 text-amber-600 border-amber-200' :
                           activity.action === 'Pengembalian' ? 'bg-blue-50 text-blue-600 border-blue-200' :
@@ -317,12 +413,13 @@ export default function AktivitasReportPage() {
                           {activity.action}
                         </span>
                       </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-700 font-medium">{activity.item}</span>
+                      <td className="px-5 py-3 text-sm">
+                        <div className="flex flex-col">
+                          <span className="text-slate-700 font-semibold">{activity.item}</span>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-tighter font-medium">{activity.type}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-slate-600">{activity.target}</td>
+                      <td className="px-5 py-3 text-slate-600 text-sm font-medium">{activity.target}</td>
                     </tr>
                   );
                 })

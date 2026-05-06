@@ -107,8 +107,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
             )}
           </button>
 
-          {asetOpen && !isCollapsed && (
-            <div className="mt-1 ml-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
+          <div 
+            className={`grid transition-all duration-300 ease-in-out ${
+              asetOpen && !isCollapsed ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="overflow-hidden ml-4 space-y-1">
               {/* Daftar Aset - Only Super Admin & Admin */}
               {canSeeDaftarAset && (
                 <>
@@ -156,7 +160,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                 <span className="text-[13px] whitespace-nowrap">Peminjaman Aset</span>
               </Link>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Aksesoris - Only Super Admin & Admin */}
@@ -209,8 +213,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
               )}
             </button>
 
-            {reportsOpen && !isCollapsed && (
-              <div className="mt-1 ml-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
+            <div 
+              className={`grid transition-all duration-300 ease-in-out ${
+                reportsOpen && !isCollapsed ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
+              }`}
+            >
+              <div className="overflow-hidden ml-4 space-y-1">
                 {[
                   { name: "Aktivitas", href: "/reports/aktivitas", icon: Activity },
                   { name: "Aset", href: "/reports/aset", icon: Package },
@@ -234,7 +242,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                   </Link>
                 ))}
               </div>
-            )}
+            </div>
           </div>
         )}
 
