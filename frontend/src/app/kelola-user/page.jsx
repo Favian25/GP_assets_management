@@ -378,14 +378,14 @@ export default function KelolaUserPage() {
               <tr className="border-b border-slate-300 bg-slate-50/50">
                 <th className="px-5 py-3 font-bold text-slate-700 w-12 text-center uppercase text-[10px] tracking-wider">No</th>
                 <th className="px-5 py-3 font-bold text-slate-700 w-14 text-center"></th>
-                <th className="px-5 py-3 font-bold text-slate-700 cursor-pointer select-none hover:bg-slate-200/50 transition-colors uppercase text-[10px] tracking-wider" onClick={handleSortName}>
-                  <div className="flex items-center justify-between gap-2">
+                <th className="px-5 py-3 font-bold text-slate-700 select-none hover:bg-slate-200/50 transition-colors">
+                  <button onClick={handleSortName} className="flex items-center justify-between gap-2 w-full cursor-pointer uppercase text-[10px] tracking-wider">
                     Nama Lengkap
                     <div className="flex flex-col">
                       <ChevronUp className={`h-2.5 w-2.5 ${sortOrder === "asc" ? "text-primary" : "text-slate-400"}`} />
                       <ChevronDown className={`h-2.5 w-2.5 ${sortOrder === "desc" ? "text-primary" : "text-slate-400"}`} />
                     </div>
-                  </div>
+                  </button>
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Email</th>
                 <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Role</th>

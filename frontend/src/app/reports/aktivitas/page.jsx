@@ -97,9 +97,14 @@ export default function AktivitasReportPage() {
   };
 
   const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
-    setSortConfig({ key, direction });
+    setSortConfig((prev) => {
+      if (prev.key === key) { 
+        if (prev.direction === "asc") return { key, direction: "desc" }; 
+        if (prev.direction === "desc") return { key: null, direction: null }; 
+      }
+      return { key, direction: "asc" };
+    });
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -175,8 +180,8 @@ export default function AktivitasReportPage() {
     { header: "Dibuat Oleh", dataKey: "createdBy" },
     { header: "Aksi", dataKey: "action" },
     { header: "Modul", dataKey: "type" },
-    { header: "Item", dataKey: "item" },
-    { header: "Tujuan/Peminjam", dataKey: "target" }
+    { header: "Item / Kode Transaksi", dataKey: "item" },
+    { header: "Penerima / Pihak Terkait", dataKey: "target" }
   ];
 
   const handleExportPDF = () => {
@@ -361,23 +366,23 @@ export default function AktivitasReportPage() {
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("date")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700 w-[120px]">
+                  <button onClick={() => handleSort("date")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Tanggal <SortIcon columnKey="date" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("createdBy")} className="flex items-center uppercase text-xs">
-                    Dibuat Oleh <SortIcon columnKey="createdBy" sortConfig={sortConfig} />
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("createdBy")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                    User <SortIcon columnKey="createdBy" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Aksi</th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("item")} className="flex items-center uppercase text-xs">
-                    Item <SortIcon columnKey="item" sortConfig={sortConfig} />
+                <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("item")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                    Item / Kode Transaksi <SortIcon columnKey="item" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">Tujuan</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Penerima / Pihak Terkait</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -390,25 +395,25 @@ export default function AktivitasReportPage() {
                   const { datePart, timePart } = formatActivityDate(activity.date);
                   return (
                     <tr key={activity.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                      <td className="px-5 py-3 text-slate-500 font-medium text-xs">
+                      <td className="px-5 py-3 text-slate-600">
                         <div className="flex flex-col leading-tight">
-                          <span className="text-slate-700 font-semibold">{datePart}</span>
-                          <span className="text-xs text-slate-400 font-medium mt-0.5">{timePart}</span>
+                          <span className="text-sm text-slate-700 font-semibold">{datePart}</span>
+                          <span className="text-xs text-slate-400 font-medium">{timePart}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-sm">
+                      <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
-                           <div className="h-7 w-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-bold border border-blue-200">
+                          <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold border border-primary/20">
                             {activity.createdBy?.substring(0, 2).toUpperCase()}
                           </div>
-                          <span className="font-medium text-slate-700">{activity.createdBy}</span>
+                          <span className="text-slate-700 font-semibold text-sm">{activity.createdBy}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3 text-center">
-                        <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full border shadow-sm ${
-                          activity.action === 'Peminjaman' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                          activity.action === 'Pengembalian' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                          'bg-emerald-50 text-emerald-600 border-emerald-200'
+                        <span className={`inline-block w-[180px] text-center text-xs font-semibold uppercase px-3 py-1 rounded-full border shadow-sm ${
+                          activity.action === 'Peminjaman' ? 'bg-amber-50 text-amber-600 border-amber-500' :
+                          activity.action === 'Pengembalian' ? 'bg-blue-50 text-blue-600 border-blue-500' :
+                          'bg-emerald-50 text-emerald-600 border-emerald-500'
                         }`}>
                           {activity.action}
                         </span>
@@ -416,10 +421,10 @@ export default function AktivitasReportPage() {
                       <td className="px-5 py-3 text-sm">
                         <div className="flex flex-col">
                           <span className="text-slate-700 font-semibold">{activity.item}</span>
-                          <span className="text-[10px] text-slate-400 uppercase tracking-tighter font-medium">{activity.type}</span>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{activity.type}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-slate-600 text-sm font-medium">{activity.target}</td>
+                      <td className="px-5 py-3 text-slate-600 text-sm font-semibold">{activity.target}</td>
                     </tr>
                   );
                 })

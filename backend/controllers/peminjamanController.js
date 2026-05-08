@@ -318,147 +318,25 @@ const peminjamanController = {
     }
   },
 
-  // GENERATE PDF
+  // GENERATE PDF (Puppeteer)
   generatePDF: async (req, res) => {
     try {
-      const PDFDocument = require('pdfkit');
-      const path = require('path');
+      const { generateLoanPDF } = require('../utils/pdfGenerator');
       const data = await Peminjaman.getById(req.params.id);
       
       if (!data) {
         return res.status(404).json({ success: false, message: "Data tidak ditemukan" });
       }
 
-      const doc = new PDFDocument({ margin: 50, size: 'A4' });
-      let filename = `Peminjaman-${data.kode_pinjam}.pdf`;
-      
+      const pdfBuffer = await generateLoanPDF(data);
+      const filename = `Peminjaman-${data.kode_pinjam}.pdf`;
+
       res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-type', 'application/pdf');
-
-      doc.pipe(res);
-
-      // 1. Logo & Header
-      const logoPath = path.join(__dirname, '..', '..', 'frontend', 'public', 'logo-galeria-production-biru.png');
-      try {
-        doc.image(logoPath, 50, 45, { width: 65 });
-      } catch (e) {
-        console.warn("Logo not found, skipping image.");
-      }
-
-      doc.fontSize(20).font('Helvetica-Bold').fillColor('#1e293b').text('GALERIA PRODUCTION', 125, 50);
-      doc.fontSize(10).font('Helvetica').fillColor('#64748b').text('Creative Studio & Equipment Rental', 125, 75);
-      doc.fontSize(9).text('Sistem Manajemen Aset & Inventaris', 125, 88);
-      
-      doc.moveDown(2);
-      doc.moveTo(50, 115).lineTo(545, 115).strokeColor('#e2e8f0').lineWidth(1).stroke();
-
-      // 2. Judul Dokumen
-      doc.moveDown(3);
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e293b').text('BUKTI TRANSAKSI PEMINJAMAN ASET', { align: 'center' });
-      doc.moveDown(2);
-
-      // 3. Informasi Utama (Grid Layout untuk mencegah tumpang tindih)
-      const infoY = doc.y;
-      
-      // Kolom Kiri: Detail Peminjaman
-      doc.fontSize(10).font('Helvetica-Bold').text('DETAIL PEMINJAMAN', 50, infoY);
-      doc.font('Helvetica').fillColor('#334155');
-      const leftColX = 50;
-      const leftValX = 150;
-      let currentY = infoY + 20;
-
-      doc.text('No. Transaksi', leftColX, currentY);
-      doc.font('Helvetica-Bold').text(`: ${data.kode_pinjam}`, leftValX, currentY);
-      
-      currentY += 18;
-      doc.font('Helvetica').text('Nama Peminjam', leftColX, currentY);
-      doc.text(`: ${data.nama_peminjam}`, leftValX, currentY);
-      
-      currentY += 18;
-      doc.text('Waktu Pinjam', leftColX, currentY);
-      doc.text(`: ${new Date(data.tanggal_peminjaman).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })} WIB`, leftValX, currentY);
-      
-      currentY += 18;
-      doc.text('Petugas', leftColX, currentY);
-      doc.text(`: ${data.yang_menyerahkan || '-'}`, leftValX, currentY);
-      
-      currentY += 18;
-      doc.text('Status', leftColX, currentY);
-      const statusColor = data.status === 'Approved' ? '#16a34a' : (data.status === 'Pending' ? '#ca8a04' : '#2563eb');
-      doc.font('Helvetica-Bold').fillColor(statusColor).text(`: ${data.status.toUpperCase()}`, leftValX, currentY);
-
-      // Kolom Kanan: Detail Pengembalian
-      doc.font('Helvetica-Bold').fillColor('#1e293b').text('DETAIL PENGEMBALIAN', 330, infoY);
-      doc.font('Helvetica').fillColor('#334155');
-      const rightColX = 330;
-      const rightValX = 430;
-      let rightY = infoY + 20;
-
-      doc.text('Waktu Kembali', rightColX, rightY);
-      doc.text(`: ${data.tanggal_pengembalian ? new Date(data.tanggal_pengembalian).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }) + ' WIB' : '-'}`, rightValX, rightY);
-      
-      rightY += 18;
-      doc.text('Penerima', rightColX, rightY);
-      doc.text(`: ${data.penerima_aset || '-'}`, rightValX, rightY);
-      
-      rightY += 18;
-      doc.text('Validator', rightColX, rightY);
-      doc.text(`: ${data.approved_by || '-'}`, rightValX, rightY);
-
-      // 4. Tabel Aset
-      doc.y = currentY + 40;
-      doc.font('Helvetica-Bold').fontSize(11).fillColor('#1e293b').text('DAFTAR ASET YANG DIPINJAM');
-      doc.moveDown(0.5);
-      
-      const tableTop = doc.y;
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569');
-      doc.text('No', 50, tableTop);
-      doc.text('Kode Item', 85, tableTop);
-      doc.text('Nama Item / Barang', 185, tableTop);
-      doc.text('Qty', 485, tableTop, { align: 'right', width: 50 });
-      
-      doc.moveTo(50, doc.y + 12).lineTo(545, doc.y + 12).strokeColor('#1e293b').lineWidth(1.5).stroke();
-      
-      let tableY = tableTop + 25;
-      doc.font('Helvetica').fillColor('#334155');
-      data.items.forEach((item, index) => {
-        doc.text(index + 1, 50, tableY);
-        doc.text(item.kode_aset, 85, tableY);
-        doc.text(item.nama_aset, 185, tableY);
-        doc.text(item.jumlah, 485, tableY, { align: 'right', width: 50 });
-        tableY += 20;
-
-        if (tableY > 700) {
-          doc.addPage();
-          tableY = 50;
-        }
-      });
-
-      doc.moveTo(50, tableY).lineTo(545, tableY).strokeColor('#e2e8f0').lineWidth(1).stroke();
-      
-      // Alasan Peminjaman
-      doc.y = tableY + 20;
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e293b').text('Alasan Peminjaman:');
-      doc.font('Helvetica').fontSize(9).fillColor('#475569').text(`"${data.alasan_peminjaman || '-'}"`, { width: 495, italic: true });
-
-      // 5. Footer / Tanda Tangan
-      if (doc.y > 650) doc.addPage();
-      
-      const signatureY = doc.y + 60;
-      doc.fontSize(10).font('Helvetica').fillColor('#334155');
-      doc.text('Pihak Peminjam,', 50, signatureY, { width: 220, align: 'center' });
-      doc.text('Petugas Operasional,', 325, signatureY, { width: 220, align: 'center' });
-      
-      doc.moveDown(5);
-      doc.font('Helvetica-Bold').fillColor('#1e293b');
-      doc.text(`( ${data.nama_peminjam} )`, 50, doc.y, { width: 220, align: 'center' });
-      doc.text(`( ${data.penerima_aset || data.yang_menyerahkan || '....................'} )`, 325, doc.y, { width: 220, align: 'center' });
-
-      doc.fontSize(8).font('Helvetica-Oblique').fillColor('#94a3b8').text(`Dicetak pada: ${new Date().toLocaleString('id-ID')} WIB`, 50, 785);
-
-      doc.end();
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.end(pdfBuffer);
     } catch (error) {
-      console.error("Error generate PDF (PDFKit Revert):", error);
+      console.error("Error generate PDF (Puppeteer):", error);
       if (!res.headersSent) {
         res.status(500).json({ success: false, message: "Gagal generate PDF" });
       }

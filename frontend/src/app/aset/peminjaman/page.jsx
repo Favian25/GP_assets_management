@@ -358,14 +358,14 @@ export default function PeminjamanAsetPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="px-5 py-3 font-bold text-slate-700 w-[80px]"><button onClick={() => handleSort("kodePinjam")} className="cursor-pointer flex items-center">No <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} /></button></th>
-                <th className="px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaPeminjam")} className="cursor-pointer flex items-center">Nama Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} /></button></th>
-                <th className="px-5 py-3 font-bold text-slate-700">Peminjaman Alat</th>
-                <th className="px-5 py-3 font-bold text-slate-700">Alasan</th>
-                <th className="px-5 py-3 font-bold text-slate-700 w-[170px]"><button onClick={() => handleSort("tanggalPeminjaman")} className="cursor-pointer flex items-center">Tgl Pinjam <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} /></button></th>
-                <th className="px-5 py-3 font-bold text-slate-700 w-[170px]">Tgl Kembali</th>
-                <th className="px-5 py-3 font-bold text-slate-700 w-[180px] text-center"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center justify-center w-full">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
-                <th className="px-5 py-3 font-bold text-slate-700 text-center w-[120px]">Aksi</th>
+                <th className="px-5 py-3 font-bold text-slate-700 w-[80px]"><button onClick={() => handleSort("kodePinjam")} className="cursor-pointer flex items-center uppercase tracking-wider">No <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} /></button></th>
+                <th className="px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaPeminjam")} className="cursor-pointer flex items-center uppercase tracking-wider">Nama Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} /></button></th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Peminjaman Alat</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Alasan</th>
+                <th className="px-5 py-3 font-bold text-slate-700 w-[170px]"><button onClick={() => handleSort("tanggalPeminjaman")} className="cursor-pointer flex items-center uppercase tracking-wider">Tgl Pinjam <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} /></button></th>
+                <th className="px-5 py-3 font-bold text-slate-700 w-[170px] uppercase tracking-wider">Tgl Kembali</th>
+                <th className="px-5 py-3 font-bold text-slate-700 w-[220px] text-center"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
+                <th className="px-5 py-3 font-bold text-slate-700 text-center w-[120px] uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -374,8 +374,10 @@ export default function PeminjamanAsetPage() {
                   <td className="px-5 py-3 font-mono text-xs font-bold text-primary hover:underline cursor-pointer" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
                   <td className="px-5 py-3 text-slate-700 font-semibold hover:text-primary cursor-pointer truncate" onClick={() => handleShowDetail(item)}>{item.namaPeminjam}</td>
                   <td className="px-5 py-3 text-slate-600 max-w-[220px]">
-                    <span className="inline-block bg-slate-200 text-slate-700 rounded-full px-2.5 py-0.5 text-xs font-semibold mr-1 shadow-sm border border-slate-300/60">{item.totalItems || 0} Alat</span>
-                    <span className="text-slate-500 text-sm truncate block mt-1">{item.daftarAset || "-"}</span>
+                    <span className="inline-block bg-slate-200 text-slate-700 rounded-full px-2.5 py-0.5 text-[10px] font-bold mr-1 shadow-sm border border-slate-300/60 uppercase tracking-wide">
+                      {item.totalItems || 0} Alat
+                    </span>
+                    <span className="text-slate-700 text-[11px] truncate block mt-1 font-semibold tracking-wide uppercase">{item.daftarAset || "-"}</span>
                   </td>
                   <td className="px-5 py-3 text-slate-600 text-sm max-w-[160px] truncate">{item.alasanPeminjaman || "-"}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPeminjaman)}</td>

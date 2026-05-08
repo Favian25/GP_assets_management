@@ -60,9 +60,14 @@ export default function AksesorisReportPage() {
   };
 
   const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
-    setSortConfig({ key, direction });
+    setSortConfig((prev) => {
+      if (prev.key === key) { 
+        if (prev.direction === "asc") return { key, direction: "desc" }; 
+        if (prev.direction === "desc") return { key: null, direction: null }; 
+      }
+      return { key, direction: "asc" };
+    });
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -165,7 +170,7 @@ export default function AksesorisReportPage() {
       "Maintenance": "bg-amber-50 text-amber-700 border-amber-500", 
       "Dijual": "bg-slate-100 text-slate-600 border-slate-500" 
     };
-    return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200";
+    return `inline-block w-[180px] text-center ${s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200"}`;
   };
 
   const Pagination = () => (
@@ -304,23 +309,23 @@ export default function AksesorisReportPage() {
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("kodeAksesoris")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("kodeAksesoris")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Kode <SortIcon columnKey="kodeAksesoris" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("namaAksesoris")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("namaAksesoris")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Nama Aksesoris <SortIcon columnKey="namaAksesoris" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("kategori")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("kategori")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Kondisi</th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Unit</th>
+                <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Kondisi</th>
+                <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Unit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -334,13 +339,13 @@ export default function AksesorisReportPage() {
                     <td className="px-5 py-3 text-primary font-mono font-bold text-xs">{item.kodeAksesoris}</td>
                     <td className="px-5 py-3">
                        <div className="flex flex-col leading-tight">
-                        <span className="text-slate-700 font-medium">{item.namaAksesoris}</span>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-tighter">{item.merek || "-"}</span>
+                        <span className="text-slate-700 font-semibold text-sm">{item.namaAksesoris}</span>
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{item.merek || "-"}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3 text-slate-600">{item.kategori}</td>
                     <td className="px-5 py-3 text-center">
-                      <span className={`inline-block px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide shadow-sm ${getKondisiBadge(item.kondisi)}`}>
+                      <span className={`${getKondisiBadge(item.kondisi)} px-3 py-1 rounded-full border text-xs font-semibold uppercase tracking-wide shadow-sm`}>
                         {item.kondisi}
                       </span>
                     </td>

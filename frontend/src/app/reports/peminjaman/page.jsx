@@ -60,9 +60,14 @@ export default function PeminjamanReportPage() {
   };
 
   const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
-    setSortConfig({ key, direction });
+    setSortConfig((prev) => {
+      if (prev.key === key) { 
+        if (prev.direction === "asc") return { key, direction: "desc" }; 
+        if (prev.direction === "desc") return { key: null, direction: null }; 
+      }
+      return { key, direction: "asc" };
+    });
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -180,7 +185,7 @@ export default function PeminjamanReportPage() {
       "Sudah Dikembalikan": "bg-emerald-50 text-emerald-700 border-emerald-500", 
       "Ditolak": "bg-rose-50 text-rose-700 border-rose-500" 
     };
-    return s[status] || "bg-slate-50 text-slate-700 border-slate-200";
+    return `inline-block w-[220px] text-center ${s[status] || "bg-slate-50 text-slate-700 border-slate-200"}`;
   };
 
   const Pagination = () => (
@@ -313,23 +318,23 @@ export default function PeminjamanReportPage() {
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("kodePinjam")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("kodePinjam")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Kode <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("namaPeminjam")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("namaPeminjam")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("tanggalPeminjaman")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("tanggalPeminjaman")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Tgl Pinjam <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Status</th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">Keperluan</th>
+                <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Status</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Keperluan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -341,9 +346,9 @@ export default function PeminjamanReportPage() {
                 paginatedData.map((item, index) => (
                   <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                     <td className="px-5 py-3 text-primary font-mono font-bold text-xs">{item.kodePinjam}</td>
-                    <td className="px-5 py-3 text-slate-700 font-medium">{item.namaPeminjam}</td>
+                    <td className="px-5 py-3 text-slate-700 font-semibold text-sm">{item.namaPeminjam}</td>
                     <td className="px-5 py-3 text-slate-600">
-                      <div className="flex items-center gap-1.5 text-xs font-medium">
+                      <div className="flex items-center gap-1.5 text-sm font-semibold">
                         <Calendar className="h-3.5 w-3.5 text-slate-400" />
                         {item.tanggalPeminjaman && !isNaN(new Date(item.tanggalPeminjaman).getTime()) 
                           ? new Date(item.tanggalPeminjaman).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
@@ -351,11 +356,11 @@ export default function PeminjamanReportPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <span className={`inline-block px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide shadow-sm ${getStatusBadge(item.status)}`}>
+                      <span className={`${getStatusBadge(item.status)} px-3 py-1 rounded-full border text-xs font-semibold uppercase tracking-wide shadow-sm`}>
                         {item.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-slate-600 truncate max-w-xs text-xs font-medium">{item.alasanPeminjaman || "-"}</td>
+                    <td className="px-5 py-3 text-slate-600 truncate max-w-xs text-sm font-medium">{item.alasanPeminjaman || "-"}</td>
                   </tr>
                 ))
               )}

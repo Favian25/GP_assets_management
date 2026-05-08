@@ -483,15 +483,15 @@ export default function AksesorisPage() {
           <table className="w-full text-left text-sm table-fixed">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAksesoris")} className="cursor-pointer flex items-center">Kode <SortIcon columnKey="kodeAksesoris" sortConfig={sortConfig} /></button></th>
-                <th className="w-[80px] px-3 py-3 font-bold text-slate-700 text-center">Gambar</th>
-                <th className="w-[190px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAksesoris")} className="cursor-pointer flex items-center">Nama <SortIcon columnKey="namaAksesoris" sortConfig={sortConfig} /></button></th>
-                <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlahUnit")} className="cursor-pointer flex items-center">Jumlah <SortIcon columnKey="jumlahUnit" sortConfig={sortConfig} /></button></th>
-                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
-                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
-                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("merek")} className="cursor-pointer flex items-center">Merek <SortIcon columnKey="merek" sortConfig={sortConfig} /></button></th>
-                <th className="w-[150px] px-5 py-3 font-bold text-slate-700 text-center">Kondisi</th>
-                <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center">Aksi</th>
+                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAksesoris")} className="cursor-pointer flex items-center uppercase tracking-wider">Kode <SortIcon columnKey="kodeAksesoris" sortConfig={sortConfig} /></button></th>
+                <th className="w-[80px] px-3 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Gambar</th>
+                <th className="w-[190px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAksesoris")} className="cursor-pointer flex items-center uppercase tracking-wider">Nama <SortIcon columnKey="namaAksesoris" sortConfig={sortConfig} /></button></th>
+                <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlahUnit")} className="cursor-pointer flex items-center uppercase tracking-wider">Jumlah <SortIcon columnKey="jumlahUnit" sortConfig={sortConfig} /></button></th>
+                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center uppercase tracking-wider">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
+                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center uppercase tracking-wider">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
+                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("merek")} className="cursor-pointer flex items-center uppercase tracking-wider">Merek <SortIcon columnKey="merek" sortConfig={sortConfig} /></button></th>
+                <th className="w-[180px] px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Kondisi</th>
+                <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -512,14 +512,14 @@ export default function AksesorisPage() {
                   <td className="w-[190px] px-5 py-3 text-slate-600 hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.namaAksesoris}</td>
                   <td className="w-[120px] px-5 py-3">
                     <div className="flex flex-col">
-                      <span className="font-bold text-emerald-600">{item.jumlahUnit ?? "-"} Tersisa</span>
+                      <span className="text-[13.5px] font-semibold text-emerald-600">{item.jumlahUnit ?? "-"} Tersisa</span>
                       <span className="text-slate-600">dari Total {item.jumlahTotal ?? item.jumlahUnit ?? "-"}</span>
                     </div>
                   </td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.merek}</td>
-                  <td className="w-[150px] px-5 py-3 text-center"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer block w-full rounded-full border py-1 text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
+                  <td className="w-[180px] px-5 py-3 text-center"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer block w-full rounded-full border py-1 text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
                   <td className="w-[110px] px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>

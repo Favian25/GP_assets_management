@@ -61,9 +61,14 @@ export default function AuditReportPage() {
   };
 
   const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
-    setSortConfig({ key, direction });
+    setSortConfig((prev) => {
+      if (prev.key === key) { 
+        if (prev.direction === "asc") return { key, direction: "desc" }; 
+        if (prev.direction === "desc") return { key: null, direction: null }; 
+      }
+      return { key, direction: "asc" };
+    });
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -150,8 +155,8 @@ export default function AuditReportPage() {
     { header: "User", dataKey: "userName" },
     { header: "Aksi", dataKey: "action" },
     { header: "Modul", dataKey: "entityType" },
-    { header: "ID Entitas", dataKey: "entityId" },
-    { header: "Detail", dataKey: "details" }
+    { header: "ID Record / Item", dataKey: "entityId" },
+    { header: "Rincian Perubahan", dataKey: "details" }
   ];
 
   const handleExportPDF = () => {
@@ -203,7 +208,7 @@ export default function AuditReportPage() {
       "DELETE": "bg-rose-50 text-rose-700 border-rose-500", 
       "PATCH": "bg-amber-50 text-amber-700 border-amber-500" 
     };
-    return s[action] || "bg-slate-50 text-slate-700 border-slate-200";
+    return `inline-block w-[140px] text-center ${s[action] || "bg-slate-50 text-slate-700 border-slate-200"}`;
   };
 
   const Pagination = () => (
@@ -347,20 +352,20 @@ export default function AuditReportPage() {
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("createdAt")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("createdAt")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Waktu <SortIcon columnKey="createdAt" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">
-                  <button onClick={() => handleSort("userName")} className="flex items-center uppercase text-xs">
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("userName")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     User <SortIcon columnKey="userName" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Aksi</th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">Modul</th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase text-center">Entitas</th>
-                <th className="px-5 py-3 font-bold text-slate-700 tracking-wider uppercase">Detail Aktivitas</th>
+                <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Modul</th>
+                <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">ID Record / Item</th>
+                <th className="px-5 py-3 font-bold text-slate-700 text-nowrap uppercase tracking-wider">Rincian Perubahan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -371,14 +376,14 @@ export default function AuditReportPage() {
               ) : (
                 paginatedData.map((log, index) => (
                   <tr key={log.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                    <td className="px-5 py-3 text-slate-500 text-xs">
+                    <td className="px-5 py-3 text-slate-600">
                       <div className="flex flex-col leading-tight">
-                        <span className="font-semibold text-slate-700">
+                        <span className="text-sm font-semibold text-slate-700">
                           {(log.createdAt || log.created_at) && !isNaN(new Date(log.createdAt || log.created_at).getTime()) 
                             ? new Date(log.createdAt || log.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) 
                             : "-"}
                         </span>
-                        <span className="text-xs text-slate-400 font-medium mt-0.5">
+                        <span className="text-xs text-slate-400 font-medium tracking-wide mt-0.5">
                           {(log.createdAt || log.created_at) && !isNaN(new Date(log.createdAt || log.created_at).getTime()) 
                             ? new Date(log.createdAt || log.created_at).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) + " WIB" 
                             : ""}
@@ -390,19 +395,19 @@ export default function AuditReportPage() {
                         <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold border border-primary/20">
                           {log.userName?.substring(0, 2).toUpperCase()}
                         </div>
-                        <span className="text-slate-700 font-medium">{log.userName}</span>
+                        <span className="text-slate-700 font-semibold text-sm">{log.userName}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <span className={`inline-block px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide shadow-sm ${getActionBadge(log.action)}`}>
+                      <span className={`${getActionBadge(log.action)} w-[180px] px-3 py-1 rounded-full border text-xs font-semibold uppercase tracking-wide shadow-sm`}>
                         {log.action}
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{log.entityType}</span>
+                      <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{log.entityType}</span>
                     </td>
                     <td className="px-5 py-3 text-center">
-                       <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded font-mono text-[10px]">#{log.entityId}</span>
+                       <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded font-mono text-xs font-bold">#{log.entityId}</span>
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-sm whitespace-normal min-w-[250px]">{log.details}</td>
                   </tr>

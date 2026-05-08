@@ -65,6 +65,16 @@ export default function DashboardPage() {
     return { datePart, timePart };
   };
 
+  const handleActivityClick = (activity) => {
+    if (activity.type === 'asset') {
+      router.push(`/aset?search=${activity.item}`);
+    } else if (activity.type === 'aksesoris') {
+      router.push(`/aksesoris?search=${activity.item}`);
+    } else if (activity.type === 'loan') {
+      router.push(`/aset/peminjaman?search=${activity.item}`);
+    }
+  };
+
   const statCards = [
     {
       title: "Total Aset",
@@ -176,15 +186,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Tentukan tipe aktivitas berdasarkan kondisi
-  const getActivityType = (kondisi) => {
-    if (kondisi === "Siap Digunakan") return "add";
-    if (kondisi === "Rusak") return "return";
-    if (kondisi === "Maintenance") return "maintenance";
-    if (kondisi === "Diarsipkan") return "borrow";
-    return "add";
-  };
-
   return (
     <div>
       {/* Header */}
@@ -246,7 +247,7 @@ export default function DashboardPage() {
                   type="text" 
                   placeholder="Cari aktivitas..." 
                   value={activitySearch}
-                  onChange={(e) => { setActivitySearch(e.target.value); setActivityPage(1); }}
+                  onChange={(e) => { setActivitySearch(e.target.value); }}
                   className="rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full"
                 />
               </div>
@@ -260,34 +261,37 @@ export default function DashboardPage() {
           </div>
 
           <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isActivityMinimized ? "max-h-0" : "max-h-[600px]"}`}>
-            <div className="overflow-x-auto max-h-[480px] overflow-y-auto custom-scrollbar">
+            <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="sticky top-0 bg-slate-50 z-10">
                   <tr className="border-b border-slate-300">
-                    <th className="px-4 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider w-[120px]"><Calendar className="inline h-3 w-3 mr-1" /> Tanggal</th>
-                    <th className="px-4 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider"><User className="inline h-3 w-3 mr-1" /> Dibuat Oleh</th>
-                    <th className="px-4 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Aksi</th>
-                    <th className="px-4 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider"><LayoutGrid className="inline h-3 w-3 mr-1" /> Item</th>
-                    <th className="px-4 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Tujuan</th>
+                    <th className="px-4 py-3 font-bold text-slate-700 w-[120px]"><Calendar className="inline h-3 w-3 mr-1" /> Tanggal</th>
+                    <th className="px-4 py-3 font-bold text-slate-700"><User className="inline h-3 w-3 mr-1" /> Dibuat Oleh</th>
+                    <th className="px-4 py-3 font-bold text-slate-700 text-center">Aksi</th>
+                    <th className="px-4 py-3 font-bold text-slate-700"><LayoutGrid className="inline h-3 w-3 mr-1" /> Item / Kode Transaksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredActivities.map((activity, idx) => (
-                    <tr key={activity.id} className={`${idx % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                      <td className="px-4 py-3 text-slate-500 font-medium">
+                    <tr 
+                      key={activity.id} 
+                      onClick={() => handleActivityClick(activity)}
+                      className={`cursor-pointer transition-colors hover:bg-slate-50 ${idx % 2 === 0 ? "bg-slate-100" : "bg-white"}`}
+                    >
+                      <td className="px-4 py-3 text-slate-600">
                         <div className="flex flex-col leading-tight">
-                          <span className="text-xs text-slate-700 font-bold">{formatActivityDate(activity.date).datePart}</span>
-                          <span className="text-[11px] text-slate-400">{formatActivityDate(activity.date).timePart}</span>
+                          <span className="text-sm text-slate-700 font-semibold">{formatActivityDate(activity.date).datePart}</span>
+                          <span className="text-xs text-slate-400 font-medium">{formatActivityDate(activity.date).timePart}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm font-bold text-blue-600 hover:underline cursor-pointer">{activity.createdBy}</span>
+                        <span className="text-sm font-semibold text-primary hover:underline cursor-pointer">{activity.createdBy}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded-full border ${
-                          activity.action === 'Peminjaman' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                          activity.action === 'Pengembalian' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                          'bg-emerald-50 text-emerald-600 border-emerald-200'
+                        <span className={`inline-block w-[140px] text-center text-xs font-semibold uppercase px-2 py-0.5 rounded-full border shadow-sm ${
+                          activity.action === 'Peminjaman' ? 'bg-amber-50 text-amber-600 border-amber-500' :
+                          activity.action === 'Pengembalian' ? 'bg-blue-50 text-blue-600 border-blue-500' :
+                          'bg-emerald-50 text-emerald-600 border-emerald-500'
                         }`}>
                           {activity.action}
                         </span>
@@ -298,21 +302,11 @@ export default function DashboardPage() {
                           <span className="text-sm text-slate-700 font-semibold">{activity.item}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
-                        {activity.target !== "-" ? (
-                          <div className="flex items-center gap-2">
-                            <User className="h-3.5 w-3.5 text-slate-400" />
-                            <span className="text-sm text-slate-600 font-medium">{activity.target}</span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-300">-</span>
-                        )}
-                      </td>
                     </tr>
                   ))}
                   {filteredActivities.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-slate-400 italic font-medium">Tidak ada aktivitas ditemukan.</td>
+                      <td colSpan={4} className="px-6 py-20 text-center text-slate-400 italic font-medium">Tidak ada aktivitas ditemukan.</td>
                     </tr>
                   )}
                 </tbody>
@@ -349,13 +343,13 @@ export default function DashboardPage() {
           </div>
 
           <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isLoanMinimized ? "max-h-0" : "max-h-[600px]"}`}>
-            <div className="overflow-x-auto max-h-[480px] overflow-y-auto custom-scrollbar">
+            <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 bg-blue-50 z-10">
                   <tr className="border-b border-blue-200">
-                    <th className="px-5 py-3 font-bold text-blue-800 uppercase text-[10px] tracking-wider">Peminjam</th>
-                    <th className="px-5 py-3 font-bold text-blue-800 uppercase text-[10px] tracking-wider">Item/Aset</th>
-                    <th className="px-5 py-3 font-bold text-blue-800 uppercase text-[10px] tracking-wider">Status</th>
+                    <th className="px-5 py-3 font-bold text-blue-800">Peminjam</th>
+                    <th className="px-5 py-3 font-bold text-blue-800">Item/Aset Dipinjam</th>
+                    <th className="px-5 py-3 font-bold text-blue-800 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-blue-50">
@@ -367,8 +361,8 @@ export default function DashboardPage() {
                     >
                       <td className="px-5 py-3">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-800">{loan.namaPeminjam}</span>
-                          <span className="text-[11px] text-primary font-mono font-bold mt-0.5">{loan.kodePinjam}</span>
+                          <span className="text-sm font-semibold text-slate-800">{loan.namaPeminjam}</span>
+                          <span className="text-xs text-primary font-mono font-bold mt-0.5">{loan.kodePinjam}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3">
@@ -378,10 +372,10 @@ export default function DashboardPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3">
-                        <span className={`inline-block px-2 py-1 rounded-full border text-xs uppercase font-semibold ${
-                          loan.status === 'Menunggu Persetujuan' ? 'bg-amber-50 text-amber-700 border-amber-300' :
-                          loan.status === 'Sedang Dipinjam' ? 'bg-blue-50 text-blue-700 border-blue-300' :
-                          'bg-violet-50 text-violet-700 border-violet-300'
+                        <span className={`inline-block w-[140px] text-center px-2 py-1 rounded-full border text-xs uppercase font-semibold shadow-sm ${
+                          loan.status === 'Menunggu Persetujuan' ? 'bg-amber-50 text-amber-700 border-amber-500' :
+                          loan.status === 'Sedang Dipinjam' ? 'bg-blue-50 text-blue-700 border-blue-500' :
+                          'bg-violet-50 text-violet-700 border-violet-500'
                         }`}>
                           {loan.status}
                         </span>
@@ -390,7 +384,7 @@ export default function DashboardPage() {
                   ))}
                   {(!filteredLoans || filteredLoans.length === 0) && (
                     <tr>
-                      <td colSpan={3} className="px-6 py-10 text-center text-slate-400 italic font-medium">Tidak ada peminjaman aktif.</td>
+                      <td colSpan={3} className="px-6 py-20 text-center text-slate-400 italic font-medium">Tidak ada peminjaman aktif.</td>
                     </tr>
                   )}
                 </tbody>
