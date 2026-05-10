@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { getAllCategories, createCategory, deleteCategory } from "../../lib/categoryService";
 import { getAllBrands, createBrand, deleteBrand } from "../../lib/brandService";
@@ -34,7 +34,25 @@ export default function KategoriMerekPage() {
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Tab sliding indicator
+  const tabContainerRef = useRef(null);
+  const tabKategoriRef = useRef(null);
+  const tabMerekRef = useRef(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({});
+
   useEffect(() => { setMounted(true); }, []);
+
+  // Update sliding indicator position when activeTab changes
+  useEffect(() => {
+    const activeRef = activeTab === "kategori" ? tabKategoriRef : tabMerekRef;
+    const button = activeRef.current;
+    if (button) {
+      setIndicatorStyle({
+        width: button.offsetWidth,
+        left: button.offsetLeft,
+      });
+    }
+  }, [activeTab]);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -231,16 +249,23 @@ export default function KategoriMerekPage() {
           <p className="text-sm text-slate-500">Manajemen kategori dan merek aset dalam satu tempat</p>
         </div>
         
-        <div className="flex bg-slate-200 p-1.5 rounded-xl border border-slate-300 self-start shadow-inner">
+        <div ref={tabContainerRef} className="relative flex bg-slate-200 p-1.5 rounded-xl border border-slate-300 self-start shadow-inner">
+          {/* Sliding Indicator */}
+          <div 
+            className="absolute top-1.5 bottom-1.5 bg-primary rounded-lg shadow-md transition-all duration-300 ease-out"
+            style={indicatorStyle}
+          />
           <button 
+            ref={tabKategoriRef}
             onClick={() => { setActiveTab("kategori"); setCurrentPage(1); setSearch(""); }}
-            className={`px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 ${activeTab === "kategori" ? "bg-primary text-white shadow-md scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
+            className={`relative z-10 px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${activeTab === "kategori" ? "text-white scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
           >
             DAFTAR KATEGORI
           </button>
           <button 
+            ref={tabMerekRef}
             onClick={() => { setActiveTab("merek"); setCurrentPage(1); setSearch(""); }}
-            className={`px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 ${activeTab === "merek" ? "bg-primary text-white shadow-md scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
+            className={`relative z-10 px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${activeTab === "merek" ? "text-white scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
           >
             DAFTAR MEREK
           </button>
@@ -295,8 +320,8 @@ export default function KategoriMerekPage() {
                       Nama Kategori <SortIcon columnKey="nama" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-40">
-                    <button onClick={() => handleSort("kode_singkat")} className="cursor-pointer flex items-center uppercase tracking-wider">
+                  <th className="px-5 py-3 font-bold text-slate-700 w-40 text-center">
+                    <button onClick={() => handleSort("kode_singkat")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider">
                       Kode <SortIcon columnKey="kode_singkat" />
                     </button>
                   </th>
@@ -317,7 +342,7 @@ export default function KategoriMerekPage() {
                     <td className="px-5 py-3 text-center text-slate-500 font-medium">{startIndex + index + 1}</td>
                     <td className="px-5 py-3 font-bold text-slate-700 text-sm">{item.nama}</td>
                     <td className="px-5 py-3">
-                      <span className="inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase border-blue-500 bg-blue-50 text-blue-700 shadow-sm">{item.kode_singkat}</span>
+                      <span className="block w-full text-center rounded-full border py-1 text-xs font-semibold tracking-wide uppercase border-blue-500 bg-blue-50 text-blue-700 shadow-sm">{item.kode_singkat}</span>
                     </td>
                     <td className="px-5 py-3 text-center">
                       <span className={`block w-full rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>

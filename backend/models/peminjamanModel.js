@@ -185,16 +185,16 @@ const Peminjaman = {
       const currentStatus = headers[0].status;
 
       if (currentStatus === 'Menunggu Persetujuan') {
-        // Approval 1: Izinkan pinjam
+        // Approval 1: Izinkan pinjam → simpan di approved_by
         await connection.query(
           "UPDATE peminjaman SET status = 'Sedang Dipinjam', approved_by = ? WHERE id = ?",
           [approvedBy, id]
         );
         // Tidak mengembalikan stok karena memang sedang dipinjam
       } else if (currentStatus === 'Menunggu Verifikasi') {
-        // Approval 2: Barang kembali
+        // Approval 2: Barang kembali → simpan di return_approved_by
         await connection.query(
-          "UPDATE peminjaman SET status = 'Peminjaman Selesai', approved_by = ? WHERE id = ?",
+          "UPDATE peminjaman SET status = 'Peminjaman Selesai', return_approved_by = ? WHERE id = ?",
           [approvedBy, id]
         );
 

@@ -247,13 +247,6 @@ async function generateLoanPDF(data) {
       min-width: 160px;
     }
 
-    .sig-dots {
-      display: block;
-      font-size: 12px;
-      letter-spacing: 2px;
-      color: #000;
-      margin-bottom: 2px;
-    }
   </style>
 </head>
 <body>
@@ -306,6 +299,10 @@ async function generateLoanPDF(data) {
         <span class="info-label">Alasan</span>
         <span class="info-value">: ${data.alasan_peminjaman || '-'}</span>
       </div>
+      <div class="info-row">
+        <span class="info-label">Disetujui Oleh</span>
+        <span class="info-value">: ${data.approved_by || '-'}</span>
+      </div>
     </div>
     <div>
       <div class="info-section-title">Detail Pengembalian</div>
@@ -318,8 +315,8 @@ async function generateLoanPDF(data) {
         <span class="info-value">: ${data.penerima_aset || '-'}</span>
       </div>
       <div class="info-row">
-        <span class="info-label">Disetujui Oleh</span>
-        <span class="info-value">: ${data.approved_by || '-'}</span>
+        <span class="info-label">Diverifikasi Oleh</span>
+        <span class="info-value">: ${data.return_approved_by || '-'}</span>
       </div>
     </div>
   </div>
@@ -344,13 +341,11 @@ async function generateLoanPDF(data) {
   <div class="signature-area">
     <div class="sig-block">
       <div class="sig-title">Pihak Peminjam,</div>
-      <span class="sig-dots">...................................</span>
-      <div class="sig-name">( ${data.nama_peminjam} )</div>
+      <div class="sig-name">( ............................ )</div>
     </div>
     <div class="sig-block">
       <div class="sig-title">Yang Menyerahkan,</div>
-      <span class="sig-dots">...................................</span>
-      <div class="sig-name">( ${data.penerima_aset || data.yang_menyerahkan || '....................'} )</div>
+      <div class="sig-name">( ............................ )</div>
     </div>
   </div>
 

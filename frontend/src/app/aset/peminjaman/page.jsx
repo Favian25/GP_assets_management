@@ -157,8 +157,8 @@ export default function PeminjamanAsetPage() {
 
   const handleDownloadPDF = async (peminjamanId) => {
     try {
+      showToast("PDF sedang diproses, mohon tunggu...");
       await downloadPeminjamanPDF(peminjamanId);
-      showToast("PDF sedang diunduh...");
     } catch (err) {
       showToast("Gagal mengunduh PDF", "error");
     }
@@ -436,6 +436,10 @@ export default function PeminjamanAsetPage() {
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Yang Menyerahkan</span><span className="text-sm text-slate-800">{showDetail.yangMenyerahkan || "-"}</span></div>
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Alasan</span><span className="text-sm text-slate-800">{showDetail.alasanPeminjaman || "-"}</span></div>
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Status</span><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusBadge(showDetail.status)}`}>{getStatusLabel(showDetail.status)}</span></div>
+                      <div className="flex items-start gap-3">
+                        <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Disetujui Oleh</span>
+                        <span className="text-sm text-slate-800">{showDetail.approvedBy || "-"}</span>
+                      </div>
                       
                       <div className="flex flex-col gap-2 mt-2">
                         <span className="text-sm font-semibold text-slate-600">Daftar Alat Dipinjam</span>
@@ -484,12 +488,8 @@ export default function PeminjamanAsetPage() {
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Penerima Aset</span><span className="text-sm text-slate-800">{showDetail.penerimaAset || "-"}</span></div>
                       <div className="flex items-start gap-3">
-                        <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Disetujui Oleh</span>
-                        {showDetail.approvedBy ? (
-                          <span className="text-sm text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shadow-sm">{showDetail.approvedBy}</span>
-                        ) : (
-                          <span className="text-sm text-slate-400 italic">Belum disetujui</span>
-                        )}
+                        <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Diverifikasi Oleh</span>
+                        <span className="text-sm text-slate-800">{showDetail.returnApprovedBy || "-"}</span>
                       </div>
 
                       {/* Bukti Pengembalian Images with Carousel */}

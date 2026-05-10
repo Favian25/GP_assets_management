@@ -126,6 +126,7 @@ export function mapPeminjamanToFrontend(backendData) {
     status: backendData.status,
     yangMenyerahkan: backendData.yang_menyerahkan,
     approvedBy: backendData.approved_by,
+    returnApprovedBy: backendData.return_approved_by,
     totalItems: backendData.total_items,
     daftarAset: backendData.daftar_aset,
     buktiPeminjaman: backendData.bukti_peminjaman,

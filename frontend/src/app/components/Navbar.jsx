@@ -156,50 +156,63 @@ export default function Navbar({ isCollapsed }) {
             )}
           </button>
 
-          {notifOpen && (
-            <div className="absolute right-0 mt-2 w-96 rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
-              <div className="border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-800">Notifikasi</p>
-                {notifications.length > 0 && (
-                  <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                    {notifications.length} terbaru
-                  </span>
-                )}
-              </div>
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="px-4 py-8 text-center">
-                    <Bell className="mx-auto h-10 w-10 text-slate-300 mb-2" />
-                    <p className="text-sm text-slate-400">Tidak ada notifikasi</p>
-                  </div>
-                ) : (
-                  notifications.map((notif) => {
-                    const icon = getNotifIcon(notif.type);
-                    return (
-                      <button
-                        key={notif.id}
-                        onClick={() => handleNotifClick(notif)}
-                        className={`cursor-pointer w-full text-left flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50 ${
-                          !notif.is_read ? "bg-primary/5" : ""
-                        }`}
-                      >
-                        <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${icon.bg}`}>
-                          <icon.component className={`h-4 w-4 ${icon.color}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm ${!notif.is_read ? "text-slate-800 font-medium" : "text-slate-600"}`}>{notif.message}</p>
-                          <p className="mt-0.5 text-xs text-slate-400">{formatTimeAgo(notif.created_at)}</p>
-                        </div>
-                        {!notif.is_read && (
-                          <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                        )}
-                      </button>
-                    );
-                  })
-                )}
+          <div className={`absolute right-0 mt-2 w-96 grid transition-all duration-300 ease-in-out ${notifOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 pointer-events-none"}`}>
+            <div className="overflow-hidden">
+              <div className="rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
+                <div className="border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-800">Notifikasi</p>
+                  {notifications.length > 0 && (
+                    <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                      {notifications.length} terbaru
+                    </span>
+                  )}
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <Bell className="mx-auto h-10 w-10 text-slate-300 mb-2" />
+                      <p className="text-sm text-slate-400">Tidak ada notifikasi</p>
+                    </div>
+                  ) : (
+                    notifications.slice(0, 10).map((notif) => {
+                      const icon = getNotifIcon(notif.type);
+                      return (
+                        <button
+                          key={notif.id}
+                          onClick={() => handleNotifClick(notif)}
+                          className={`cursor-pointer w-full text-left flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50 border-b-2 border-slate-100 last:border-0 ${
+                            !notif.is_read ? "bg-primary/5" : ""
+                          }`}
+                        >
+                          <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${icon.bg}`}>
+                            <icon.component className={`h-4 w-4 ${icon.color}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm ${!notif.is_read ? "text-slate-800 font-medium" : "text-slate-600"}`}>{notif.message}</p>
+                            <p className="mt-0.5 text-xs text-slate-400">{formatTimeAgo(notif.created_at)}</p>
+                          </div>
+                          {!notif.is_read && (
+                            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="border-t border-slate-200 p-2">
+                  <button
+                    onClick={() => {
+                      setNotifOpen(false);
+                      router.push("/notifikasi");
+                    }}
+                    className="cursor-pointer w-full rounded-lg py-2 text-center text-xs font-semibold uppercase text-primary transition-colors hover:bg-primary/10"
+                  >
+                    Lihat Semua Notifikasi
+                  </button>
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Profile */}
@@ -218,27 +231,29 @@ export default function Navbar({ isCollapsed }) {
             <ChevronDown className="h-4 w-4 text-slate-400" />
           </button>
 
-          {profileOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
-              <div className="px-4 py-3 border-b border-slate-200">
-                <p className="text-sm font-semibold text-slate-800 truncate">{userName}</p>
-                <p className="text-xs text-slate-400 capitalize">{userRole}</p>
-              </div>
-              <div className="p-1.5">
-                <button onClick={() => { setProfileOpen(false); router.push("/profil"); }} className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-primary/10 hover:text-primary">
-                  <User className="h-4 w-4" />
-                  Profil Saya
-                </button>
-              </div>
-              <div className="mx-1.5 border-t border-slate-200" />
-              <div className="p-1.5">
-                <button onClick={handleLogout} className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-100">
-                  <LogOut className="h-4 w-4" />
-                  Keluar
-                </button>
+          <div className={`absolute right-0 mt-2 w-56 grid transition-all duration-300 ease-in-out ${profileOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 pointer-events-none"}`}>
+            <div className="overflow-hidden">
+              <div className="rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
+                <div className="px-4 py-3 border-b border-slate-200">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{userName}</p>
+                  <p className="text-xs text-slate-400 capitalize">{userRole}</p>
+                </div>
+                <div className="p-1.5">
+                  <button onClick={() => { setProfileOpen(false); router.push("/profil"); }} className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-primary/10 hover:text-primary">
+                    <User className="h-4 w-4" />
+                    Profil Saya
+                  </button>
+                </div>
+                <div className="mx-1.5 border-t border-slate-200" />
+                <div className="p-1.5">
+                  <button onClick={handleLogout} className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-100">
+                    <LogOut className="h-4 w-4" />
+                    Keluar
+                  </button>
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </header>

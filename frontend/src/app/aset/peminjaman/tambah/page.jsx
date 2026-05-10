@@ -298,6 +298,11 @@ export default function TambahPeminjamanPage() {
       return;
     }
 
+    if (buktiFiles.length === 0) {
+      showToast("Bukti peminjaman wajib diisi (minimal 1 gambar)", "error");
+      return;
+    }
+
     const validItems = items.filter(item => (item.assetId || item.aksesorisId) && item.jumlah > 0);
     if (validItems.length === 0) {
       showToast("Minimal harus ada 1 alat yang dipinjam", "error");
@@ -470,7 +475,7 @@ export default function TambahPeminjamanPage() {
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
               <FileText className="h-4 w-4 text-emerald-500" />
-              Bukti Peminjaman <span className="text-xs text-slate-400 ml-2">(Opsional)</span>
+              Bukti Peminjaman <span className="text-rose-500">*</span> <span className="text-xs text-slate-400 ml-1">(Min. 1, Maks. 5 gambar)</span>
             </h2>
           </div>
           <div className="p-6">

@@ -166,17 +166,24 @@ export default function EditPeminjamanPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (status === "Menunggu Verifikasi") {
-      if (!tanggalPengembalian || !penerimaAset || !penerimaAset.trim() || buktiFiles.length === 0) {
-        showToast("Mohon lengkapi Tanggal Pengembalian, Penerima Alat, dan Bukti Pengembalian (minimal 1 gambar) sebelum menyimpan", "error");
-        return;
-      }
-    } else {
-      // Logic for editing in other statuses if needed
-      if (!tanggalPengembalian && (!penerimaAset || !penerimaAset.trim()) && status === data?.status && buktiFiles.length === 0) {
-        showToast("Mohon isi atau ubah data sebelum menyimpan", "error");
-        return;
-      }
+    // Cek apakah status sudah diubah ke Pengembalian
+    if (status !== "Menunggu Verifikasi") {
+      showToast("Ubah status menjadi 'Pengembalian Alat' terlebih dahulu sebelum menyimpan", "error");
+      return;
+    }
+
+    // Validasi semua data pengembalian wajib lengkap
+    if (!tanggalPengembalian) {
+      showToast("Tanggal pengembalian wajib diisi", "error");
+      return;
+    }
+    if (!penerimaAset || !penerimaAset.trim()) {
+      showToast("Penerima alat wajib diisi", "error");
+      return;
+    }
+    if (buktiFiles.length === 0) {
+      showToast("Bukti pengembalian wajib diisi (minimal 1 gambar)", "error");
+      return;
     }
 
     try {
@@ -186,7 +193,7 @@ export default function EditPeminjamanPage() {
         status,
         penerimaAset,
       }, buktiFiles);
-      showToast("Data peminjaman berhasil diperbarui!");
+      showToast("Data pengembalian berhasil disimpan!");
       setTimeout(() => router.push("/aset/peminjaman"), 1500);
     } catch (err) {
       showToast(err.response?.data?.message || "Gagal memperbarui data", "error");
