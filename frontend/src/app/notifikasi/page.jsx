@@ -218,8 +218,8 @@ export default function NotificationsPage() {
 
       {/* Pagination UI */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2">
-          <p className="text-sm text-slate-500">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-2 gap-3">
+          <p className="hidden sm:block text-sm text-slate-500">
             Menampilkan <span className="font-semibold text-slate-700">{startIndex + 1}</span>-
             <span className="font-semibold text-slate-700">{Math.min(startIndex + itemsPerPage, notifications.length)}</span> dari 
             <span className="font-semibold text-slate-700"> {notifications.length}</span> notifikasi

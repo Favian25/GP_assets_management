@@ -39,19 +39,40 @@ export default function KategoriMerekPage() {
   const tabKategoriRef = useRef(null);
   const tabMerekRef = useRef(null);
   const [indicatorStyle, setIndicatorStyle] = useState({});
+  const [isIndicatorReady, setIsIndicatorReady] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
   // Update sliding indicator position when activeTab changes
   useEffect(() => {
-    const activeRef = activeTab === "kategori" ? tabKategoriRef : tabMerekRef;
-    const button = activeRef.current;
-    if (button) {
-      setIndicatorStyle({
-        width: button.offsetWidth,
-        left: button.offsetLeft,
-      });
-    }
+    let mounted = true;
+    const updateIndicator = () => {
+      const activeRef = activeTab === "kategori" ? tabKategoriRef : tabMerekRef;
+      const button = activeRef.current;
+      if (button && button.offsetWidth > 0) {
+        setIndicatorStyle({
+          width: button.offsetWidth,
+          left: button.offsetLeft,
+        });
+      }
+    };
+
+    updateIndicator();
+    
+    const readyTimer = setTimeout(() => {
+      if (mounted) setIsIndicatorReady(true);
+    }, 50);
+
+    // Antisipasi client-side routing Next.js dimana ukuran bisa jadi 0 di awal
+    const routingTimer = setTimeout(updateIndicator, 150);
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      mounted = false;
+      clearTimeout(readyTimer);
+      clearTimeout(routingTimer);
+      window.removeEventListener("resize", updateIndicator);
+    };
   }, [activeTab]);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
@@ -135,8 +156,8 @@ export default function KategoriMerekPage() {
   };
 
   const PaginationControls = () => (
-    <div className="flex items-center justify-between px-5 py-3 bg-slate-50/50">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 bg-slate-50/50 gap-3">
+      <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500 text-nowrap">Menampilkan {filteredData.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredData.length)} dari <span className="font-semibold text-slate-700">{filteredData.length}</span> data</p>
         <div className="flex items-center gap-2">
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
@@ -249,23 +270,23 @@ export default function KategoriMerekPage() {
           <p className="text-sm text-slate-500">Manajemen kategori dan merek aset dalam satu tempat</p>
         </div>
         
-        <div ref={tabContainerRef} className="relative flex bg-slate-200 p-1.5 rounded-xl border border-slate-300 self-start shadow-inner">
+        <div ref={tabContainerRef} className="relative flex bg-slate-200 p-1.5 rounded-xl border border-slate-300 self-center sm:self-start shadow-inner">
           {/* Sliding Indicator */}
           <div 
-            className="absolute top-1.5 bottom-1.5 bg-primary rounded-lg shadow-md transition-all duration-300 ease-out"
+            className={`absolute top-1.5 bottom-1.5 bg-primary rounded-lg shadow-md transition-all duration-300 ease-out ${!indicatorStyle.width ? 'opacity-0' : 'opacity-100'}`}
             style={indicatorStyle}
           />
           <button 
             ref={tabKategoriRef}
             onClick={() => { setActiveTab("kategori"); setCurrentPage(1); setSearch(""); }}
-            className={`relative z-10 px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${activeTab === "kategori" ? "text-white scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
+            className={`relative z-10 px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${activeTab === "kategori" && indicatorStyle.width ? "text-white scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
           >
             DAFTAR KATEGORI
           </button>
           <button 
             ref={tabMerekRef}
             onClick={() => { setActiveTab("merek"); setCurrentPage(1); setSearch(""); }}
-            className={`relative z-10 px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${activeTab === "merek" ? "text-white scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
+            className={`relative z-10 px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${activeTab === "merek" && indicatorStyle.width ? "text-white scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
           >
             DAFTAR MEREK
           </button>
@@ -345,7 +366,7 @@ export default function KategoriMerekPage() {
                       <span className="block w-full text-center rounded-full border py-1 text-xs font-semibold tracking-wide uppercase border-blue-500 bg-blue-50 text-blue-700 shadow-sm">{item.kode_singkat}</span>
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <span className={`block w-full rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
+                      <span className={`block min-w-[120px] w-full max-w-[140px] mx-auto rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
                         {item.tipe}
                       </span>
                     </td>
@@ -390,7 +411,7 @@ export default function KategoriMerekPage() {
                     <td className="px-5 py-3 text-center text-slate-500 font-medium">{startIndex + index + 1}</td>
                     <td className="px-5 py-3 font-bold text-slate-700 text-sm">{item.nama}</td>
                     <td className="px-5 py-3 text-center">
-                      <span className={`block w-full rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
+                      <span className={`block min-w-[120px] w-full max-w-[140px] mx-auto rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
                         {item.tipe}
                       </span>
                     </td>

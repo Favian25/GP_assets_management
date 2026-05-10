@@ -240,8 +240,8 @@ export default function KelolaUserPage() {
   };
 
   const Pagination = () => (
-    <div className="flex items-center justify-between px-5 py-3">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 gap-3">
+      <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500">Menampilkan {currentData.length === 0 ? 0 : indexOfFirstItem + 1}–{Math.min(indexOfFirstItem + itemsPerPage, processedUsers.length)} dari <span className="font-semibold text-slate-700">{processedUsers.length}</span> data</p>
       </div>
       <div className="flex items-center gap-1">

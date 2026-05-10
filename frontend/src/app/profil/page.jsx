@@ -234,23 +234,44 @@ export default function ProfilPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card (Live preview) */}
-        <div className="lg:col-span-1 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-max sticky top-24">
-          <div className={`h-24 ${getRoleColor(user.role)} relative`}>
-            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-              <div className="relative group">
-                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white border-4 border-white shadow-lg overflow-hidden">
-                  {getAvatarContent()}
+        <div className="lg:col-span-1 bg-white sm:border sm:border-slate-200 sm:rounded-xl sm:shadow-sm sm:overflow-hidden h-max sticky top-[60px] sm:top-24 z-40 sm:z-auto -mx-4 sm:mx-0 px-4 sm:px-0 py-3 sm:py-0 border-b border-slate-200 sm:border-b-0">
+          
+          {/* Desktop Layout */}
+          <div className="hidden sm:block">
+            <div className={`h-24 ${getRoleColor(user.role)} relative`}>
+              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
+                <div className="relative group">
+                  <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white border-4 border-white shadow-lg overflow-hidden">
+                    {getAvatarContent()}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="pt-14 pb-6 px-6 text-center">
-            <h2 className="text-lg font-bold text-slate-800 wrap-break-word">{namaLengkap || user.namaLengkap}</h2>
-            <p className="text-sm text-slate-500 mt-0.5">{user.email}</p>
-            <div className="mt-3">
-              <span className={`inline-block rounded-full border px-3 py-1 text-xs font-semibold capitalize ${getRoleBadge(user.role)}`}>{user.role}</span>
+            <div className="pt-14 pb-6 px-6 text-center">
+              <h2 className="text-lg font-bold text-slate-800 wrap-break-word">{namaLengkap || user.namaLengkap}</h2>
+              <p className="text-sm text-slate-500 mt-0.5">{user.email}</p>
+              <div className="mt-3">
+                <span className={`inline-block rounded-full border px-3 py-1 text-xs font-semibold capitalize ${getRoleBadge(user.role)}`}>{user.role}</span>
+              </div>
             </div>
           </div>
+
+          {/* Mobile Layout */}
+          <div className="sm:hidden flex flex-col gap-2">
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white border-2 border-slate-200 overflow-hidden">
+              {getAvatarContent()}
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0 pr-3">
+                <h2 className="text-base font-bold text-slate-800 leading-tight truncate">{namaLengkap || user.namaLengkap}</h2>
+                <p className="text-xs text-slate-500 mt-0.5 truncate">{user.email}</p>
+              </div>
+              <span className={`shrink-0 inline-block rounded-full border px-2.5 py-1 text-[10px] font-bold capitalize ${getRoleBadge(user.role)}`}>
+                {user.role}
+              </span>
+            </div>
+          </div>
+
         </div>
 
         {/* Unified Form */}

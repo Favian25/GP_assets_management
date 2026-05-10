@@ -299,7 +299,7 @@ export default function EditPeminjamanPage() {
         {data.items && data.items.length > 0 && (
           <div className="px-6 pb-6">
             <label className="mb-2 block text-xs font-medium text-slate-500">Daftar Alat Dipinjam</label>
-            <div className="rounded-lg border border-slate-200 overflow-hidden">
+            <div className="rounded-lg border border-slate-200 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="bg-slate-50 border-b border-slate-200">
                   <th className="px-4 py-2 text-left font-semibold text-slate-600 w-10">No</th>

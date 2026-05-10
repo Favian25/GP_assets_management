@@ -311,8 +311,8 @@ export default function AksesorisPage() {
   };
 
   const Pagination = () => (
-    <div className="flex items-center justify-between px-5 py-3">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 gap-3">
+      <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500 text-nowrap">Menampilkan {sorted.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-semibold text-slate-700">{sorted.length}</span> data</p>
         <div className="flex items-center gap-2">
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
@@ -434,12 +434,16 @@ export default function AksesorisPage() {
       )}
 
       {/* Lightbox */}
-      {lightboxImg && (
-        <div className="fixed inset-0 z-35 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxImg(null)}>
+      {mounted && typeof document !== 'undefined' && lightboxImg && createPortal(
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxImg(null)}>
           <div className="relative h-[85vh] w-[85vw] max-w-5xl animate-modal-in" onClick={(e) => e.stopPropagation()}>
+            <button className="fixed top-6 right-6 z-110 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors" onClick={() => setLightboxImg(null)}>
+              <X className="h-8 w-8" />
+            </button>
             <Image src={lightboxImg} alt="Preview" fill unoptimized className="rounded-xl object-contain shadow-2xl cursor-default" />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Header */}

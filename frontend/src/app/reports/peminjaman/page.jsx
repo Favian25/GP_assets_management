@@ -182,15 +182,17 @@ export default function PeminjamanReportPage() {
     const s = { 
       "Menunggu Persetujuan": "bg-amber-50 text-amber-700 border-amber-500", 
       "Sedang Dipinjam": "bg-blue-50 text-blue-700 border-blue-500", 
-      "Sudah Dikembalikan": "bg-emerald-50 text-emerald-700 border-emerald-500", 
+      "Menunggu Verifikasi": "bg-violet-50 text-violet-700 border-violet-500",
+      "Sudah Dikembalikan": "bg-emerald-50 text-emerald-700 border-emerald-500",
+      "Peminjaman Selesai": "bg-emerald-50 text-emerald-700 border-emerald-500", 
       "Ditolak": "bg-rose-50 text-rose-700 border-rose-500" 
     };
-    return `inline-block w-[220px] text-center ${s[status] || "bg-slate-50 text-slate-700 border-slate-200"}`;
+    return `inline-block w-[240px] text-center ${s[status] || "bg-slate-50 text-slate-700 border-slate-200"}`;
   };
 
   const Pagination = () => (
-    <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 border-t border-slate-200 gap-3">
+      <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500 text-nowrap">Menampilkan {filteredData.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredData.length)} dari <span className="font-semibold text-slate-700">{filteredData.length}</span> data</p>
         <div className="flex items-center gap-2">
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 

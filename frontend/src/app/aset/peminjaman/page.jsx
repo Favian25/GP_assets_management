@@ -255,8 +255,8 @@ export default function PeminjamanAsetPage() {
   };
 
   const Pagination = () => (
-    <div className="flex items-center justify-between px-5 py-3">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 gap-3">
+      <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500 text-nowrap">Menampilkan {paginatedData.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-semibold text-slate-700">{sorted.length}</span> data</p>
         <div className="flex items-center gap-2">
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
@@ -382,7 +382,7 @@ export default function PeminjamanAsetPage() {
                   <td className="px-5 py-3 text-slate-600 text-sm max-w-[160px] truncate">{item.alasanPeminjaman || "-"}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPeminjaman)}</td>
                   <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPengembalian)}</td>
-                  <td className="px-5 py-3 text-center"><span className={`block w-full rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
+                  <td className="px-5 py-3 text-center"><span className={`block min-w-[180px] w-full max-w-[200px] mx-auto rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       {/* Detail */}

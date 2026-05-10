@@ -12,6 +12,7 @@ export default function ClientWrapper({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [isClientAuthChecked, setIsClientAuthChecked] = useState(false);
 
   const isAuthPage = pathname === "/auth" || pathname.startsWith("/auth/");
@@ -84,10 +85,10 @@ export default function ClientWrapper({ children }) {
 
   return (
     <>
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-      <Navbar isCollapsed={isCollapsed} />
-      <div className={`flex min-h-screen flex-col transition-all duration-300 ease-in-out ${isCollapsed ? "ml-20" : "ml-64"}`}>
-        <main key={pathname} className="flex-1 bg-background p-6 pt-22 animate-page-in">
+      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <Navbar isCollapsed={isCollapsed} onMenuToggle={() => setMobileOpen(!mobileOpen)} />
+      <div className={`flex min-h-screen flex-col transition-all duration-300 ease-in-out ml-0 ${isCollapsed ? "lg:ml-20" : "lg:ml-64"}`}>
+        <main key={pathname} className="flex-1 bg-background p-4 sm:p-6 pt-20 sm:pt-22 animate-page-in">
           {children}
         </main>
         <Footer />

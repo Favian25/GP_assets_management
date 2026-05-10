@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { logoutUser, getUserContext } from "../lib/authService";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, formatTimeAgo } from "../lib/notificationService";
-import { Bell, User, ChevronDown, LogOut, FileText, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Bell, User, ChevronDown, LogOut, FileText, CheckCircle2, AlertTriangle, ShieldCheck, Menu } from "lucide-react";
 
 const getBackendURL = () => {
   if (typeof window !== "undefined") {
@@ -15,7 +15,7 @@ const getBackendURL = () => {
 };
 const BACKEND_URL = getBackendURL();
 
-export default function Navbar({ isCollapsed }) {
+export default function Navbar({ isCollapsed, onMenuToggle }) {
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -134,14 +134,24 @@ export default function Navbar({ isCollapsed }) {
   }, []);
 
   return (
-    <header className={`fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 transition-all duration-300 ease-in-out ${isCollapsed ? "left-20" : "left-64"}`}>
-      <div 
-        className="text-xl font-montserrat font-extrabold tracking-wide drop-shadow-sm truncate pr-4"
-        style={{ backgroundImage: 'radial-gradient(circle at top left, #3b82f6 0%, #1d4ed8 50%, #1e3a8a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}
-      >
-        ASSET MANAGEMENT SYSTEM
+    <header className={`fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 transition-all duration-300 ease-in-out left-0 ${isCollapsed ? "lg:left-20" : "lg:left-64"}`}>
+      <div className="flex items-center gap-3">
+        {/* Hamburger Menu - Mobile Only */}
+        <button 
+          onClick={onMenuToggle}
+          className="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        
+        <div 
+          className="text-lg sm:text-xl font-montserrat font-extrabold tracking-wide drop-shadow-sm truncate pr-4 hidden sm:block"
+          style={{ backgroundImage: 'radial-gradient(circle at top left, #3b82f6 0%, #1d4ed8 50%, #1e3a8a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}
+        >
+          ASSET MANAGEMENT SYSTEM
+        </div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* Notification */}
         <div ref={notifRef} className="relative">
           <button
@@ -156,7 +166,7 @@ export default function Navbar({ isCollapsed }) {
             )}
           </button>
 
-          <div className={`absolute right-0 mt-2 w-96 grid transition-all duration-300 ease-in-out ${notifOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 pointer-events-none"}`}>
+          <div className={`fixed sm:absolute top-16 right-4 sm:top-auto sm:right-0 sm:mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-96 grid transition-all duration-300 ease-in-out z-50 ${notifOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 pointer-events-none"}`}>
             <div className="overflow-hidden">
               <div className="rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
                 <div className="border-b border-slate-200 px-4 py-3 flex items-center justify-between">
@@ -228,7 +238,7 @@ export default function Navbar({ isCollapsed }) {
                 userInitial
               )}
             </div>
-            <ChevronDown className="h-4 w-4 text-slate-400" />
+            <ChevronDown className="h-4 w-4 text-slate-400 hidden sm:block" />
           </button>
 
           <div className={`absolute right-0 mt-2 w-56 grid transition-all duration-300 ease-in-out ${profileOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 pointer-events-none"}`}>
