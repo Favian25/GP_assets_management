@@ -233,7 +233,7 @@ export default function Navbar({ isCollapsed, onMenuToggle }) {
           >
             <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white border border-slate-200 text-sm font-bold text-slate-600 overflow-hidden">
               {userFoto ? (
-                <Image src={userFoto.startsWith("http") ? userFoto : `${BACKEND_URL}${userFoto}`} alt="Profile" fill className="object-cover" sizes="32px" unoptimized />
+                <Image src={userFoto.startsWith("http") ? userFoto : `${BACKEND_URL}${userFoto}`} alt="Profile" fill className="object-cover" sizes="32px" unoptimized priority />
               ) : (
                 userInitial
               )}

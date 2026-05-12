@@ -182,12 +182,12 @@ export default function ProfilPage() {
 
   const getRoleBadge = (role) => {
     const s = {
-      "super admin": "bg-violet-50 text-violet-700 border-violet-200",
-      "admin": "bg-blue-50 text-blue-700 border-blue-200",
-      "supervisor": "bg-amber-50 text-amber-700 border-amber-200",
-      "user": "bg-emerald-50 text-emerald-700 border-emerald-200",
+      "super admin": "bg-violet-50 text-violet-700 border-violet-500",
+      "admin": "bg-blue-50 text-blue-700 border-blue-500",
+      "supervisor": "bg-amber-50 text-amber-700 border-amber-500",
+      "user": "bg-emerald-50 text-emerald-700 border-emerald-500",
     };
-    return s[role] || "bg-slate-100 text-slate-600 border-slate-200";
+    return s[role] || "bg-slate-100 text-slate-600 border-slate-500";
   };
 
   const getAvatarContent = () => {
@@ -201,7 +201,7 @@ export default function ProfilPage() {
     const f = user.fotoProfil || user.foto_profil;
     const fotoSrc = fotoPreview || (f ? (f.startsWith('http') ? f : `${API_BASE}${f}`) : null);
     if (fotoSrc) {
-      return <Image src={fotoSrc} alt="Foto Profil" fill className="object-cover" sizes="128px" unoptimized />;
+      return <Image src={fotoSrc} alt="Foto Profil" fill className="object-cover" sizes="128px" unoptimized priority />;
     }
     return (
       <div className={`flex h-full w-full items-center justify-center rounded-full ${getRoleColor(user.role)} text-2xl font-bold text-white`}>
@@ -227,17 +227,23 @@ export default function ProfilPage() {
         document.body
       )}
 
-      <div className="mb-6">
+      <div className="mb-6 lg:block hidden">
         <h1 className="text-2xl font-bold text-slate-800">Profil Saya</h1>
         <p className="text-sm text-slate-500">Informasi akun dan pengaturan keamanan</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card (Live preview) */}
-        <div className="lg:col-span-1 bg-white sm:border sm:border-slate-200 sm:rounded-xl sm:shadow-sm sm:overflow-hidden h-max sticky top-[60px] sm:top-24 z-40 sm:z-auto -mx-4 sm:mx-0 px-4 sm:px-0 py-3 sm:py-0 border-b border-slate-200 sm:border-b-0">
+        <div className="lg:col-span-1 h-max sticky top-[60px] lg:top-24 z-40 lg:z-auto -mx-4 sm:-mx-6 lg:mx-0 -mt-5 sm:-mt-7 lg:mt-0">
           
-          {/* Desktop Layout */}
-          <div className="hidden sm:block">
+          {/* Mobile/Tablet Header (Transparent Background) */}
+          <div className="lg:hidden px-4 pt-5 pb-3">
+            <h1 className="text-lg font-bold text-slate-800">Profil Saya</h1>
+          </div>
+
+          <div className="bg-white lg:border lg:border-slate-200 lg:rounded-xl lg:shadow-sm lg:overflow-hidden border-b border-slate-200 lg:border-b-0">
+            {/* Desktop Layout */}
+          <div className="hidden lg:block">
             <div className={`h-24 ${getRoleColor(user.role)} relative`}>
               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
                 <div className="relative group">
@@ -256,22 +262,38 @@ export default function ProfilPage() {
             </div>
           </div>
 
-          {/* Mobile Layout */}
-          <div className="sm:hidden flex flex-col gap-2">
-            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white border-2 border-slate-200 overflow-hidden">
-              {getAvatarContent()}
+          {/* Mobile Layout (Discord Style) */}
+          <div className="lg:hidden">
+            {/* Banner */}
+            <div className={`h-20 ${getRoleColor(user.role)} relative`}>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0 pr-3">
-                <h2 className="text-base font-bold text-slate-800 leading-tight truncate">{namaLengkap || user.namaLengkap}</h2>
-                <p className="text-xs text-slate-500 mt-0.5 truncate">{user.email}</p>
+            {/* Avatar & Info Container */}
+            <div className="px-4 pb-5 relative bg-white">
+              {/* Overlapping Avatar */}
+              <div className="absolute -top-10 left-4">
+                <div className="relative h-20 w-20 rounded-full bg-white border-4 border-white shadow-md overflow-hidden flex items-center justify-center">
+                  {getAvatarContent()}
+                </div>
               </div>
-              <span className={`shrink-0 inline-block rounded-full border px-2.5 py-1 text-[10px] font-bold capitalize ${getRoleBadge(user.role)}`}>
-                {user.role}
-              </span>
+              {/* Info section below avatar overlap */}
+              <div className="pt-12 flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold text-slate-900 leading-tight truncate">
+                    {namaLengkap || user.namaLengkap}
+                  </h2>
+                  <p className="text-sm text-slate-500 font-medium truncate mt-0.5">
+                    {user.email}
+                  </p>
+                </div>
+                <div className="shrink-0 pt-1">
+                  <span className={`inline-block rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${getRoleBadge(user.role)}`}>
+                    {user.role}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-
+          </div>
         </div>
 
         {/* Unified Form */}

@@ -202,11 +202,11 @@ export default function AksesorisReportPage() {
           <Cpu className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-bold text-slate-800">Laporan Inventaris Aksesoris</h2>
         </div>
-        <div className="relative" ref={exportMenuRef}>
+        <div className="relative w-full sm:w-auto" ref={exportMenuRef}>
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={exporting || loading || filteredData.length === 0}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+            className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
             <Printer className="h-4 w-4" /> 
             <span>Cetak Laporan</span>
@@ -214,12 +214,12 @@ export default function AksesorisReportPage() {
           </button>
           
           {showExportMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-full sm:w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
               <button
                 onClick={handleExportPDF}
-                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-50"
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-50 cursor-pointer"
               >
-                <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
+                <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
                   <FileText className="h-4 w-4" />
                 </div>
                 <div className="flex flex-col items-start">
@@ -229,9 +229,9 @@ export default function AksesorisReportPage() {
               </button>
               <button
                 onClick={handleExportExcel}
-                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
               >
-                <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 shrink-0">
                   <Download className="h-4 w-4" />
                 </div>
                 <div className="flex flex-col items-start">
@@ -247,45 +247,45 @@ export default function AksesorisReportPage() {
       {/* Advanced Filter Section */}
       <div className="p-5 flex flex-col gap-4 bg-white border-b border-slate-300">
         <div className="flex flex-col lg:flex-row gap-4">
-          <div className="relative flex-1">
+          <div className="relative w-full lg:flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
               placeholder="Cari aksesoris, kode, atau merek..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
+              className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="relative">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-nowrap gap-3 w-full lg:w-auto">
+            <div className="relative w-full sm:w-auto sm:flex-1 lg:flex-none">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <select
                 value={kategoriFilter}
                 onChange={(e) => { setKategoriFilter(e.target.value); setCurrentPage(1); }}
-                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+                className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
               >
                 <option value="">Semua Kategori</option>
                 {getUniqueValues('kategori').map(k => <option key={k} value={k}>{k}</option>)}
               </select>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto sm:flex-1 lg:flex-none">
               <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <select
                 value={merekFilter}
                 onChange={(e) => { setMerekFilter(e.target.value); setCurrentPage(1); }}
-                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+                className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
               >
                 <option value="">Semua Merek</option>
                 {getUniqueValues('merek').map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
-            <div className="relative">
+            <div className="relative w-full col-span-2 sm:col-span-1 sm:w-auto sm:flex-1 lg:flex-none">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <select
                 value={kondisiFilter}
                 onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
-                className="pl-9 pr-8 py-2 border-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+                className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
               >
                 <option value="">Semua Kondisi</option>
                 {getUniqueValues('kondisi').map(k => <option key={k} value={k}>{k}</option>)}
@@ -293,7 +293,7 @@ export default function AksesorisReportPage() {
             </div>
             <button 
               onClick={resetFilters}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              className="flex items-center justify-center gap-2 h-10 w-full col-span-2 sm:col-span-1 sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 border border-slate-300 rounded-lg hover:bg-slate-300 transition-colors cursor-pointer shrink-0"
               title="Reset Filter"
             >
               <RotateCcw className="h-4 w-4" /> Reset

@@ -30,13 +30,31 @@ const emptyForm = {
 // =====================================================
 
 function InputField({ label, required, value, onChange, placeholder, type = "text", className = "" }) {
+  const isDate = type === 'date' || type === 'datetime-local';
+  
   return (
     <div className={className}>
       <label className="mb-1.5 block text-sm font-medium text-slate-700">
         {label} {required && <span className="text-rose-500">*</span>}
       </label>
-      <input type={type} placeholder={placeholder} value={value} onChange={onChange} required={required} onInvalid={(e) => required && e.target.setCustomValidity(`${label} wajib diisi`)} onInput={(e) => required && e.target.setCustomValidity("")}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+      <div className="relative">
+        {isDate && !value && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">
+            {placeholder || (type === 'date' ? "dd/mm/yyyy" : "dd/mm/yyyy, --:--")}
+          </span>
+        )}
+        <input 
+          type={type} 
+          placeholder={placeholder}
+          value={value} 
+          onChange={onChange} 
+          onClick={(e) => { if (isDate) { try { e.target.showPicker(); } catch(err) {} } }}
+          required={required} 
+          onInvalid={(e) => required && e.target.setCustomValidity(`${label} wajib diisi`)} 
+          onInput={(e) => required && e.target.setCustomValidity("")}
+          className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${isDate ? 'cursor-pointer' : ''} ${isDate && !value ? 'text-transparent' : 'text-slate-700 placeholder:text-slate-400'}`} 
+        />
+      </div>
     </div>
   );
 }
@@ -437,7 +455,7 @@ export default function AksesorisPage() {
       {mounted && typeof document !== 'undefined' && lightboxImg && createPortal(
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxImg(null)}>
           <div className="relative h-[85vh] w-[85vw] max-w-5xl animate-modal-in" onClick={(e) => e.stopPropagation()}>
-            <button className="fixed top-6 right-6 z-110 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors" onClick={() => setLightboxImg(null)}>
+            <button className="fixed top-6 right-1 z-110 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors" onClick={() => setLightboxImg(null)}>
               <X className="h-8 w-8" />
             </button>
             <Image src={lightboxImg} alt="Preview" fill unoptimized className="rounded-xl object-contain shadow-2xl cursor-default" />

@@ -58,10 +58,10 @@ const getStatusLabel = (status) => {
 
 const getStatusBadge = (status) => {
   const s = {
-    "Menunggu Persetujuan": "bg-amber-50 text-amber-700 border-amber-200",
-    "Sedang Dipinjam": "bg-blue-50 text-blue-700 border-blue-200",
-    "Menunggu Verifikasi": "bg-violet-50 text-violet-700 border-violet-200",
-    "Peminjaman Selesai": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "Menunggu Persetujuan": "bg-amber-50 text-amber-700 border-amber-500",
+    "Sedang Dipinjam": "bg-blue-50 text-blue-700 border-blue-500",
+    "Menunggu Verifikasi": "bg-violet-50 text-violet-700 border-violet-500",
+    "Peminjaman Selesai": "bg-emerald-50 text-emerald-700 border-emerald-500",
   };
   return s[status] || "bg-slate-50 text-slate-700 border-slate-200";
 };
@@ -251,7 +251,7 @@ export default function EditPeminjamanPage() {
             <FileText className="h-4 w-4 text-slate-400" />
             Data Peminjaman (Read-Only)
           </h2>
-          <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase ${getStatusBadge(data.status)}`}>{getStatusLabel(data.status)}</span>
+          <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs text-center font-semibold uppercase shadow-sm ${getStatusBadge(data.status)}`}>{getStatusLabel(data.status)}</span>
         </div>
         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -346,9 +346,23 @@ export default function EditPeminjamanPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Pengembalian <span className="text-rose-500">*</span></label>
-              <input type="datetime-local" value={tanggalPengembalian} onChange={(e) => setTanggalPengembalian(e.target.value)} required
-                onInvalid={(e) => e.target.setCustomValidity("Tanggal pengembalian wajib diisi")} onInput={(e) => e.target.setCustomValidity("")}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+              <div className="relative">
+                {!tanggalPengembalian && (
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">
+                    dd/mm/yyyy, --:--
+                  </span>
+                )}
+                <input 
+                  type="datetime-local" 
+                  value={tanggalPengembalian} 
+                  onChange={(e) => setTanggalPengembalian(e.target.value)} 
+                  onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                  required
+                  onInvalid={(e) => e.target.setCustomValidity("Tanggal pengembalian wajib diisi")} 
+                  onInput={(e) => e.target.setCustomValidity("")}
+                  className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${!tanggalPengembalian ? 'text-transparent' : 'text-slate-700 placeholder:text-slate-400'}`} 
+                />
+              </div>
             </div>
 
             <div className="sm:col-span-2">

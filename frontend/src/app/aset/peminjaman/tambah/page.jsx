@@ -389,9 +389,23 @@ export default function TambahPeminjamanPage() {
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Peminjaman <span className="text-rose-500">*</span></label>
-                <input type="datetime-local" value={tanggalPeminjaman} onChange={(e) => setTanggalPeminjaman(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
-                  onInvalid={(e) => e.target.setCustomValidity("Tanggal peminjaman wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                <div className="relative">
+                  {!tanggalPeminjaman && (
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">
+                      dd/mm/yyyy, --:--
+                    </span>
+                  )}
+                  <input 
+                    type="datetime-local" 
+                    value={tanggalPeminjaman} 
+                    onChange={(e) => setTanggalPeminjaman(e.target.value)}
+                    onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                    className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${!tanggalPeminjaman ? 'text-transparent' : 'text-slate-700 placeholder:text-slate-400'}`} 
+                    required
+                    onInvalid={(e) => e.target.setCustomValidity("Tanggal peminjaman wajib diisi")} 
+                    onInput={(e) => e.target.setCustomValidity("")}
+                  />
+                </div>
               </div>
 
               <div>
