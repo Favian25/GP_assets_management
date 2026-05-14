@@ -7,18 +7,46 @@ import { getDashboardStats } from "./lib/assetService";
 import { 
   Package, CheckCircle2, AlertCircle, Settings, AlertTriangle, 
   RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus, 
-  Calendar, User, Clock, LayoutGrid, Cpu
+  Calendar, User, Clock, LayoutGrid, Cpu, Check, X
 } from "lucide-react";
+import { getUserContext } from "./lib/authService";
+import { createPortal } from "react-dom";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userRole, setUserRole] = useState("user");
+  const [toast, setToast] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    const ctx = getUserContext();
+    if (ctx) setUserRole(ctx.role || "user");
+    
+    // Check for unauthorized error from redirect
+    const err = new URLSearchParams(window.location.search).get("error");
+    if (err === "unauthorized") {
+      showToast("Akses Dibatasi: Anda tidak memiliki izin untuk mengakses halaman tersebut.", "error");
+      // Clean up URL
+      router.replace("/");
+    }
+
     fetchStats();
   }, []);
+
+  const showToast = (message, type = "error") => {
+    setToast({ message, type });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
 
   const fetchStats = async () => {
     try {
@@ -73,9 +101,18 @@ export default function DashboardPage() {
   };
 
   const handleActivityClick = (activity) => {
+    const isAdmin = ["super admin", "admin"].includes(userRole);
     if (activity.type === 'asset') {
-      router.push(`/aset?search=${activity.item}`);
+      if (!isAdmin) {
+        showToast("Akses Dibatasi: Anda tidak memiliki izin untuk melihat daftar aset.", "error");
+        return;
+      }
+      router.push(`/aset/daftar?search=${activity.item}`);
     } else if (activity.type === 'aksesoris') {
+      if (!isAdmin) {
+        showToast("Akses Dibatasi: Anda tidak memiliki izin untuk melihat daftar aksesoris.", "error");
+        return;
+      }
       router.push(`/aksesoris?search=${activity.item}`);
     } else if (activity.type === 'loan') {
       router.push(`/aset/peminjaman?search=${activity.item}`);
@@ -88,7 +125,7 @@ export default function DashboardPage() {
       value: stats?.total ?? 0,
       icon: <Package />,
       color: "bg-blue-600",
-      link: "/aset",
+      link: "/aset/daftar",
     },
     {
       title: "Aksesoris",
@@ -102,28 +139,28 @@ export default function DashboardPage() {
       value: stats?.tersedia ?? 0,
       icon: <CheckCircle2 />,
       color: "bg-emerald-600",
-      link: "/aset",
+      link: "/aset/daftar?kondisi=Siap Digunakan",
     },
     {
       title: "Rusak",
       value: stats?.rusak ?? 0,
       icon: <AlertCircle />,
       color: "bg-rose-600",
-      link: "/aset",
+      link: "/aset/daftar?kondisi=Rusak",
     },
     {
       title: "Maintenance",
       value: stats?.maintenance ?? 0,
       icon: <Settings />,
       color: "bg-amber-500",
-      link: "/aset",
+      link: "/aset/daftar?kondisi=Maintenance",
     },
     {
       title: "Aset Dipinjam",
       value: stats?.dipinjam ?? 0,
       icon: <ClipboardList />,
       color: "bg-indigo-600",
-      link: "/aset/peminjaman",
+      link: "/aset/peminjaman?status=Sedang Dipinjam",
     },
   ];
 
@@ -205,12 +242,21 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-        {statCards.map((stat, index) => (
-          <Link
-            key={index}
-            href={stat.link}
-            className={`relative overflow-hidden rounded-2xl ${stat.color} p-5 text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl group block`}
-          >
+        {statCards.map((stat, index) => {
+          const isRestricted = ["/aset/daftar", "/aksesoris", "/reports"].some(path => stat.link.startsWith(path)) && !["super admin", "admin"].includes(userRole);
+          
+          return (
+            <Link
+              key={index}
+              href={stat.link}
+              onClick={(e) => {
+                if (isRestricted) {
+                  e.preventDefault();
+                  showToast("Akses Dibatasi: Anda tidak memiliki izin untuk mengakses halaman ini.", "error");
+                }
+              }}
+              className={`relative overflow-hidden rounded-2xl ${stat.color} p-5 text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl group block ${isRestricted ? "cursor-not-allowed opacity-90" : "cursor-pointer"}`}
+            >
             {/* Decorative background elements */}
             <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 transition-transform group-hover:scale-125" />
             
@@ -233,8 +279,9 @@ export default function DashboardPage() {
                 Lihat Selengkapnya <ChevronRight className="h-3 w-3" />
               </div>
             </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Dashboard Tables Grid */}
@@ -282,7 +329,9 @@ export default function DashboardPage() {
                     <tr 
                       key={loan.id} 
                       className={`cursor-pointer transition-colors hover:bg-blue-50/50 ${idx % 2 === 0 ? "bg-slate-100/50" : "bg-white"}`}
-                      onClick={() => router.push(`/aset/peminjaman?search=${loan.kodePinjam}`)}
+                      onClick={() => {
+                        router.push(`/aset/peminjaman?search=${loan.kodePinjam}`);
+                      }}
                     >
                       <td className="px-5 py-3">
                         <div className="flex flex-col">
@@ -399,8 +448,16 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-
       </div>
+
+      {/* Toast Portal */}
+      {mounted && typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-9999 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+          {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+          {toast.message}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

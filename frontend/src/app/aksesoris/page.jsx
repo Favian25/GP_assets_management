@@ -7,6 +7,7 @@ import Image from "next/image";
 import { getAllAksesoris, createAksesoris, updateAksesoris, deleteAksesoris, searchAksesoris, updateAksesorisKondisi } from "../lib/aksesorisService";
 import { getAllCategories, createCategory } from "../lib/categoryService";
 import { getAllBrands, createBrand } from "../lib/brandService";
+import { getUserContext } from "../lib/authService";
 import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu } from "lucide-react";
 
 const getBackendURL = () => {
@@ -145,6 +146,7 @@ export default function AksesorisPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [kondisiFilter, setKondisiFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showDetail, setShowDetail] = useState(null);
   const [showEdit, setShowEdit] = useState(null);
@@ -161,6 +163,7 @@ export default function AksesorisPage() {
   const [editImagePreview, setEditImagePreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [userRole, setUserRole] = useState("user");
   const [kategoriList, setKategoriList] = useState([]);
   const [merekList, setMerekList] = useState([]);
 
@@ -173,11 +176,24 @@ export default function AksesorisPage() {
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { 
+    setMounted(true);
+    const ctx = getUserContext();
+    if (ctx) {
+      const role = ctx.role || "user";
+      setUserRole(role);
+      // Failsafe RBAC
+      if (!["super admin", "admin"].includes(role)) {
+        router.push("/?error=unauthorized");
+      }
+    }
+  }, [router]);
 
   useEffect(() => {
     const q = searchParams?.get("search");
     if (q) setSearch(q);
+    const k = searchParams?.get("kondisi");
+    if (k) setKondisiFilter(k);
   }, [searchParams]);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
@@ -209,9 +225,11 @@ export default function AksesorisPage() {
   }, [loading]);
 
   useEffect(() => { 
-    fetchData(); 
-    fetchDependencies();
-  }, [fetchData]);
+    if (["super admin", "admin"].includes(userRole)) {
+      fetchData(); 
+      fetchDependencies();
+    }
+  }, [fetchData, userRole]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -229,8 +247,13 @@ export default function AksesorisPage() {
   };
   const getImageUrl = (gambar) => { if (!gambar) return null; if (gambar.startsWith("http")) return gambar; return `${BACKEND_URL}${gambar}`; };
 
-  // Sorting & Pagination
-  const sorted = [...assets].sort((a, b) => {
+  // Filtering, Sorting & Pagination
+  const filteredData = assets.filter(item => {
+    if (!kondisiFilter) return true;
+    return item.kondisi === kondisiFilter;
+  });
+
+  const sorted = [...filteredData].sort((a, b) => {
     if (!sortConfig.key) return 0;
     const aVal = (a[sortConfig.key] || "").toString().toLowerCase();
     const bVal = (b[sortConfig.key] || "").toString().toLowerCase();
@@ -487,10 +510,22 @@ export default function AksesorisPage() {
         
         {/* Toolbar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-            <input type="text" placeholder="Cari nama aksesoris..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" />
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+              <input type="text" placeholder="Cari nama aksesoris..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" />
+            </div>
+            <select 
+              value={kondisiFilter} 
+              onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full sm:w-48 rounded-lg border-2 border-slate-200 py-2 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
+            >
+              <option value="">Semua Kondisi</option>
+              {kondisiOptions.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
           </div>
           <button onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
             className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">

@@ -5,8 +5,9 @@ const notificationController = {
   getNotifications: async (req, res) => {
     try {
       const role = req.user.role;
-      const data = await Notification.getByRole(role);
-      const unreadCount = await Notification.getUnreadCountByRole(role);
+      const userName = req.user.nama;
+      const data = await Notification.getByRole(role, userName);
+      const unreadCount = await Notification.getUnreadCountByRole(role, userName);
       res.status(200).json({ success: true, data, unreadCount });
     } catch (error) {
       console.error('Error get notifications:', error);

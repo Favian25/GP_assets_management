@@ -203,11 +203,11 @@ export default function NotificationsPage() {
                       </span>
                     </div>
                     <p className={`text-base leading-relaxed ${!notif.is_read ? "text-slate-800 font-semibold" : "text-slate-600"}`}>
-                      {notif.message}
+                      {notif.message.replace(/\s\[(Peminjam|By):.*?\]/gi, "").trim()}
                     </p>
                   </div>
                   {!notif.is_read && (
-                    <span className="mt-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                    <span className="mt-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
                   )}
                 </button>
               );

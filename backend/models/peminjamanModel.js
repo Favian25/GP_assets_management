@@ -33,7 +33,13 @@ const Peminjaman = {
 
   // GET data berdasarkan ID (header + items)
   getById: async (id) => {
-    const [headers] = await db.query("SELECT * FROM peminjaman WHERE id = ?", [id]);
+    const [headers] = await db.query(
+      `SELECT p.*, u.nama_lengkap as created_by_name 
+       FROM peminjaman p 
+       LEFT JOIN users u ON p.user_id = u.id 
+       WHERE p.id = ?`, 
+      [id]
+    );
     if (!headers[0]) return null;
 
     const [items] = await db.query(

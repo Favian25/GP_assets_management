@@ -243,7 +243,7 @@ const peminjamanController = {
       const actionText = checkData.status === "Menunggu Persetujuan" ? "disetujui untuk dipinjam" : "diverifikasi pengembaliannya";
       await Notification.create({
         type: 'approved',
-        message: `Peminjaman ${checkData.kode_pinjam} telah ${actionText} oleh ${approved_by || 'System'}`,
+        message: `Peminjaman ${checkData.kode_pinjam} telah ${actionText} oleh ${approved_by || 'System'} [Peminjam: ${checkData.nama_peminjam}] [By: ${checkData.created_by_name}]`,
         referenceId: id,
         targetRoles: 'super admin,admin,supervisor,user',
       });

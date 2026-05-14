@@ -25,6 +25,7 @@ export default function Navbar({ isCollapsed, onMenuToggle }) {
   const [userInitial, setUserInitial] = useState("U");
   const [userRole, setUserRole] = useState("");
   const [userFoto, setUserFoto] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   // Notifikasi state
   const [notifications, setNotifications] = useState([]);
@@ -38,6 +39,7 @@ export default function Navbar({ isCollapsed, onMenuToggle }) {
         setUserInitial((ctx.namaLengkap || ctx.email || "U").charAt(0).toUpperCase());
         setUserRole(ctx.role || "user");
         setUserFoto(ctx.fotoProfil || ctx.foto_profil || null);
+        setCurrentUserId(ctx.id);
       }
     };
     updateFromCtx();
@@ -53,12 +55,30 @@ export default function Navbar({ isCollapsed, onMenuToggle }) {
 
   // Fetch notifikasi
   const fetchNotifications = useCallback(async () => {
+    if (!userRole) return;
     const result = await getNotifications();
     if (result.success) {
-      setNotifications(result.data);
-      setUnreadCount(result.unreadCount);
+      let filtered = result.data;
+      const searchName = userName.trim();
+      if (userRole === 'user') {
+        // Filter notifikasi:
+        // 1. Berdasarkan user_id (paling akurat)
+        // 2. Berdasarkan nama (fallback)
+        filtered = result.data.filter(n => 
+          (n.user_id && n.user_id === currentUserId) || 
+          (searchName && n.message.toLowerCase().includes(searchName.toLowerCase()))
+        );
+      }
+      setNotifications(filtered);
+      
+      // Hitung unread dari hasil filter jika role user
+      if (userRole === 'user') {
+        setUnreadCount(filtered.filter(n => !n.is_read).length);
+      } else {
+        setUnreadCount(result.unreadCount);
+      }
     }
-  }, []);
+  }, [userRole, userName, currentUserId]);
 
   // Polling setiap 15 detik
   useEffect(() => {
@@ -67,12 +87,15 @@ export default function Navbar({ isCollapsed, onMenuToggle }) {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Tandai semua sudah dibaca saat dropdown dibuka
-  const handleOpenNotif = async () => {
-    const willOpen = !notifOpen;
-    setNotifOpen(willOpen);
+  // Buka tutup dropdown
+  const handleOpenNotif = () => {
+    setNotifOpen(!notifOpen);
     setProfileOpen(false);
-    if (willOpen && unreadCount > 0) {
+  };
+
+  // Tandai semua sudah dibaca (manual)
+  const handleMarkAllAsRead = async () => {
+    if (unreadCount > 0) {
       await markAllNotificationsAsRead();
       setUnreadCount(0);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
@@ -171,10 +194,13 @@ export default function Navbar({ isCollapsed, onMenuToggle }) {
               <div className="rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
                 <div className="border-b border-slate-200 px-4 py-3 flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-800">Notifikasi</p>
-                  {notifications.length > 0 && (
-                    <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                      {notifications.length} terbaru
-                    </span>
+                  {unreadCount > 0 && (
+                    <button 
+                      onClick={handleMarkAllAsRead}
+                      className="cursor-pointer text-[10px] font-bold text-primary hover:text-primary-hover bg-primary/10 px-2.5 py-1 rounded-lg transition-colors border border-primary/20"
+                    >
+                      Tandai sudah dibaca ({unreadCount})
+                    </button>
                   )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
@@ -198,11 +224,13 @@ export default function Navbar({ isCollapsed, onMenuToggle }) {
                             <icon.component className={`h-4 w-4 ${icon.color}`} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${!notif.is_read ? "text-slate-800 font-medium" : "text-slate-600"}`}>{notif.message}</p>
+                            <p className={`text-sm ${!notif.is_read ? "text-slate-800 font-medium" : "text-slate-600"}`}>
+                              {notif.message.replace(/\s\[(Peminjam|By):.*?\]/gi, "").trim()}
+                            </p>
                             <p className="mt-0.5 text-xs text-slate-400">{formatTimeAgo(notif.created_at)}</p>
                           </div>
                           {!notif.is_read && (
-                            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                            <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] animate-pulse" />
                           )}
                         </button>
                       );

@@ -9,23 +9,30 @@ const Notification = {
     return result;
   },
 
-  getByRole: async (role) => {
-    const [rows] = await db.query(
-      `SELECT * FROM notifications 
-       WHERE FIND_IN_SET(?, target_roles) > 0 
-       ORDER BY created_at DESC 
-       LIMIT 20`,
-      [role]
-    );
+  getByRole: async (role, userName = null) => {
+    let query = `SELECT * FROM notifications WHERE FIND_IN_SET(?, target_roles) > 0`;
+    let params = [role];
+    
+    if (role === 'user' && userName) {
+      query += ` AND message LIKE ?`;
+      params.push(`%${userName}%`);
+    }
+    
+    query += ` ORDER BY created_at DESC LIMIT 50`;
+    const [rows] = await db.query(query, params);
     return rows;
   },
 
-  getUnreadCountByRole: async (role) => {
-    const [rows] = await db.query(
-      `SELECT COUNT(*) as count FROM notifications 
-       WHERE FIND_IN_SET(?, target_roles) > 0 AND is_read = 0`,
-      [role]
-    );
+  getUnreadCountByRole: async (role, userName = null) => {
+    let query = `SELECT COUNT(*) as count FROM notifications WHERE FIND_IN_SET(?, target_roles) > 0 AND is_read = 0`;
+    let params = [role];
+
+    if (role === 'user' && userName) {
+      query += ` AND message LIKE ?`;
+      params.push(`%${userName}%`);
+    }
+
+    const [rows] = await db.query(query, params);
     return rows[0].count;
   },
 

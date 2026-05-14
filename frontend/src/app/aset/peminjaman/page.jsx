@@ -16,6 +16,7 @@ const getBackendURL = () => {
   return "http://localhost:5000";
 };
 const BACKEND_URL = getBackendURL();
+const statusOptions = ["Menunggu Persetujuan", "Sedang Dipinjam", "Menunggu Verifikasi", "Peminjaman Selesai"];
 
 // Helper: parse bukti data yang bisa berupa string JSON atau array (jika kolom MySQL bertipe JSON)
 const parseBuktiImages = (data) => {
@@ -122,6 +123,7 @@ export default function PeminjamanAsetPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
@@ -150,6 +152,8 @@ export default function PeminjamanAsetPage() {
   useEffect(() => {
     const q = searchParams?.get("search");
     if (q) setSearch(q);
+    const s = searchParams?.get("status");
+    if (s) setStatusFilter(s);
   }, [searchParams]);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
@@ -203,8 +207,13 @@ export default function PeminjamanAsetPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Sorting & Pagination
-  const sorted = [...dataList].sort((a, b) => {
+  // Filtering, Sorting & Pagination
+  const filteredData = dataList.filter(item => {
+    if (!statusFilter) return true;
+    return item.status === statusFilter;
+  });
+
+  const sorted = [...filteredData].sort((a, b) => {
     if (!sortConfig.key) return 0;
     const aVal = (a[sortConfig.key] || "").toString().toLowerCase();
     const bVal = (b[sortConfig.key] || "").toString().toLowerCase();
@@ -338,16 +347,28 @@ export default function PeminjamanAsetPage() {
 
         {/* Toolbar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-            <input type="text" placeholder="Cari nama peminjam..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" />
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+              <input type="text" placeholder="Cari peminjaman..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300" />
+            </div>
+            <select 
+              value={statusFilter} 
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full sm:w-56 rounded-lg border-2 border-slate-200 py-2 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
+            >
+              <option value="">Semua Status</option>
+              {statusOptions.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
           </div>
           {canAdd && (
             <button onClick={() => router.push("/aset/peminjaman/tambah")}
               className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">
               <Plus className="h-4 w-4" />
-              Tambah Peminjaman
+              Pinjam Aset
             </button>
           )}
         </div>
