@@ -169,7 +169,7 @@ export default function Navbar({ isCollapsed, onMenuToggle }) {
         
         <div 
           className="text-lg sm:text-xl font-montserrat font-extrabold tracking-wide drop-shadow-sm truncate pr-4 hidden sm:block"
-          style={{ backgroundImage: 'radial-gradient(circle at top left, #3b82f6 0%, #1d4ed8 50%, #1e3a8a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}
+          style={{ backgroundImage: 'radial-gradient(circle at top left, #f47820 0%, #d4610e 50%, #b84d0a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}
         >
           ASSET MANAGEMENT SYSTEM
         </div>

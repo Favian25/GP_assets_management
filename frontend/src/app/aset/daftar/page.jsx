@@ -17,7 +17,7 @@ const getBackendURL = () => {
   return "http://localhost:5000";
 };
 const BACKEND_URL = getBackendURL();
-const kondisiOptions = ["Siap Digunakan", "Rusak", "Maintenance", "Dijual"];
+const kondisiOptions = ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"];
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 
 const emptyForm = {
@@ -337,6 +337,7 @@ export default function DaftarAsetPage() {
     const s = { 
       "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600", 
       "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600", 
+      "Rusak Berat": "bg-rose-900 text-white border-rose-950 hover:bg-black hover:border-black",
       "Maintenance": "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600", 
       "Dijual": "bg-slate-100 text-slate-600 border-slate-500 hover:bg-slate-600 hover:text-white hover:border-slate-600" 
     };
@@ -386,7 +387,7 @@ export default function DaftarAsetPage() {
           {isEdit && (
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Aset</label>
-              <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm font-mono font-bold text-primary">{data.kodeAset}</div>
+              <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm font-mono font-semibold text-slate-700">{data.kodeAset}</div>
             </div>
           )}
           <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: e.target.value}))} />
@@ -440,7 +441,7 @@ export default function DaftarAsetPage() {
   if (loading) {
     return (
       <div>
-        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1><p className="text-sm text-slate-500">Kelola data aset Galeria Production</p></div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1><p className="text-sm text-slate-500">Kelola data aset Galeria Karya Media</p></div>
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="p-8 space-y-3 animate-pulse">{[1,2,3,4,5].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/><div className="h-4 w-20 rounded bg-slate-200"/></div>))}</div>
         </div>
@@ -451,7 +452,7 @@ export default function DaftarAsetPage() {
   if (error) {
     return (
       <div>
-        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1><p className="text-sm text-slate-500">Kelola data aset Galeria Production</p></div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1><p className="text-sm text-slate-500">Kelola data aset Galeria Karya Media</p></div>
         <div className="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-10">
           <AlertTriangle className="h-12 w-12 text-rose-400 mb-3" />
           <p className="text-sm font-medium text-rose-700 mb-1">Koneksi Gagal</p>
@@ -494,7 +495,7 @@ export default function DaftarAsetPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Daftar Aset</h1>
-        <p className="text-sm text-slate-500">Kelola data aset Galeria Production</p>
+        <p className="text-sm text-slate-500">Kelola data aset Galeria Karya Media</p>
       </div>
 
       {/* Toolbar & Table Section */}
@@ -557,7 +558,7 @@ export default function DaftarAsetPage() {
             <tbody>
               {paginatedData.map((item, index) => (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="w-[140px] px-5 py-3 font-mono text-xs font-bold text-primary hover:underline cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.kodeAset}</td>
+                  <td className="w-[140px] px-5 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.kodeAset}</td>
                   <td className="w-[80px] px-3 py-2 text-center">
                     {item.gambar ? (
                       <div className="mx-auto h-9 w-9 relative cursor-pointer hover:ring-2 hover:ring-primary transition-all rounded-md overflow-hidden" onClick={() => setLightboxImg(getImageUrl(item.gambar))}>

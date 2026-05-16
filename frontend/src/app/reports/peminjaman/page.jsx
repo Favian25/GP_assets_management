@@ -363,7 +363,7 @@ export default function PeminjamanReportPage() {
               ) : (
                 paginatedData.map((item, index) => (
                   <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                    <td className="px-5 py-3 text-primary font-mono font-bold text-xs">{item.kodePinjam}</td>
+                    <td className="px-5 py-3 text-slate-700 font-semibold text-xs">{item.kodePinjam}</td>
                     <td className="px-5 py-3 text-slate-700 font-semibold text-sm">{item.namaPeminjam}</td>
                     <td className="px-5 py-3 text-slate-600">
                       <div className="flex items-center gap-1.5 text-sm font-semibold">

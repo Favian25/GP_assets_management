@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Sistem Pencatatan Asset — Galeria Production",
-  description: "Dashboard sistem pencatatan dan manajemen aset Galeria Production",
+  title: "Sistem Pencatatan Asset — Galeria Karya Media",
+  description: "Dashboard sistem pencatatan dan manajemen aset Galeria Karya Media",
 };
 
 export default function RootLayout({ children }) {

@@ -174,6 +174,7 @@ export default function AsetReportPage() {
     const s = { 
       "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500", 
       "Rusak": "bg-red-50 text-red-700 border-red-500", 
+      "Rusak Berat": "bg-rose-950 text-rose-100 border-rose-900",
       "Maintenance": "bg-amber-50 text-amber-700 border-amber-500", 
       "Dijual": "bg-slate-100 text-slate-600 border-slate-500" 
     };
@@ -359,7 +360,7 @@ export default function AsetReportPage() {
               ) : (
                 paginatedData.map((asset, index) => (
                   <tr key={asset.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                    <td className="px-5 py-3 text-primary font-mono font-bold text-xs">{asset.kodeAset}</td>
+                    <td className="px-5 py-3 text-slate-700 font-semibold text-xs">{asset.kodeAset}</td>
                     <td className="px-5 py-3">
                       <div className="flex flex-col leading-tight">
                         <span className="text-slate-700 font-semibold text-sm">{asset.namaAset}</span>

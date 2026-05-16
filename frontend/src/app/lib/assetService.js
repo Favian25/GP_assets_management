@@ -130,22 +130,22 @@ export async function getDashboardStats() {
   const aksesoris = await getAllAksesoris();
   const peminjaman = await getAllPeminjaman();
   
-  // ── Total Aset: jumlah keseluruhan aset KECUALI yang kondisinya "Dijual" ──
+  // ── Total Aset: jumlah keseluruhan aset KECUALI yang kondisinya "Dijual" atau "Rusak Berat" ──
   const totalAset = assets
-    .filter(a => a.kondisi !== "Dijual")
+    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
     .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
-  // ── Aksesoris: jumlah keseluruhan aksesoris KECUALI yang kondisinya "Dijual" ──
+  // ── Aksesoris: jumlah unit aksesoris yang TERSEDIA (jumlahUnit) KECUALI "Dijual" atau "Rusak Berat" ──
   const totalAksesoris = aksesoris
-    .filter(a => a.kondisi !== "Dijual")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahUnit) || 0), 0);
 
   // ── Siap Digunakan: ASET SAJA yang kondisinya "Siap Digunakan", ambil stok tersedia (jumlah) ──
   const tersedia = assets
     .filter(a => a.kondisi === "Siap Digunakan")
     .reduce((sum, a) => sum + (parseInt(a.jumlah) || 0), 0);
 
-  // ── Rusak: jumlah unit ASET SAJA yang kondisinya "Rusak" ──
+  // ── Rusak: jumlah unit ASET SAJA yang kondisinya "Rusak" (yang masih bisa diperbaiki) ──
   const rusak = assets
     .filter(a => a.kondisi === "Rusak")
     .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
@@ -155,10 +155,15 @@ export async function getDashboardStats() {
     .filter(a => a.kondisi === "Maintenance")
     .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
-  // ── Aset Dipinjam: jumlah unit aset yang sedang terpinjam (selisih total - tersedia) ──
-  const dipinjam = assets
+  // ── Alat Dipinjam: jumlah unit aset + aksesoris yang sedang terpinjam (selisih total - tersedia) ──
+  const dipinjamAset = assets
     .filter(a => a.kondisi === "Siap Digunakan")
     .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlah) || 0)), 0);
+
+  const dipinjamAksesoris = aksesoris
+    .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlahUnit) || 0)), 0);
+
+  const dipinjam = dipinjamAset + dipinjamAksesoris;
 
   // Peringatan Stok Rendah (jumlah <= 3)
   const lowStockAssets = [

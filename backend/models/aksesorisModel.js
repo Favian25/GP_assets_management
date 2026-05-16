@@ -20,14 +20,14 @@ const Aksesoris = {
 
   // Generate kode aksesoris berikutnya
   getNextKode: async (kodeSingkat) => {
-    const prefix = `GPRO-${kodeSingkat}-`;
+    const prefix = `GKM-${kodeSingkat}-`;
     const [rows] = await db.query(
       "SELECT kode_aksesoris FROM aksesoris WHERE kode_aksesoris LIKE ? ORDER BY id DESC LIMIT 1",
       [`${prefix}%`]
     );
     let nextNum = 1;
     if (rows[0] && rows[0].kode_aksesoris) {
-      const match = rows[0].kode_aksesoris.match(new RegExp(`GPRO-${kodeSingkat}-(\\d+)`));
+      const match = rows[0].kode_aksesoris.match(new RegExp(`GKM-${kodeSingkat}-(\\d+)`));
       if (match) nextNum = parseInt(match[1]) + 1;
     }
     return `${prefix}${String(nextNum).padStart(3, "0")}`;

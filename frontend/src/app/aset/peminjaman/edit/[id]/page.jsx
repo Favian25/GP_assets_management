@@ -256,7 +256,7 @@ export default function EditPeminjamanPage() {
         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">No. Peminjaman</label>
-            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm font-mono font-bold text-primary">{data.kodePinjam}</div>
+            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm font-mono font-semibold text-slate-700">{data.kodePinjam}</div>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Nama Peminjam</label>
@@ -311,7 +311,7 @@ export default function EditPeminjamanPage() {
                   {data.items.map((item, i) => (
                     <tr key={item.id} className="border-b border-slate-100 last:border-0">
                       <td className="px-4 py-2 text-slate-500">{i + 1}</td>
-                      <td className="px-4 py-2 text-xs text-slate-500 font-mono font-bold">{item.kodeAset}</td>
+                      <td className="px-4 py-2 text-xs text-slate-500 font-mono font-semibold">{item.kodeAset}</td>
                       <td className="px-4 py-2 text-slate-700 font-medium">{item.namaAset}</td>
                       <td className="px-4 py-2 text-center font-semibold text-slate-700">{item.jumlah}</td>
                     </tr>

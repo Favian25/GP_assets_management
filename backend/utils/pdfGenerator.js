@@ -8,7 +8,7 @@ const fs = require('fs');
  */
 function getLogoBase64() {
   try {
-    const logoPath = path.join(__dirname, '..', '..', 'frontend', 'public', 'logo-kop-surat.png');
+    const logoPath = path.join(__dirname, '..', '..', 'frontend', 'public', 'LOGO GALERIA KARYA MEDIA - TRANSPARANT WARNA.png');
     const logoBuffer = fs.readFileSync(logoPath);
     return `data:image/png;base64,${logoBuffer.toString('base64')}`;
   } catch (e) {
@@ -91,44 +91,46 @@ async function generateLoanPDF(data) {
     .header {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 4px;
+      gap: 20px;
+      margin-bottom: 2px;
+      padding-left: 20px;
+    }
+
+    .header-logo-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 130px;
     }
 
     .header-logo {
-      height: 36px;
+      height: 76px;
       width: auto;
-      margin-top: 2px;
     }
 
     .header-text {
       flex: 1;
+      padding-top: 1px;
     }
 
-    .brand-line {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-
-    .brand-production {
+    .brand-name {
       font-family: 'Montserrat', sans-serif;
-      font-weight: 800;
-      font-size: 17px;
-      color: #1a3a6b;
-      letter-spacing: 5px;
-      margin-left: 10px
+      font-weight: 900;
+      font-size: 18px;
+      color: #000;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
     }
 
     .header-info {
-      font-size: 10px;
+      font-size: 11px;
       color: #000;
-      line-height: 1.55;
-      margin-top: 3px;
+      line-height: 1.6;
     }
 
     .double-line {
-      margin-top: 6px;
+      margin-top: 8px;
       border-top: 2.5px solid #000;
       border-bottom: 1px solid #000;
       padding-top: 2px;
@@ -253,15 +255,15 @@ async function generateLoanPDF(data) {
 
   <!-- ===== HEADER / KOP SURAT ===== -->
   <div class="header">
+    <div class="header-logo-block">
+      ${logoBase64 ? `<img src="${logoBase64}" class="header-logo" />` : ''}
+    </div>
     <div class="header-text">
-      <div class="brand-line">
-        ${logoBase64 ? `<img src="${logoBase64}" class="header-logo" />` : ''}
-        <span class="brand-production">P R O D U C T I O N</span>
-      </div>
+      <div class="brand-name">CV. GALERIA KARYA MEDIA</div>
       <div class="header-info">
-        Office 1 : Perum Puri Kertosari Asri Blok A3, Kertosari – Banyuwangi<br/>
-        Office 2 : Perum Graha Tirta Cluster Calista No. 112, Waru, Sidoarjo<br/>
-        Telp / WA : 082234048321 | 085133233373 &nbsp;|&nbsp; Instagram : @galeriaproduction &nbsp;|&nbsp; Website : www.galeriaproduction.com
+        Perum Puri Kertosari Asri Blok A3, Kertosari – Banyuwangi<br/>
+        Telp / WA : 082228177117 | 082234048321<br/>
+        Website : www.galeriakaryamedia.com
       </div>
     </div>
   </div>

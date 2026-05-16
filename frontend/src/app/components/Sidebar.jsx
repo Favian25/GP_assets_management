@@ -86,7 +86,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
           <div className={`flex flex-1 items-center justify-center transition-all duration-500 overflow-hidden ${isCollapsed ? "lg:max-w-0 lg:opacity-0 lg:invisible" : "max-w-full opacity-100 visible"}`}>
             <Link href="/" className="flex items-center justify-center w-full">
               <div className="flex h-8 w-auto items-center justify-center bg-transparent relative">
-                <Image src="/logo-galeria-production.png" alt="Galeria Production Logo" width={110} height={110} className="h-full w-auto object-contain" style={{ width: 'auto' }} priority />
+                <Image src="/LOGO GALERIA KARYA MEDIA - TRANSPARANT PUTIH ( LANDSCAPE ).png" alt="Galeria Karya Media Logo" width={110} height={110} className="h-full w-auto object-contain" style={{ width: 'auto' }} priority />
               </div>
             </Link>
           </div>

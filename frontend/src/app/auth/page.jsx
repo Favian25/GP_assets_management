@@ -34,7 +34,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-[#E5EEFF] relative overflow-hidden">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-[#FFF3E8] relative overflow-hidden">
       {/* Optional Subtle Grid Background */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px]"></div>
       
@@ -42,8 +42,8 @@ export default function AuthPage() {
         
         {/* Brand Logo & Title */}
         <div className="text-center mb-6">
-          <div className="mx-auto flex h-24 w-auto items-center justify-center mb-1 relative">
-            <Image src="/logo-galeria-production-biru.png" alt="Galeria Production Logo" width={220} height={96} className="h-full w-auto object-contain" style={{ width: 'auto' }} priority />
+          <div className="mx-auto flex h-36 w-auto items-center justify-center mb-1 relative">
+            <Image src="/LOGO GALERIA KARYA MEDIA - TRANSPARANT WARNA.png" alt="Galeria Karya Media Logo" width={340} height={144} className="h-full w-auto object-contain" style={{ width: 'auto' }} priority />
           </div>
           <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">Asset Management</p>
         </div>

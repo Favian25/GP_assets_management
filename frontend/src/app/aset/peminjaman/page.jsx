@@ -291,7 +291,7 @@ export default function PeminjamanAsetPage() {
   if (loading) {
     return (
       <div>
-        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Peminjaman Aset</h1><p className="text-sm text-slate-500">Kelola data peminjaman aset Galeria Production</p></div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Peminjaman Aset</h1><p className="text-sm text-slate-500">Kelola data peminjaman aset Galeria Karya Media</p></div>
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="p-8 space-y-3 animate-pulse">{[1,2,3,4,5].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/><div className="h-4 w-20 rounded bg-slate-200"/></div>))}</div>
         </div>
@@ -302,7 +302,7 @@ export default function PeminjamanAsetPage() {
   if (error) {
     return (
       <div>
-        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Peminjaman Aset</h1><p className="text-sm text-slate-500">Kelola data peminjaman aset Galeria Production</p></div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Peminjaman Aset</h1><p className="text-sm text-slate-500">Kelola data peminjaman aset Galeria Karya Media</p></div>
         <div className="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-10">
           <AlertTriangle className="h-12 w-12 text-rose-400 mb-3" />
           <p className="text-sm font-medium text-rose-700 mb-1">Koneksi Gagal</p>
@@ -392,7 +392,7 @@ export default function PeminjamanAsetPage() {
             <tbody>
               {paginatedData.map((item, index) => (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="px-5 py-3 font-mono text-xs font-bold text-primary hover:underline cursor-pointer" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
+                  <td className="px-5 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
                   <td className="px-5 py-3 text-slate-700 font-semibold hover:text-primary cursor-pointer truncate" onClick={() => handleShowDetail(item)}>{item.namaPeminjam}</td>
                   <td className="px-5 py-3 text-slate-600 max-w-[220px]">
                     <span className="inline-block bg-slate-200 text-slate-700 rounded-full px-2.5 py-0.5 text-[10px] font-bold mr-1 shadow-sm border border-slate-300/60 uppercase tracking-wide">
@@ -451,7 +451,7 @@ export default function PeminjamanAsetPage() {
                   <div>
                     <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Peminjaman</h4>
                     <div className="space-y-2.5">
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">No. Peminjaman</span><span className="text-sm font-mono text-primary font-bold">{showDetail.kodePinjam}</span></div>
+                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">No. Peminjaman</span><span className="text-sm font-mono text-slate-700 font-semibold">{showDetail.kodePinjam}</span></div>
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Nama Peminjam</span><span className="text-sm text-slate-800">{showDetail.namaPeminjam}</span></div>
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Peminjaman</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPeminjaman)}</span></div>
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Yang Menyerahkan</span><span className="text-sm text-slate-800">{showDetail.yangMenyerahkan || "-"}</span></div>

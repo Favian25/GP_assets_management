@@ -1,17 +1,17 @@
 const db = require("../config/db");
 
 const Peminjaman = {
-  // Generate kode pinjam berikutnya (GP-PJM-1, GP-PJM-2, ...)
+  // Generate kode pinjam berikutnya (GKM-PJM-1, GKM-PJM-2, ...)
   getNextKodePinjam: async () => {
     const [rows] = await db.query(
       "SELECT kode_pinjam FROM peminjaman ORDER BY id DESC LIMIT 1"
     );
     let nextNum = 1;
     if (rows[0] && rows[0].kode_pinjam) {
-      const match = rows[0].kode_pinjam.match(/GPRO-PJM-(\d+)/);
+      const match = rows[0].kode_pinjam.match(/GKM-PJM-(\d+)/);
       if (match) nextNum = parseInt(match[1]) + 1;
     }
-    return `GPRO-PJM-${nextNum}`;
+    return `GKM-PJM-${nextNum}`;
   },
 
   // GET semua data peminjaman beserta items

@@ -5,13 +5,13 @@
   --foreground: #1e293b;
   --sidebar-bg: #1e293b;
   --sidebar-text: #cbd5e1;
-  --sidebar-active: #3b82f6;
+  --sidebar-active: #f47820;
   --card-bg: #ffffff;
   --border: #e2e8f0;
-  --primary: #005AF5;
-  --primary-hover: #0045BF;
+  --primary: #f47820;
+  --primary-hover: #d4610e;
   --success: #22c55e;
-  --warning: #f59e0b;
+  --warning: #eab308;
   --danger: #ef4444;
   --info: #06b6d4;
 }

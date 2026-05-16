@@ -156,7 +156,7 @@ export default function DashboardPage() {
       link: "/aset/daftar?kondisi=Maintenance",
     },
     {
-      title: "Aset Dipinjam",
+      title: "Alat Dipinjam",
       value: stats?.dipinjam ?? 0,
       icon: <ClipboardList />,
       color: "bg-indigo-600",
@@ -171,7 +171,7 @@ export default function DashboardPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
           <p className="text-sm text-slate-500">
-            Selamat datang di Sistem Pencatatan Asset Galeria Production
+            Selamat datang di Sistem Pencatatan Asset Galeria Karya Media
           </p>
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -211,7 +211,7 @@ export default function DashboardPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
           <p className="text-sm text-slate-500">
-            Selamat datang di Sistem Pencatatan Asset Galeria Production
+            Selamat datang di Sistem Pencatatan Asset Galeria Karya Media
           </p>
         </div>
         <div className="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-10">
@@ -236,7 +236,7 @@ export default function DashboardPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
         <p className="text-sm text-slate-500">
-          Selamat datang di Sistem Pencatatan Asset Galeria Production
+          Selamat datang di Sistem Pencatatan Asset Galeria Karya Media
         </p>
       </div>
 
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                 <thead className="sticky top-0 bg-blue-50 z-10">
                   <tr className="border-b border-blue-200">
                     <th className="px-5 py-3 font-bold text-blue-800">Peminjam</th>
-                    <th className="px-5 py-3 font-bold text-blue-800">Item/Aset Dipinjam</th>
+                    <th className="px-5 py-3 font-bold text-blue-800">Alat Dipinjam</th>
                     <th className="px-5 py-3 font-bold text-blue-800 text-center">Status</th>
                   </tr>
                 </thead>
@@ -336,13 +336,13 @@ export default function DashboardPage() {
                       <td className="px-5 py-3">
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-slate-800">{loan.namaPeminjam}</span>
-                          <span className="text-xs text-primary font-mono font-bold mt-0.5">{loan.kodePinjam}</span>
+                          <span className="text-xs text-blue-800 font-mono font-semibold mt-0.5">{loan.kodePinjam}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-1.5">
                           <Package className="h-3.5 w-3.5 text-slate-400" />
-                          <span className="text-sm font-semibold text-slate-600">{loan.totalItems || 0} Aset</span>
+                          <span className="text-sm font-semibold text-slate-600">{loan.totalItems || 0} Alat</span>
                         </div>
                       </td>
                       <td className="px-5 py-3">
@@ -419,7 +419,7 @@ export default function DashboardPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm font-semibold text-primary hover:underline cursor-pointer">{activity.createdBy}</span>
+                        <span className="text-sm font-semibold text-slate-700 cursor-pointer">{activity.createdBy}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-block w-[140px] text-center text-xs font-semibold uppercase px-2 py-0.5 rounded-full border shadow-sm ${
