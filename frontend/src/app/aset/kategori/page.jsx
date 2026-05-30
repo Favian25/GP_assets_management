@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { getAllCategories, createCategory, deleteCategory } from "../../lib/categoryService";
-import { getAllBrands, createBrand, deleteBrand } from "../../lib/brandService";
+import { getAllCategories, createCategory, deleteCategory, updateCategory } from "../../lib/categoryService";
+import { getAllBrands, createBrand, deleteBrand, updateBrand } from "../../lib/brandService";
 import { Plus, Trash2, X, Check, Tag, Bookmark, AlertTriangle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Info, ChevronUp, ChevronDown } from "lucide-react";
 
 export default function KategoriMerekPage() {

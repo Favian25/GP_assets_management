@@ -69,6 +69,9 @@ export default function KelolaUserPage() {
   useEffect(() => { setMounted(true); }, []);
 
   const getBackendURL = () => {
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+    }
     if (typeof window !== "undefined") {
       return `http://${window.location.hostname}:5000`;
     }

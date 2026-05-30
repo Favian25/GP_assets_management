@@ -22,7 +22,7 @@ const authController = {
       }
 
       // Hash password
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(12);
       const hashedPassword = await bcrypt.hash(password, salt);
 
       // Secara default semua pembuatan lewat frontend ini akan diberikan role 'user'

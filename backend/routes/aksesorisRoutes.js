@@ -25,7 +25,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const { verifyToken } = require("../middlewares/authMiddleware");
+const { verifyToken, requireRole } = require("../middlewares/authMiddleware");
 const upload = multer({
   storage,
   fileFilter,
@@ -35,9 +35,9 @@ const upload = multer({
 router.get("/search", aksesorisController.search);         // GET  /api/aksesoris/search?q=keyword
 router.get("/", aksesorisController.getAll);                // GET  /api/aksesoris
 router.get("/:id", aksesorisController.getById);            // GET  /api/aksesoris/:id
-router.post("/", verifyToken, upload.single("gambar"), aksesorisController.create);     // POST /api/aksesoris
-router.put("/:id", verifyToken, upload.single("gambar"), aksesorisController.update);   // PUT  /api/aksesoris/:id
-router.patch("/:id/kondisi", verifyToken, aksesorisController.updateKondisi);           // PATCH /api/aksesoris/:id/kondisi
-router.delete("/:id", verifyToken, aksesorisController.delete);                         // DELETE /api/aksesoris/:id
+router.post("/", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), aksesorisController.create);     // POST /api/aksesoris
+router.put("/:id", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), aksesorisController.update);   // PUT  /api/aksesoris/:id
+router.patch("/:id/kondisi", verifyToken, requireRole("admin", "super admin"), aksesorisController.updateKondisi);           // PATCH /api/aksesoris/:id/kondisi
+router.delete("/:id", verifyToken, requireRole("admin", "super admin"), aksesorisController.delete);                         // DELETE /api/aksesoris/:id
 
 module.exports = router;

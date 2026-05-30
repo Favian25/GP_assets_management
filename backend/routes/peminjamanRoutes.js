@@ -31,7 +31,7 @@ const upload = multer({
   fileFilter,
 });
 
-const { verifyToken } = require("../middlewares/authMiddleware");
+const { verifyToken, requireRole } = require("../middlewares/authMiddleware");
 
 // GET kode pinjam berikutnya (harus di atas /:id)
 router.get("/next-kode", peminjamanController.getNextKode);
@@ -51,8 +51,8 @@ router.post("/", verifyToken, upload.array("bukti", 5), peminjamanController.cre
 // UPDATE pengembalian peminjaman (tambah verifyToken & upload array)
 router.put("/:id", verifyToken, upload.array("bukti", 5), peminjamanController.updatePeminjaman);
 
-// APPROVE peminjaman (verifyToken & potentially check role inside)
-router.put("/:id/approve", verifyToken, peminjamanController.approvePeminjaman);
+// APPROVE peminjaman (verifyToken & check role)
+router.put("/:id/approve", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.approvePeminjaman);
 
 // DELETE peminjaman
 router.delete("/:id", verifyToken, peminjamanController.deletePeminjaman);

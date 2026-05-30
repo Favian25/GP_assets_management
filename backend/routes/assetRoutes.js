@@ -25,7 +25,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const { verifyToken } = require("../middlewares/authMiddleware");
+const { verifyToken, requireRole } = require("../middlewares/authMiddleware");
 const upload = multer({
   storage,
   fileFilter,
@@ -35,9 +35,9 @@ const upload = multer({
 router.get("/search", assetController.search);    // GET  /api/assets/search?q=keyword
 router.get("/", assetController.getAll);           // GET  /api/assets
 router.get("/:id", assetController.getById);       // GET  /api/assets/:id
-router.post("/", verifyToken, upload.single("gambar"), assetController.create);    // POST /api/assets
-router.put("/:id", verifyToken, upload.single("gambar"), assetController.update);  // PUT  /api/assets/:id
-router.patch("/:id/kondisi", verifyToken, assetController.updateKondisi);      // PATCH /api/assets/:id/kondisi
-router.delete("/:id", verifyToken, assetController.delete);     // DELETE /api/assets/:id
+router.post("/", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), assetController.create);    // POST /api/assets
+router.put("/:id", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), assetController.update);  // PUT  /api/assets/:id
+router.patch("/:id/kondisi", verifyToken, requireRole("admin", "super admin"), assetController.updateKondisi);      // PATCH /api/assets/:id/kondisi
+router.delete("/:id", verifyToken, requireRole("admin", "super admin"), assetController.delete);     // DELETE /api/assets/:id
 
 module.exports = router;

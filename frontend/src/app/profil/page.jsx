@@ -9,6 +9,9 @@ import { updateMyProfile } from "../lib/userService";
 import { User, Lock, Camera, Trash2, Eye, EyeOff, Check, X, Shield, Key } from "lucide-react";
 
 const getAPIBase = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+  }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;
   }
@@ -236,8 +239,8 @@ export default function ProfilPage() {
         {/* Profile Card (Live preview) */}
         <div className="lg:col-span-1 h-max sticky top-[60px] lg:top-24 z-40 lg:z-auto -mx-4 sm:-mx-6 lg:mx-0 -mt-5 sm:-mt-7 lg:mt-0">
           
-          {/* Mobile/Tablet Header (Transparent Background) */}
-          <div className="lg:hidden px-4 pt-5 pb-3">
+          {/* Mobile/Tablet Header */}
+          <div className="lg:hidden px-4 pt-5 pb-3 bg-white">
             <h1 className="text-lg font-bold text-slate-800">Profil Saya</h1>
           </div>
 

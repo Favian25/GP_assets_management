@@ -11,6 +11,9 @@ import { getUserContext } from "../../lib/authService";
 import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Package } from "lucide-react";
 
 const getBackendURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+  }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;
   }

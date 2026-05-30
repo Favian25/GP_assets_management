@@ -1,6 +1,9 @@
 import axios from "axios";
 
 const getAuthURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL}/auth`;
+  }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000/api/auth`;
   }

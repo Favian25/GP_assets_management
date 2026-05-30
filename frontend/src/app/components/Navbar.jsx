@@ -8,6 +8,9 @@ import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, f
 import { Bell, User, ChevronDown, LogOut, FileText, CheckCircle2, AlertTriangle, ShieldCheck, Menu } from "lucide-react";
 
 const getBackendURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+  }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;
   }

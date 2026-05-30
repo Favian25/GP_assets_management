@@ -10,6 +10,9 @@ import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, C
 
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 const getBackendURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+  }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;
   }
