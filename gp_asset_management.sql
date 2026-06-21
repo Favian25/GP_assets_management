@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: May 19, 2026 at 07:06 AM
+-- Generation Time: Jun 11, 2026 at 09:58 AM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.26
 
@@ -28,8 +28,8 @@ SET time_zone = "+00:00";
 --
 
 DROP TABLE IF EXISTS `aksesoris`;
-CREATE TABLE IF NOT EXISTS `aksesoris` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `aksesoris` (
+  `id` int NOT NULL,
   `kode_aksesoris` varchar(50) NOT NULL,
   `nama_aksesoris` varchar(255) NOT NULL,
   `kategori` varchar(100) DEFAULT NULL,
@@ -45,10 +45,7 @@ CREATE TABLE IF NOT EXISTS `aksesoris` (
   `keterangan` text,
   `user_id` int DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `kode_aksesoris` (`kode_aksesoris`),
-  KEY `user_id` (`user_id`)
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -58,8 +55,8 @@ CREATE TABLE IF NOT EXISTS `aksesoris` (
 --
 
 DROP TABLE IF EXISTS `assets`;
-CREATE TABLE IF NOT EXISTS `assets` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `assets` (
+  `id` int NOT NULL,
   `kode_aset` varchar(50) NOT NULL,
   `nama_aset` varchar(255) NOT NULL,
   `pengguna` varchar(150) DEFAULT NULL,
@@ -79,11 +76,7 @@ CREATE TABLE IF NOT EXISTS `assets` (
   `harga_aset` decimal(15,2) DEFAULT NULL,
   `jumlah_total` int DEFAULT NULL,
   `tanggal_pembelian` date DEFAULT NULL,
-  `user_id` int DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `kode_aset` (`kode_aset`),
-  UNIQUE KEY `no_sn` (`no_sn`),
-  KEY `fk_asset_user` (`user_id`)
+  `user_id` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -93,16 +86,15 @@ CREATE TABLE IF NOT EXISTS `assets` (
 --
 
 DROP TABLE IF EXISTS `audit_logs`;
-CREATE TABLE IF NOT EXISTS `audit_logs` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `audit_logs` (
+  `id` int NOT NULL,
   `user_id` int DEFAULT NULL,
   `user_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `action` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `entity_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `entity_id` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `details` text COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -112,13 +104,11 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
 --
 
 DROP TABLE IF EXISTS `brands`;
-CREATE TABLE IF NOT EXISTS `brands` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `brands` (
+  `id` int NOT NULL,
   `nama` varchar(100) NOT NULL,
   `tipe` enum('aset','aksesoris') NOT NULL DEFAULT 'aset',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `nama` (`nama`)
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -128,15 +118,12 @@ CREATE TABLE IF NOT EXISTS `brands` (
 --
 
 DROP TABLE IF EXISTS `categories`;
-CREATE TABLE IF NOT EXISTS `categories` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `categories` (
+  `id` int NOT NULL,
   `nama` varchar(100) NOT NULL,
   `kode_singkat` varchar(10) NOT NULL,
   `tipe` enum('aset','aksesoris') NOT NULL DEFAULT 'aset',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `nama` (`nama`),
-  UNIQUE KEY `kode_singkat` (`kode_singkat`)
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -146,15 +133,14 @@ CREATE TABLE IF NOT EXISTS `categories` (
 --
 
 DROP TABLE IF EXISTS `notifications`;
-CREATE TABLE IF NOT EXISTS `notifications` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `notifications` (
+  `id` int NOT NULL,
   `type` varchar(50) NOT NULL,
   `message` text NOT NULL,
   `reference_id` int DEFAULT NULL,
   `target_roles` varchar(255) NOT NULL,
   `is_read` tinyint(1) DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -164,8 +150,8 @@ CREATE TABLE IF NOT EXISTS `notifications` (
 --
 
 DROP TABLE IF EXISTS `peminjaman`;
-CREATE TABLE IF NOT EXISTS `peminjaman` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `peminjaman` (
+  `id` int NOT NULL,
   `kode_pinjam` varchar(50) NOT NULL,
   `nama_peminjam` varchar(255) NOT NULL,
   `penerima_aset` varchar(255) DEFAULT NULL,
@@ -180,10 +166,7 @@ CREATE TABLE IF NOT EXISTS `peminjaman` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `bukti_peminjaman` json DEFAULT NULL,
   `bukti_pengembalian` json DEFAULT NULL,
-  `user_id` int DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `kode_pinjam` (`kode_pinjam`),
-  KEY `fk_user_peminjaman` (`user_id`)
+  `user_id` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -193,16 +176,12 @@ CREATE TABLE IF NOT EXISTS `peminjaman` (
 --
 
 DROP TABLE IF EXISTS `peminjaman_items`;
-CREATE TABLE IF NOT EXISTS `peminjaman_items` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `peminjaman_items` (
+  `id` int NOT NULL,
   `peminjaman_id` int NOT NULL,
   `asset_id` int DEFAULT NULL,
   `aksesoris_id` int DEFAULT NULL,
-  `jumlah` int NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`),
-  KEY `peminjaman_id` (`peminjaman_id`),
-  KEY `asset_id` (`asset_id`),
-  KEY `fk_peminjaman_items_aksesoris` (`aksesoris_id`)
+  `jumlah` int NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -212,25 +191,153 @@ CREATE TABLE IF NOT EXISTS `peminjaman_items` (
 --
 
 DROP TABLE IF EXISTS `users`;
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `users` (
+  `id` int NOT NULL,
   `nama_lengkap` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
   `role` enum('super admin','admin','supervisor','user') NOT NULL DEFAULT 'user',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `foto_profil` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `foto_profil` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `users`
 --
 
 INSERT INTO `users` (`id`, `nama_lengkap`, `email`, `password`, `role`, `created_at`, `updated_at`, `foto_profil`) VALUES
-(1, 'superadmin', 'superadmin@galeria.com', '$2a$12$vIU.493s4tF1GfdlFgO.deUe3Vl5aJm.dwS7R5U2vqaCokU8dR8WC', 'super admin', '2026-05-19 03:50:41', '2026-05-19 03:50:41', NULL);
+(1, 'super admin', 'superadmin@galeria.com', '$2a$12$GZxcV0xlojxkuo5PxA1yw.WCFnXW724TCCFJLljkGzI08vs6sZ1h.', 'super admin', '2026-06-11 09:54:11', '2026-06-11 09:54:11', NULL);
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `aksesoris`
+--
+ALTER TABLE `aksesoris`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kode_aksesoris` (`kode_aksesoris`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `assets`
+--
+ALTER TABLE `assets`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kode_aset` (`kode_aset`),
+  ADD UNIQUE KEY `no_sn` (`no_sn`),
+  ADD KEY `fk_asset_user` (`user_id`);
+
+--
+-- Indexes for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `brands`
+--
+ALTER TABLE `brands`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nama` (`nama`);
+
+--
+-- Indexes for table `categories`
+--
+ALTER TABLE `categories`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nama` (`nama`),
+  ADD UNIQUE KEY `kode_singkat` (`kode_singkat`);
+
+--
+-- Indexes for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `peminjaman`
+--
+ALTER TABLE `peminjaman`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kode_pinjam` (`kode_pinjam`),
+  ADD KEY `fk_user_peminjaman` (`user_id`);
+
+--
+-- Indexes for table `peminjaman_items`
+--
+ALTER TABLE `peminjaman_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `peminjaman_id` (`peminjaman_id`),
+  ADD KEY `asset_id` (`asset_id`),
+  ADD KEY `fk_peminjaman_items_aksesoris` (`aksesoris_id`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `aksesoris`
+--
+ALTER TABLE `aksesoris`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `assets`
+--
+ALTER TABLE `assets`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `audit_logs`
+--
+ALTER TABLE `audit_logs`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `brands`
+--
+ALTER TABLE `brands`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `categories`
+--
+ALTER TABLE `categories`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `peminjaman`
+--
+ALTER TABLE `peminjaman`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `peminjaman_items`
+--
+ALTER TABLE `peminjaman_items`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Constraints for dumped tables

@@ -2,8 +2,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 
-// Gunakan secret dari env, fallback ke string fallback buat development jika lupa diset
-const JWT_SECRET = process.env.JWT_SECRET || 'galeria_production_super_secret_key';
+// JWT Secret harus diset di .env
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required. Set it in your .env file.');
+}
 
 const authController = {
   register: async (req, res) => {
@@ -149,7 +152,7 @@ const authController = {
         return res.status(401).json({ success: false, message: 'Password saat ini salah' });
       }
 
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(12);
       const hashedPassword = await bcrypt.hash(newPassword, salt);
 
       await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.user.userId]);

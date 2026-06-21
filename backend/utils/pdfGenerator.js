@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+
 const path = require('path');
 const fs = require('fs');
 
@@ -44,14 +44,17 @@ function getStatusStyle(status) {
 }
 
 /**
- * Generates a professional PDF for a loan transaction using Puppeteer.
- * The output is guaranteed to fit on exactly 1 A4 page.
+ * Generates a professional HTML template for a loan transaction.
+ * The frontend will print this HTML as a PDF.
  *
  * @param {Object} data - The loan data object from Peminjaman.getById()
- * @returns {Promise<Buffer>} - PDF file as a buffer
+ * @returns {string} - HTML string ready for printing
  */
-async function generateLoanPDF(data) {
+function generateLoanPDF(data) {
+  // Use a public URL for the logo since it will be rendered in the browser
   const logoBase64 = getLogoBase64();
+  
+  // Helper to return color/badge styling based on status
   const statusStyle = getStatusStyle(data.status);
 
   // Build table rows
@@ -82,10 +85,52 @@ async function generateLoanPDF(data) {
       font-family: 'Inter', sans-serif;
       color: #000;
       width: 210mm;
-      height: 297mm;
+      min-height: 297mm;
       padding: 15mm 15mm 20mm 15mm;
       display: flex;
       flex-direction: column;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    @media print {
+      body {
+        box-shadow: none;
+        margin: 0;
+        min-height: auto;
+        height: 297mm;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    .print-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4), 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+      transition: all 0.2s;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .print-btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.5), 0 4px 6px -1px rgba(37, 99, 235, 0.3);
     }
 
     .header {
@@ -351,34 +396,14 @@ async function generateLoanPDF(data) {
     </div>
   </div>
 
+  <button class="print-btn no-print" onclick="window.print()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+    Cetak / Simpan PDF
+  </button>
 </body>
 </html>`;
 
-  // Launch Puppeteer and generate PDF
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: [
-      '--no-sandbox', 
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage'
-    ],
-  });
-
-  try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
-    });
-
-    return pdfBuffer;
-  } finally {
-    await browser.close();
-  }
+  return html;
 }
 
 module.exports = { generateLoanPDF };

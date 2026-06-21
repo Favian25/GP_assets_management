@@ -79,3 +79,19 @@ backend/build/
 backend/logs/
 backend/*.log
 
+# Scratch / Temporary files
+backend/scratch/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ============================
+# AI / Tools Config
+# ============================
+.gemini/
+
+# ============================
+# Additional Logs (root level)
+# ============================
+*.log

@@ -123,20 +123,25 @@ export const searchPeminjaman = async (keyword) => {
     throw error;
   }
 };
-// 9. DOWNLOAD PDF Peminjaman
+// 9. DOWNLOAD PDF Peminjaman (via Client-side Print)
 export const downloadPeminjamanPDF = async (id) => {
   try {
-    const response = await api.get(`/peminjaman/${id}/pdf`, { responseType: "blob" });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `Peminjaman-${id}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    const response = await api.get(`/peminjaman/${id}/pdf`, { responseType: "text" });
+    
+    // Buka tab/jendela baru
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      throw new Error("Pop-up diblokir oleh browser. Harap izinkan pop-up untuk situs ini.");
+    }
+    
+    // Tulis HTML dari backend ke tab baru
+    printWindow.document.open();
+    printWindow.document.write(response.data);
+    printWindow.document.close();
+    
+    // Note: Script window.print() sudah disematkan di dalam HTML dari backend
   } catch (error) {
-    console.error(`Error downloading PDF for peminjaman ${id}:`, error);
+    console.error(`Error processing print layout for peminjaman ${id}:`, error);
     throw error;
   }
 };

@@ -70,7 +70,7 @@ export default function KelolaUserPage() {
 
   const getBackendURL = () => {
     if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+      return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
     }
     if (typeof window !== "undefined") {
       return `http://${window.location.hostname}:5000`;
@@ -245,7 +245,7 @@ export default function KelolaUserPage() {
   const Pagination = () => (
     <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 gap-3">
       <div className="hidden sm:flex items-center gap-3">
-        <p className="text-sm text-slate-500">Menampilkan {currentData.length === 0 ? 0 : indexOfFirstItem + 1}–{Math.min(indexOfFirstItem + itemsPerPage, processedUsers.length)} dari <span className="font-semibold text-slate-700">{processedUsers.length}</span> data</p>
+        <p className="text-sm text-slate-500">Menampilkan {currentData.length === 0 ? 0 : indexOfFirstItem + 1}-{Math.min(indexOfFirstItem + itemsPerPage, processedUsers.length)} dari <span className="font-semibold text-slate-700">{processedUsers.length}</span> data</p>
       </div>
       <div className="flex items-center gap-1">
         <button onClick={() => setCurrentPage(1)} disabled={validCurrentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Pertama"><ChevronsLeft className="h-4 w-4" /></button>
@@ -448,7 +448,7 @@ export default function KelolaUserPage() {
                           </button>
                         </>
                       ) : (
-                        <span className="text-xs text-slate-400 italic">—</span>
+                        <span className="text-xs text-slate-400 italic">-</span>
                       )}
                     </div>
                   </td>

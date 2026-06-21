@@ -318,7 +318,7 @@ const peminjamanController = {
     }
   },
 
-  // GENERATE PDF (Puppeteer)
+  // GENERATE PDF (Frontend-side Print)
   generatePDF: async (req, res) => {
     try {
       const { generateLoanPDF } = require('../utils/pdfGenerator');
@@ -328,17 +328,14 @@ const peminjamanController = {
         return res.status(404).json({ success: false, message: "Data tidak ditemukan" });
       }
 
-      const pdfBuffer = await generateLoanPDF(data);
-      const filename = `Peminjaman-${data.kode_pinjam}.pdf`;
-
-      res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-type', 'application/pdf');
-      res.setHeader('Content-Length', pdfBuffer.length);
-      res.end(pdfBuffer);
+      const htmlContent = await generateLoanPDF(data);
+      
+      res.setHeader('Content-Type', 'text/html');
+      res.send(htmlContent);
     } catch (error) {
-      console.error("Error generate PDF (Puppeteer):", error);
+      console.error("Error generate HTML for PDF:", error);
       if (!res.headersSent) {
-        res.status(500).json({ success: false, message: "Gagal generate PDF" });
+        res.status(500).json({ success: false, message: "Gagal memproses dokumen cetak" });
       }
     }
   },

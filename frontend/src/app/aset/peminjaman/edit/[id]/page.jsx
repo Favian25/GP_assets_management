@@ -6,11 +6,11 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { getPeminjamanById, updatePeminjaman } from "../../../../lib/peminjamanService";
 import { getUserContext } from "../../../../lib/authService";
-import { ChevronLeft, ChevronRight, FileText, Check, X, Calendar, User, Package, Lock, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Check, X, Calendar, User, Package, Lock, Plus, Camera, Image as ImageIcon } from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
   }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;
@@ -378,13 +378,38 @@ export default function EditPeminjamanPage() {
             {/* Bukti Pengembalian Upload */}
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Bukti Pengembalian <span className="text-rose-500">*</span></label>
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 transition-colors">
-                <input type="file" multiple accept="image/*" onChange={handleFileChange} ref={fileInputRef} className="hidden" id="bukti-pengembalian-upload" />
-                <label htmlFor="bukti-pengembalian-upload" className="cursor-pointer flex flex-col items-center justify-center">
-                  <Plus className="h-8 w-8 text-slate-300 mb-2" />
-                  <span className="text-sm font-medium text-slate-600">Klik untuk upload bukti pengembalian</span>
-                  <span className="text-xs text-slate-400 mt-1">Maks. 5 file (JPG/PNG)</span>
-                </label>
+              <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  {/* Opsi Kamera */}
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="bukti-kamera"
+                  />
+                  <label htmlFor="bukti-kamera" className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-emerald-500 hover:text-emerald-600 transition-colors">
+                    <Camera className="h-5 w-5 text-emerald-500" />
+                    <span className="text-sm font-semibold text-slate-700">Buka Kamera</span>
+                  </label>
+
+                  {/* Opsi Galeri */}
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="bukti-galeri"
+                  />
+                  <label htmlFor="bukti-galeri" className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-emerald-500 hover:text-emerald-600 transition-colors">
+                    <ImageIcon className="h-5 w-5 text-emerald-500" />
+                    <span className="text-sm font-semibold text-slate-700">Pilih Galeri</span>
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500 mt-4">Maks. 5 file (JPG/PNG)</p>
               </div>
 
               {/* Previews */}

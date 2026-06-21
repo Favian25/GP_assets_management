@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { createPeminjaman, getNextKodePinjam } from "../../../lib/peminjamanService";
 import { getAllAssets } from "../../../lib/assetService";
 import { getAllAksesoris } from "../../../lib/aksesorisService";
-import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle } from "lucide-react";
+import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Image as ImageIcon } from "lucide-react";
 
 // Format Datetime for MySQL
 const formatDatetimeForMySQL = (dateStr) => {
@@ -500,23 +500,38 @@ export default function TambahPeminjamanPage() {
             </h2>
           </div>
           <div className="p-6">
-            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:bg-slate-50 transition-colors">
-              <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/jpg,image/png"
-                onChange={handleFileChange}
-                ref={currentFileRef}
-                className="hidden"
-                id="bukti-upload"
-              />
-              <label htmlFor="bukti-upload" className="cursor-pointer flex flex-col items-center justify-center">
-                <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
-                  <Plus className="h-6 w-6 text-emerald-600" />
-                </div>
-                <span className="text-sm font-medium text-slate-600">Klik untuk upload bukti peminjaman</span>
-                <p className="text-xs text-slate-500 mt-1">Maks. 5 gambar (JPG/PNG)</p>
-              </label>
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                {/* Opsi Kamera */}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png"
+                  capture="environment"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="bukti-kamera"
+                />
+                <label htmlFor="bukti-kamera" className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-emerald-500 hover:text-emerald-600 transition-colors">
+                  <Camera className="h-5 w-5 text-emerald-500" />
+                  <span className="text-sm font-semibold text-slate-700">Buka Kamera</span>
+                </label>
+
+                {/* Opsi Galeri */}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="bukti-galeri"
+                />
+                <label htmlFor="bukti-galeri" className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-emerald-500 hover:text-emerald-600 transition-colors">
+                  <ImageIcon className="h-5 w-5 text-emerald-500" />
+                  <span className="text-sm font-semibold text-slate-700">Pilih Galeri</span>
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 mt-4">Maks. 5 gambar (JPG/PNG)</p>
             </div>
 
             {/* Previews */}

@@ -12,7 +12,7 @@ import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
   }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;
@@ -121,7 +121,7 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
             className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover">
             Pilih Gambar
           </button>
-          <p className="mt-2 text-xs text-slate-400">Seret gambar ke sini atau klik tombol · PNG, JPG, JPEG</p>
+          <p className="mt-2 text-xs text-slate-400">Seret gambar ke sini atau klik tombol Â· PNG, JPG, JPEG</p>
         </div>
       </div>
     </div>
@@ -358,7 +358,7 @@ export default function AksesorisPage() {
   const Pagination = () => (
     <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 gap-3">
       <div className="hidden sm:flex items-center gap-3">
-        <p className="text-sm text-slate-500 text-nowrap">Menampilkan {sorted.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-semibold text-slate-700">{sorted.length}</span> data</p>
+        <p className="text-sm text-slate-500 text-nowrap">Menampilkan {sorted.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-semibold text-slate-700">{sorted.length}</span> data</p>
         <div className="flex items-center gap-2">
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
             className="cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-primary-hover shadow-sm transition-colors hover:bg-primary-hover">

@@ -1,9 +1,9 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import { mapAuditLogArrayToFrontend } from './api';
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
   }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;

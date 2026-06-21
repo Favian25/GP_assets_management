@@ -39,7 +39,7 @@ const upload = multer({
 });
 
 // Routes
-router.get('/', verifyToken, userController.getAllUsers);
+router.get('/', verifyToken, requireRole('super admin', 'admin'), userController.getAllUsers);
 router.post('/', verifyToken, requireRole('super admin', 'admin'), userController.createUser);
 router.put('/profile/me', verifyToken, upload.single('fotoProfil'), userController.updateMyProfile);
 router.put('/:id', verifyToken, requireRole('super admin', 'admin'), upload.single('fotoProfil'), userController.updateUser);

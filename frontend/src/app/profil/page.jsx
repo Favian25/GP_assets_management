@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -10,7 +10,7 @@ import { User, Lock, Camera, Trash2, Eye, EyeOff, Check, X, Shield, Key } from "
 
 const getAPIBase = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
   }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;

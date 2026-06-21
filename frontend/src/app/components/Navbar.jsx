@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import { Bell, User, ChevronDown, LogOut, FileText, CheckCircle2, AlertTriangle,
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
   }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;
