@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const { optimizeImage } = require("../utils/imageOptimizer");
 const AuditLog = require("../models/auditModel");
+const db = require("../config/db");
 
 const assetController = {
   // GET /api/assets
@@ -218,21 +219,52 @@ const assetController = {
 
   // DELETE /api/assets/:id
   delete: async (req, res) => {
+    const connection = await db.getConnection();
     try {
       const { id } = req.params;
+      await connection.beginTransaction();
 
       // Cek apakah aset ada & ambil data gambar
-      const existing = await Asset.getById(id);
+      const [assetRows] = await connection.query("SELECT * FROM assets WHERE id = ?", [id]);
+      const existing = assetRows[0];
       if (!existing) {
+        await connection.rollback();
         return res.status(404).json({
           success: false,
           message: "Aset tidak ditemukan",
         });
       }
 
-      const affectedRows = await Asset.delete(id);
+      // Cek apakah aset sedang dipinjam (peminjaman aktif)
+      const [activeLoans] = await connection.query(
+        `SELECT p.kode_pinjam, p.nama_peminjam, p.status 
+         FROM peminjaman_items pi
+         JOIN peminjaman p ON pi.peminjaman_id = p.id
+         WHERE pi.asset_id = ? AND p.status NOT IN ('Peminjaman Selesai')`,
+        [id]
+      );
 
-      // Hapus file gambar jika ada
+      if (activeLoans.length > 0) {
+        await connection.rollback();
+        const loanInfo = activeLoans.map(l => `${l.kode_pinjam} (${l.nama_peminjam})`).join(', ');
+        return res.status(409).json({
+          success: false,
+          message: `Aset tidak dapat dihapus karena sedang dipinjam: ${loanInfo}. Selesaikan peminjaman terlebih dahulu.`,
+        });
+      }
+
+      // Hapus data peminjaman_items terkait (yang peminjaman-nya sudah selesai)
+      await connection.query(
+        "DELETE FROM peminjaman_items WHERE asset_id = ?",
+        [id]
+      );
+
+      // Hapus aset
+      await connection.query("DELETE FROM assets WHERE id = ?", [id]);
+
+      await connection.commit();
+
+      // Hapus file gambar jika ada (dilakukan setelah commit agar tidak kehilangan data jika rollback)
       if (existing.gambar) {
         const imgPath = path.join(__dirname, "..", "public", existing.gambar);
         if (fs.existsSync(imgPath)) {
@@ -251,15 +283,27 @@ const assetController = {
 
       res.json({
         success: true,
-        message: "Aset berhasil dihapus",
+        message: "Aset dan seluruh riwayat terkait berhasil dihapus",
       });
     } catch (error) {
+      await connection.rollback();
       console.error("Error delete asset:", error);
+
+      // Handle foreign key constraint error sebagai fallback
+      if (error.code === "ER_ROW_IS_REFERENCED_2" || error.code === "ER_ROW_IS_REFERENCED") {
+        return res.status(409).json({
+          success: false,
+          message: "Aset tidak dapat dihapus karena masih memiliki data terkait di sistem. Pastikan semua peminjaman terkait aset ini sudah selesai.",
+        });
+      }
+
       res.status(500).json({
         success: false,
         message: "Gagal menghapus aset",
         error: error.message,
       });
+    } finally {
+      connection.release();
     }
   },
 

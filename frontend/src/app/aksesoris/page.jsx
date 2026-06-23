@@ -8,7 +8,7 @@ import { getAllAksesoris, createAksesoris, updateAksesoris, deleteAksesoris, sea
 import { getAllCategories, createCategory } from "../lib/categoryService";
 import { getAllBrands, createBrand } from "../lib/brandService";
 import { getUserContext } from "../lib/authService";
-import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu } from "lucide-react";
+import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu, Camera } from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -87,7 +87,8 @@ function TextAreaField({ label, value, onChange, placeholder, rows = 2, classNam
 }
 
 function ImageUploadField({ onFileChange, previewUrl, onClear }) {
-  const fileRef = useRef(null);
+  const cameraRef = useRef(null);
+  const galeriRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const handleDrag = (e) => { e.preventDefault(); e.stopPropagation(); };
   const handleDragIn = (e) => { handleDrag(e); setDragging(true); };
@@ -103,10 +104,10 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
     <div className="sm:col-span-2">
       <label className="mb-1.5 block text-sm font-medium text-slate-700">Upload Gambar</label>
       <div onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
-        className={`rounded-lg border-2 border-dashed px-6 py-6 transition-colors ${dragging ? "border-primary bg-primary/5" : "border-slate-200 hover:border-primary/50"}`}>
+        className={`rounded-xl border-2 border-dashed px-6 py-6 transition-colors ${dragging ? "border-primary bg-primary/5" : "border-slate-200 hover:border-primary/50"}`}>
         <div className="flex flex-col items-center text-center">
           {previewUrl ? (
-            <div className="relative mb-3 h-40 w-full max-w-[200px]">
+            <div className="relative mb-4 h-40 w-full max-w-[200px]">
               <Image src={previewUrl} alt="Preview" fill unoptimized className="rounded-lg object-contain border border-slate-200" />
               <button type="button" onClick={onClear}
                 className="absolute -top-2 -right-2 cursor-pointer rounded-full bg-rose-500 p-1 text-white shadow-md transition-colors hover:bg-rose-600">
@@ -114,14 +115,38 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
               </button>
             </div>
           ) : (
-            <ImageIcon className="h-8 w-8 text-slate-300 mb-2" />
+            <ImageIcon className="h-8 w-8 text-slate-300 mb-3" />
           )}
-          <input ref={fileRef} type="file" accept="image/jpeg,image/jpg,image/png" onChange={onFileChange} className="hidden" />
-          <button type="button" onClick={() => fileRef.current?.click()}
-            className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover">
-            Pilih Gambar
-          </button>
-          <p className="mt-2 text-xs text-slate-400">Seret gambar ke sini atau klik tombol Â· PNG, JPG, JPEG</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+            {/* Opsi Kamera */}
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              capture="environment"
+              onChange={onFileChange}
+              className="hidden"
+            />
+            <button type="button" onClick={() => cameraRef.current?.click()}
+              className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors">
+              <Camera className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold text-slate-700">Buka Kamera</span>
+            </button>
+            {/* Opsi Galeri */}
+            <input
+              ref={galeriRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              onChange={onFileChange}
+              className="hidden"
+            />
+            <button type="button" onClick={() => galeriRef.current?.click()}
+              className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors">
+              <ImageIcon className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold text-slate-700">Pilih Galeri</span>
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-slate-400">Seret gambar ke sini atau klik tombol · PNG, JPG, JPEG</p>
         </div>
       </div>
     </div>

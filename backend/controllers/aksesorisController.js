@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const { optimizeImage } = require("../utils/imageOptimizer");
 const AuditLog = require("../models/auditModel");
+const db = require("../config/db");
 
 const aksesorisController = {
   // GET /api/aksesoris
@@ -212,19 +213,52 @@ const aksesorisController = {
 
   // DELETE /api/aksesoris/:id
   delete: async (req, res) => {
+    const connection = await db.getConnection();
     try {
       const { id } = req.params;
+      await connection.beginTransaction();
 
-      const existing = await Aksesoris.getById(id);
+      // Cek apakah aksesoris ada
+      const [aksRows] = await connection.query("SELECT * FROM aksesoris WHERE id = ?", [id]);
+      const existing = aksRows[0];
       if (!existing) {
+        await connection.rollback();
         return res.status(404).json({
           success: false,
           message: "Aksesoris tidak ditemukan",
         });
       }
 
-      await Aksesoris.delete(id);
+      // Cek apakah aksesoris sedang dipinjam (peminjaman aktif)
+      const [activeLoans] = await connection.query(
+        `SELECT p.kode_pinjam, p.nama_peminjam, p.status 
+         FROM peminjaman_items pi
+         JOIN peminjaman p ON pi.peminjaman_id = p.id
+         WHERE pi.aksesoris_id = ? AND p.status NOT IN ('Peminjaman Selesai')`,
+        [id]
+      );
 
+      if (activeLoans.length > 0) {
+        await connection.rollback();
+        const loanInfo = activeLoans.map(l => `${l.kode_pinjam} (${l.nama_peminjam})`).join(', ');
+        return res.status(409).json({
+          success: false,
+          message: `Aksesoris tidak dapat dihapus karena sedang dipinjam: ${loanInfo}. Selesaikan peminjaman terlebih dahulu.`,
+        });
+      }
+
+      // Hapus data peminjaman_items terkait (yang peminjaman-nya sudah selesai)
+      await connection.query(
+        "DELETE FROM peminjaman_items WHERE aksesoris_id = ?",
+        [id]
+      );
+
+      // Hapus aksesoris
+      await connection.query("DELETE FROM aksesoris WHERE id = ?", [id]);
+
+      await connection.commit();
+
+      // Hapus file gambar jika ada
       if (existing.gambar) {
         const imgPath = path.join(__dirname, "..", "public", existing.gambar);
         if (fs.existsSync(imgPath)) {
@@ -243,15 +277,26 @@ const aksesorisController = {
 
       res.json({
         success: true,
-        message: "Aksesoris berhasil dihapus",
+        message: "Aksesoris dan seluruh riwayat terkait berhasil dihapus",
       });
     } catch (error) {
+      await connection.rollback();
       console.error("Error delete aksesoris:", error);
+
+      if (error.code === "ER_ROW_IS_REFERENCED_2" || error.code === "ER_ROW_IS_REFERENCED") {
+        return res.status(409).json({
+          success: false,
+          message: "Aksesoris tidak dapat dihapus karena masih memiliki data terkait di sistem. Pastikan semua peminjaman terkait sudah selesai.",
+        });
+      }
+
       res.status(500).json({
         success: false,
         message: "Gagal menghapus aksesoris",
         error: error.message,
       });
+    } finally {
+      connection.release();
     }
   },
 
