@@ -355,6 +355,10 @@ export default function TambahPeminjamanPage() {
     return matchSearch && matchFilter;
   });
 
+  if (itemFilter === "semua") {
+    filteredItems.sort((a, b) => a.nama.localeCompare(b.nama));
+  }
+
   // Render
   if (!isLoaded) {
     return (
@@ -592,14 +596,14 @@ export default function TambahPeminjamanPage() {
 
                     {/* Badge */}
                     <div className="flex gap-1 mt-2 flex-wrap">
-                      <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                      <span className={`w-20 text-center inline-block text-xs px-2 py-1 rounded-full font-semibold ${
                         item.tipe === "asset"
-                          ? "bg-emerald-100 text-emerald-700"
+                          ? "bg-blue-100 text-blue-700"
                           : "bg-purple-100 text-purple-700"
                       }`}>
                         {item.tipe === "asset" ? "Aset" : "Aksesoris"}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded ${getKondisiBadge(item.kondisi)}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${getKondisiBadge(item.kondisi)}`}>
                         {item.kondisi}
                       </span>
                     </div>
@@ -636,9 +640,9 @@ export default function TambahPeminjamanPage() {
                     } ${item.kondisi !== "Siap Digunakan" || item.stok <= 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <div className="flex items-center gap-2 flex-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                      <span className={`w-20 text-center inline-block text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${
                         item.tipe === "asset"
-                          ? "bg-emerald-100 text-emerald-700"
+                          ? "bg-blue-100 text-blue-700"
                           : "bg-purple-100 text-purple-700"
                       }`}>
                         {item.tipe === "asset" ? "Aset" : "Aksesoris"}
@@ -653,7 +657,7 @@ export default function TambahPeminjamanPage() {
                       {item.harga > 0 && (
                         <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString()}</span>
                       )}
-                      <span className={`text-xs px-2 py-1 rounded ${getKondisiBadge(item.kondisi)}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${getKondisiBadge(item.kondisi)}`}>
                         {item.kondisi}
                       </span>
                     </div>
@@ -676,42 +680,51 @@ export default function TambahPeminjamanPage() {
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Item Terpilih</h3>
 
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {items.map((item, idx) => (
-                  <div key={idx} className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="font-semibold text-slate-900">{item.nama}</p>
-                      <p className="text-xs text-slate-500">{item.kode}</p>
+                  <div key={idx} className="p-3 rounded-lg border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Item Info */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className={`w-20 text-center inline-block text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                        item.tipe === "asset"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}>
+                        {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
+                        <p className="text-xs text-slate-500 truncate">{item.kode} • Stok: {item.stok}</p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <label className="text-xs text-slate-600 block mb-1">Jumlah</label>
+                    {/* Quantity & Actions */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      {item.harga > 0 && (
+                        <div className="text-right hidden sm:block">
+                          <p className="text-xs font-semibold text-emerald-600">
+                            Rp {(item.harga * item.jumlah).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                        <label className="text-xs text-slate-600 font-medium ml-1">Jml:</label>
                         <input
                           type="number"
                           min="1"
                           max={item.stok}
                           value={item.jumlah}
                           onChange={(e) => updateItemJumlah(idx, parseInt(e.target.value))}
-                          className="w-16 rounded border border-slate-300 px-2 py-1 text-sm text-slate-900"
+                          className="w-14 rounded bg-white border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                         />
-                      </div>
-
-                      <div className="text-right">
-                        {item.harga > 0 && (
-                          <>
-                            <p className="text-xs text-slate-600 mb-1">
-                              Rp {(item.harga * item.jumlah).toLocaleString()}
-                            </p>
-                          </>
-                        )}
-                        <p className="text-xs text-slate-500">stok: {item.stok}</p>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => removeItemFromList(idx)}
-                        className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        className="cursor-pointer p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition"
+                        title="Hapus Item"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
