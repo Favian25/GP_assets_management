@@ -10,7 +10,7 @@ import { getAllAksesoris } from "../../../lib/aksesorisService";
 import { getActivePegawai, getApprovers } from "../../../lib/pegawaiService";
 import api from "../../../lib/api";
 import { getUserContext } from "../../../lib/authService";
-import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, Image as ImageIcon, Search } from "lucide-react";
 
 export default function TambahPeminjamanPage() {
   const router = useRouter();
@@ -40,6 +40,8 @@ export default function TambahPeminjamanPage() {
   const [toast, setToast] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [viewMode, setViewMode] = useState("list"); // "list" atau "grid"
+  const [itemSearch, setItemSearch] = useState("");
+  const [itemFilter, setItemFilter] = useState("semua"); // "semua" | "asset" | "aksesoris"
   const fileInputRef = useRef(null);
 
   // Initialize user context
@@ -342,10 +344,21 @@ export default function TambahPeminjamanPage() {
     return items.reduce((sum, item) => sum + item.harga * item.jumlah, 0);
   };
 
+  // Filtered items for search & filter
+  const filteredItems = allItems.filter((item) => {
+    const matchSearch = itemSearch === "" ||
+      item.nama.toLowerCase().includes(itemSearch.toLowerCase()) ||
+      item.kode.toLowerCase().includes(itemSearch.toLowerCase()) ||
+      (item.kategori && item.kategori.toLowerCase().includes(itemSearch.toLowerCase())) ||
+      (item.merek && item.merek.toLowerCase().includes(itemSearch.toLowerCase()));
+    const matchFilter = itemFilter === "semua" || item.tipe === itemFilter;
+    return matchSearch && matchFilter;
+  });
+
   // Render
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-slate-600">Memuat data...</p>
@@ -355,51 +368,45 @@ export default function TambahPeminjamanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-6 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div>
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-white rounded-lg transition"
+              className="cursor-pointer p-2 bg-primary rounded-lg transition hover:bg-primary-hover"
             >
-              <ChevronLeft className="w-5 h-5 text-slate-600" />
+              <ChevronLeft className="w-5 h-5 text-white" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Tambah Peminjaman Aset</h1>
+              <h1 className="text-2xl font-bold text-slate-900">Tambah Peminjaman Alat</h1>
               <p className="text-sm text-slate-500">Kode: {kodePinjam}</p>
             </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Section 1: Data Peminjam */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          {/* Section 1: Data Peminjam & Keperluan (Merged) */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Data Peminjam
+              Informasi Peminjaman
             </h2>
 
             <div className="grid md:grid-cols-2 gap-4">
-              {/* Nama Peminjam - Dropdown */}
+              {/* Nama Peminjam - Manual Input */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Nama Peminjam *
                 </label>
-                <select
+                <input
+                  type="text"
+                  placeholder="Masukkan nama peminjam"
                   value={namaPeminjam}
                   onChange={(e) => setNamaPeminjam(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                   required
-                >
-                  <option value="">-- Pilih Pegawai --</option>
-                  {pegawaiList.map((p) => (
-                    <option key={p.id} value={p.namaLengkap}>
-                      {p.namaLengkap} ({p.email})
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               {/* Tanggal Peminjaman */}
@@ -416,44 +423,40 @@ export default function TambahPeminjamanPage() {
                 />
               </div>
 
-              {/* Yang Menyerahkan - Conditional */}
+              {/* Yang Menyerahkan - Manual Input, Conditional */}
               {(userRole !== "user" && userRole !== "guest") && (
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Yang Menyerahkan *
                   </label>
-                  <select
+                  <input
+                    type="text"
+                    placeholder="Masukkan nama yang menyerahkan"
                     value={yangMenyerahkan}
                     onChange={(e) => setYangMenyerahkan(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                     required
-                  >
-                    <option value="">-- Pilih Approver --</option>
-                    {approversList.map((a) => (
-                      <option key={a.id} value={a.namaLengkap}>
-                        {a.namaLengkap} ({a.role})
-                      </option>
-                    ))}
-                  </select>
+                  />
                   <p className="text-xs text-slate-500 mt-1">
                     Anda: {userName} ({userRole})
                   </p>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Section 2: Keperluan */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            {/* Divider */}
+            <hr className="my-6 border-slate-200" />
+
+            {/* Keperluan Peminjaman (merged into this card) */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                <FileText className="w-5 h-5" />
+              <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
                 Keperluan Peminjaman
-              </h2>
+              </h3>
               <button
                 type="button"
                 onClick={addKeperluan}
-                className="flex items-center gap-2 px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition"
+                className="cursor-pointer flex items-center gap-2 px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover transition"
               >
                 <Plus className="w-4 h-4" /> Tambah Keperluan
               </button>
@@ -480,7 +483,7 @@ export default function TambahPeminjamanPage() {
                     <button
                       type="button"
                       onClick={() => removeKeperluan(idx)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                      className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -490,43 +493,75 @@ export default function TambahPeminjamanPage() {
             </div>
           </div>
 
-          {/* Section 3: Item Selection */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          {/* Section 2: Item Selection */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
+            {/* Header Row: Title + Search + Filter + View Toggle */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 shrink-0">
                 <Package className="w-5 h-5" />
                 Pilih Item ({items.length} terpilih)
               </h2>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  className={`px-3 py-1 text-sm rounded-lg transition ${
-                    viewMode === "list"
-                      ? "bg-primary text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  List
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("grid")}
-                  className={`px-3 py-1 text-sm rounded-lg transition ${
-                    viewMode === "grid"
-                      ? "bg-primary text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  <Grid className="w-4 h-4 inline mr-1" /> Grid
-                </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 lg:justify-end">
+                {/* Search */}
+                <div className="relative flex-1 sm:max-w-xs">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari nama, kode, kategori..."
+                    value={itemSearch}
+                    onChange={(e) => setItemSearch(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+                {/* Filter Buttons */}
+                <div className="flex gap-1.5">
+                  {[{ key: "semua", label: "Semua" }, { key: "asset", label: "Aset" }, { key: "aksesoris", label: "Aksesoris" }].map((f) => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => setItemFilter(f.key)}
+                      className={`cursor-pointer px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                        itemFilter === f.key
+                          ? "bg-primary text-white hover:bg-primary-hover"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                {/* View Mode Toggle */}
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("list")}
+                    className={`cursor-pointer px-3 py-1.5 text-sm rounded-lg transition ${
+                      viewMode === "list"
+                        ? "bg-primary text-white hover:bg-primary-hover"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("grid")}
+                    className={`cursor-pointer px-3 py-1.5 text-sm rounded-lg transition ${
+                      viewMode === "grid"
+                        ? "bg-primary text-white hover:bg-primary-hover"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Grid className="w-4 h-4 inline mr-1" /> Grid
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Item Selection - Grid View */}
             {viewMode === "grid" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                {allItems.map((item) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-h-96 overflow-y-auto">
+                {filteredItems.map((item) => (
                   <div
                     key={`${item.tipe}-${item.id}`}
                     onClick={() => addItemToList(item)}
@@ -557,7 +592,11 @@ export default function TambahPeminjamanPage() {
 
                     {/* Badge */}
                     <div className="flex gap-1 mt-2 flex-wrap">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                        item.tipe === "asset"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}>
                         {item.tipe === "asset" ? "Aset" : "Aksesoris"}
                       </span>
                       <span className={`text-xs px-2 py-1 rounded ${getKondisiBadge(item.kondisi)}`}>
@@ -586,7 +625,7 @@ export default function TambahPeminjamanPage() {
             {/* Item Selection - List View */}
             {viewMode === "list" && (
               <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
-                {allItems.map((item) => (
+                {filteredItems.map((item) => (
                   <div
                     key={`${item.tipe}-${item.id}`}
                     onClick={() => addItemToList(item)}
@@ -596,9 +635,18 @@ export default function TambahPeminjamanPage() {
                         : "border-slate-200 hover:border-primary"
                     } ${item.kondisi !== "Siap Digunakan" || item.stok <= 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
-                    <div className="flex-1">
-                      <p className="font-semibold text-slate-900">{item.nama}</p>
-                      <p className="text-xs text-slate-500">{item.kode} • {item.kategori} • {item.merek}</p>
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                        item.tipe === "asset"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}>
+                        {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900">{item.nama}</p>
+                        <p className="text-xs text-slate-500">{item.kode} • {item.kategori} • {item.merek}</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-slate-600">Stok: {item.stok}</span>
@@ -613,11 +661,19 @@ export default function TambahPeminjamanPage() {
                 ))}
               </div>
             )}
+
+            {/* Empty state */}
+            {filteredItems.length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Tidak ada item yang cocok dengan pencarian</p>
+              </div>
+            )}
           </div>
 
-          {/* Section 4: Selected Items */}
+          {/* Section 3: Selected Items */}
           {items.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Item Terpilih</h3>
 
               <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -655,7 +711,7 @@ export default function TambahPeminjamanPage() {
                       <button
                         type="button"
                         onClick={() => removeItemFromList(idx)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -679,8 +735,8 @@ export default function TambahPeminjamanPage() {
             </div>
           )}
 
-          {/* Section 5: Bukti Peminjaman */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          {/* Section 4: Bukti Peminjaman */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Camera className="w-5 h-5" />
               Bukti Peminjaman ({buktiFiles.length}/5)
@@ -718,7 +774,7 @@ export default function TambahPeminjamanPage() {
                       <button
                         type="button"
                         onClick={() => removeFile(idx)}
-                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                        className="cursor-pointer absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -734,21 +790,20 @@ export default function TambahPeminjamanPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-6 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition"
+              className="cursor-pointer px-6 py-2.5 rounded-lg border-2 border-slate-400 text-slate-700 font-semibold hover:bg-slate-200 hover:border-slate-500 hover:text-slate-900 transition"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+              className="cursor-pointer px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
             >
               <Check className="w-4 h-4" />
               {submitting ? "Menyimpan..." : "Simpan Peminjaman"}
             </button>
           </div>
         </form>
-      </div>
 
       {/* Toast */}
       {toast && createPortal(
