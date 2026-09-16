@@ -334,91 +334,11 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Dashboard Tables Grid */}
-      <div className="mt-8 flex flex-col lg:grid lg:grid-cols-5 gap-8 items-start">
-        
-        {/* Peminjaman Aktif Section (Top on mobile, Right on desktop) */}
-        <div className="lg:col-span-2 order-1 lg:order-2 w-full lg:w-auto rounded-xl border border-blue-200 bg-white shadow-sm overflow-hidden border-t-4 border-t-blue-500">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-blue-50/50">
-            <div className="flex items-center gap-3">
-              <ClipboardList className="h-5 w-5 text-blue-500" />
-              <h2 className="text-lg font-bold text-blue-800">Peminjaman Aktif</h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className={`relative transition-all duration-300 ${isLoanMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-28 sm:w-36"}`}>
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Cari peminjaman..." 
-                  value={loanSearch}
-                  onChange={(e) => setLoanSearch(e.target.value)}
-                  className="rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full"
-                />
-              </div>
-              <button 
-                onClick={() => setIsLoanMinimized(!isLoanMinimized)}
-                className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-500 cursor-pointer"
-              >
-                {isLoanMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-              </button>
-            </div>
-          </div>
+      {/* Dashboard Tables Grid - Stacked Vertically */}
+      <div className="mt-8 flex flex-col gap-8">
 
-          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isLoanMinimized ? "max-h-0" : "max-h-[600px]"}`}>
-            <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
-              <table className="w-full text-left text-sm">
-                <thead className="sticky top-0 bg-blue-50 z-10">
-                  <tr className="border-b border-blue-200">
-                    <th className="px-5 py-3 font-bold text-blue-800">Peminjam</th>
-                    <th className="px-5 py-3 font-bold text-blue-800">Alat Dipinjam</th>
-                    <th className="px-5 py-3 font-bold text-blue-800 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-blue-50">
-                  {filteredLoans?.map((loan, idx) => (
-                    <tr 
-                      key={loan.id} 
-                      className={`cursor-pointer transition-colors hover:bg-blue-50/50 ${idx % 2 === 0 ? "bg-slate-100/50" : "bg-white"}`}
-                      onClick={() => {
-                        router.push(`/aset/peminjaman?search=${loan.kodePinjam}`);
-                      }}
-                    >
-                      <td className="px-5 py-3">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-slate-800">{loan.namaPeminjam}</span>
-                          <span className="text-xs text-blue-800 font-mono font-semibold mt-0.5">{loan.kodePinjam}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <Package className="h-3.5 w-3.5 text-slate-400" />
-                          <span className="text-sm font-semibold text-slate-600">{loan.totalItems || 0} Alat</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className={`inline-block w-[140px] text-center px-2 py-1 rounded-full border text-xs uppercase font-semibold shadow-sm ${
-                          loan.status === 'Menunggu Persetujuan' ? 'bg-amber-50 text-amber-700 border-amber-500' :
-                          loan.status === 'Sedang Dipinjam' ? 'bg-blue-50 text-blue-700 border-blue-500' :
-                          'bg-violet-50 text-violet-700 border-violet-500'
-                        }`}>
-                          {loan.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {(!filteredLoans || filteredLoans.length === 0) && (
-                    <tr>
-                      <td colSpan={3} className="px-6 py-20 text-center text-slate-400 italic font-medium">Tidak ada peminjaman aktif.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Aktivitas Terbaru Section (Bottom on mobile, Left on desktop) */}
-        <div className="lg:col-span-3 order-2 lg:order-1 w-full lg:w-auto rounded-2xl bg-white shadow-xl overflow-hidden border border-slate-100">
+        {/* Aktivitas Terbaru Section - Top */}
+        <div className="w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-slate-100">
           {/* Header */}
           <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
             <div className="flex items-center justify-between gap-4">
@@ -517,6 +437,86 @@ export default function DashboardPage() {
                           <p className="text-sm font-medium text-slate-500">Tidak ada aktivitas</p>
                         </div>
                       </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Peminjaman Aktif Section - Bottom */}
+        <div className="w-full rounded-xl border border-blue-200 bg-white shadow-sm overflow-hidden border-t-4 border-t-blue-500">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-blue-50/50">
+            <div className="flex items-center gap-3">
+              <ClipboardList className="h-5 w-5 text-blue-500" />
+              <h2 className="text-lg font-bold text-blue-800">Peminjaman Aktif</h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className={`relative transition-all duration-300 ${isLoanMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-28 sm:w-36"}`}>
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Cari peminjaman..." 
+                  value={loanSearch}
+                  onChange={(e) => setLoanSearch(e.target.value)}
+                  className="rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full"
+                />
+              </div>
+              <button 
+                onClick={() => setIsLoanMinimized(!isLoanMinimized)}
+                className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-500 cursor-pointer"
+              >
+                {isLoanMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+              </button>
+            </div>
+          </div>
+
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isLoanMinimized ? "max-h-0" : "max-h-[600px]"}`}>
+            <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
+              <table className="w-full text-left text-sm">
+                <thead className="sticky top-0 bg-blue-50 z-10">
+                  <tr className="border-b border-blue-200">
+                    <th className="px-5 py-3 font-bold text-blue-800">Peminjam</th>
+                    <th className="px-5 py-3 font-bold text-blue-800">Alat Dipinjam</th>
+                    <th className="px-5 py-3 font-bold text-blue-800 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-blue-50">
+                  {filteredLoans?.map((loan, idx) => (
+                    <tr 
+                      key={loan.id} 
+                      className={`cursor-pointer transition-colors hover:bg-blue-50/50 ${idx % 2 === 0 ? "bg-slate-100/50" : "bg-white"}`}
+                      onClick={() => {
+                        router.push(`/aset/peminjaman?search=${loan.kodePinjam}`);
+                      }}
+                    >
+                      <td className="px-5 py-3">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-slate-800">{loan.namaPeminjam}</span>
+                          <span className="text-xs text-blue-800 font-mono font-semibold mt-0.5">{loan.kodePinjam}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <Package className="h-3.5 w-3.5 text-slate-400" />
+                          <span className="text-sm font-semibold text-slate-600">{loan.totalItems || 0} Alat</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={`inline-block w-[140px] text-center px-2 py-1 rounded-full border text-xs uppercase font-semibold shadow-sm ${
+                          loan.status === 'Menunggu Persetujuan' ? 'bg-amber-50 text-amber-700 border-amber-500' :
+                          loan.status === 'Sedang Dipinjam' ? 'bg-blue-50 text-blue-700 border-blue-500' :
+                          'bg-violet-50 text-violet-700 border-violet-500'
+                        }`}>
+                          {loan.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!filteredLoans || filteredLoans.length === 0) && (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-20 text-center text-slate-400 italic font-medium">Tidak ada peminjaman aktif.</td>
                     </tr>
                   )}
                 </tbody>
