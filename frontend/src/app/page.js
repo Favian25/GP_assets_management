@@ -4,10 +4,10 @@ import { useState, useEffect, cloneElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getDashboardStats } from "./lib/assetService";
-import { 
-  Package, CheckCircle2, AlertCircle, Settings, AlertTriangle, 
-  RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus, 
-  Calendar, User, Clock, LayoutGrid, Cpu, Check, X
+import {
+  Package, CheckCircle2, AlertCircle, Settings, AlertTriangle,
+  RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus,
+  Calendar, User, Clock, LayoutGrid, Cpu, Check, X, Zap, TrendingUp
 } from "lucide-react";
 import { getUserContext } from "./lib/authService";
 import { createPortal } from "react-dom";
@@ -18,14 +18,20 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState("user");
+  const [userName, setUserName] = useState("User");
   const [toast, setToast] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   useEffect(() => {
     setMounted(true);
     const ctx = getUserContext();
-    if (ctx) setUserRole(ctx.role || "user");
-    
+    if (ctx) {
+      setUserRole(ctx.role || "user");
+      setUserName(ctx.name || "User");
+    }
+
     // Check for unauthorized error from redirect
     const err = new URLSearchParams(window.location.search).get("error");
     if (err === "unauthorized") {
@@ -50,16 +56,37 @@ export default function DashboardPage() {
 
   const fetchStats = async () => {
     try {
-      setLoading(true);
+      setIsRefreshing(true);
       setError(null);
       const data = await getDashboardStats();
       setStats(data);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
       setError("Gagal memuat statistik dashboard. Pastikan backend berjalan.");
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  // Get greeting berdasarkan waktu
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Pagi";
+    if (hour < 15) return "Siang";
+    if (hour < 18) return "Sore";
+    return "Malam";
+  };
+
+  // Format last updated time
+  const formatLastUpdated = () => {
+    const now = new Date();
+    const diff = Math.floor((now - lastUpdated) / 1000);
+    if (diff < 60) return "Baru saja";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m yang lalu`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h yang lalu`;
+    return lastUpdated.toLocaleDateString("id-ID");
   };
 
   const [activitySearch, setActivitySearch] = useState("");
@@ -232,11 +259,31 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-        <p className="text-sm text-slate-500">
-          Selamat datang di Sistem Pencatatan Asset Galeria Karya Media
+      {/* Enhanced Header */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-3xl font-black text-slate-900">
+                Selamat {getGreeting()}, {userName}! 👋
+              </h1>
+            </div>
+            <p className="text-sm text-slate-600">
+              Sistem Pencatatan Asset Galeria Karya Media
+            </p>
+          </div>
+          <button
+            onClick={() => fetchStats()}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-primary-hover text-white font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-60 cursor-pointer"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Memperbarui..." : "Perbarui"}
+          </button>
+        </div>
+        <p className="text-xs text-slate-500 mt-3 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Terakhir diperbarui: {formatLastUpdated()}
         </p>
       </div>
 
@@ -244,7 +291,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {statCards.map((stat, index) => {
           const isRestricted = ["/aset/daftar", "/aksesoris", "/reports"].some(path => stat.link.startsWith(path)) && !["super admin", "admin"].includes(userRole);
-          
+
           return (
             <Link
               key={index}
@@ -255,102 +302,120 @@ export default function DashboardPage() {
                   showToast("Akses Dibatasi: Anda tidak memiliki izin untuk mengakses halaman ini.", "error");
                 }
               }}
-              className={`relative overflow-hidden rounded-2xl ${stat.color} p-5 text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl group block ${isRestricted ? "cursor-not-allowed opacity-90" : "cursor-pointer"}`}
+              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.color} p-6 text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 group block ${isRestricted ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
             >
-            {/* Decorative background elements */}
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 transition-transform group-hover:scale-125" />
-            
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md shadow-inner">
-                  {cloneElement(stat.icon, { className: "h-6 w-6 text-white" })}
+              {/* Decorative animated gradient background */}
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/[0.08] transition-transform duration-500 group-hover:scale-150 group-hover:translate-x-2 group-hover:-translate-y-2" />
+              <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/[0.05] transition-transform duration-500 group-hover:scale-125" />
+
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 backdrop-blur-lg shadow-lg border border-white/30">
+                    {cloneElement(stat.icon, { className: "h-7 w-7 text-white" })}
+                  </div>
+                  <TrendingUp className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-black leading-none mb-0.5">
+
+                <div>
+                  <span className="text-4xl font-black leading-none mb-2 block">
                     {stats ? stat.value : "—"}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">
+                  <span className="text-xs font-bold uppercase tracking-widest opacity-90 block">
                     {stat.title}
                   </span>
                 </div>
-              </div>
 
-              <div className="mt-6 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider group-hover:translate-x-1 transition-transform">
-                Lihat Selengkapnya <ChevronRight className="h-3 w-3" />
+                <div className="mt-6 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide opacity-90 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                  Lihat <ChevronRight className="h-4 w-4" />
+                </div>
               </div>
-            </div>
             </Link>
           );
         })}
       </div>
 
-      {/* Dashboard Tables Grid */}
-      <div className="mt-8 flex flex-col lg:grid lg:grid-cols-5 gap-8 items-start">
-        
-        {/* Peminjaman Aktif Section (Top on mobile, Right on desktop) */}
-        <div className="lg:col-span-2 order-1 lg:order-2 w-full lg:w-auto rounded-xl border border-blue-200 bg-white shadow-sm overflow-hidden border-t-4 border-t-blue-500">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-blue-50/50">
-            <div className="flex items-center gap-3">
-              <ClipboardList className="h-5 w-5 text-blue-500" />
-              <h2 className="text-lg font-bold text-blue-800">Peminjaman Aktif</h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className={`relative transition-all duration-300 ${isLoanMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-28 sm:w-36"}`}>
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Cari peminjaman..." 
-                  value={loanSearch}
-                  onChange={(e) => setLoanSearch(e.target.value)}
-                  className="rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full"
-                />
+      {/* Dashboard Tables Grid - Stacked Vertically */}
+      <div className="mt-8 flex flex-col gap-8">
+
+        {/* Peminjaman Aktif Section - Top */}
+        <div className="w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-slate-100">
+          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-blue-600 to-blue-700">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
+                  <ClipboardList className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Peminjaman Aktif</h2>
+                  <p className="text-xs text-blue-100 mt-1">Daftar aset yang sedang dipinjam</p>
+                </div>
               </div>
-              <button 
-                onClick={() => setIsLoanMinimized(!isLoanMinimized)}
-                className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-500 cursor-pointer"
-              >
-                {isLoanMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-              </button>
+              <div className="flex items-center gap-2">
+                <div className={`relative transition-all duration-300 ${isLoanMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-40 sm:w-56"}`}>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari..."
+                    value={loanSearch}
+                    onChange={(e) => setLoanSearch(e.target.value)}
+                    className="rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 focus:border-white/40 focus:ring-1 focus:ring-white/20 focus:bg-white/15 outline-none transition-all w-full"
+                  />
+                </div>
+                <button
+                  onClick={() => setIsLoanMinimized(!isLoanMinimized)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                >
+                  {isLoanMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
           </div>
 
+          {/* Table Container */}
           <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isLoanMinimized ? "max-h-0" : "max-h-[600px]"}`}>
             <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
               <table className="w-full text-left text-sm">
-                <thead className="sticky top-0 bg-blue-50 z-10">
-                  <tr className="border-b border-blue-200">
-                    <th className="px-5 py-3 font-bold text-blue-800">Peminjam</th>
-                    <th className="px-5 py-3 font-bold text-blue-800">Alat Dipinjam</th>
-                    <th className="px-5 py-3 font-bold text-blue-800 text-center">Status</th>
+                <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Peminjam</th>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Alat Dipinjam</th>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider text-center w-[110px]">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-blue-50">
-                  {filteredLoans?.map((loan, idx) => (
-                    <tr 
-                      key={loan.id} 
-                      className={`cursor-pointer transition-colors hover:bg-blue-50/50 ${idx % 2 === 0 ? "bg-slate-100/50" : "bg-white"}`}
+                <tbody className="divide-y divide-slate-100">
+                  {filteredLoans?.map((loan) => (
+                    <tr
+                      key={loan.id}
                       onClick={() => {
                         router.push(`/aset/peminjaman?search=${loan.kodePinjam}`);
                       }}
+                      className="cursor-pointer group hover:bg-slate-50/80 transition-colors duration-200"
                     >
-                      <td className="px-5 py-3">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-slate-800">{loan.namaPeminjam}</span>
-                          <span className="text-xs text-blue-800 font-mono font-semibold mt-0.5">{loan.kodePinjam}</span>
+                      <td className="px-6 py-3.5">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-slate-900">{loan.namaPeminjam}</span>
+                          <span className="text-xs text-slate-500">{loan.kodePinjam}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <Package className="h-3.5 w-3.5 text-slate-400" />
-                          <span className="text-sm font-semibold text-slate-600">{loan.totalItems || 0} Alat</span>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                          <span className="text-sm font-medium text-slate-700">{loan.totalItems || 0} Alat</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
-                        <span className={`inline-block w-[140px] text-center px-2 py-1 rounded-full border text-xs uppercase font-semibold shadow-sm ${
-                          loan.status === 'Menunggu Persetujuan' ? 'bg-amber-50 text-amber-700 border-amber-500' :
-                          loan.status === 'Sedang Dipinjam' ? 'bg-blue-50 text-blue-700 border-blue-500' :
-                          'bg-violet-50 text-violet-700 border-violet-500'
+                      <td className="px-6 py-3.5 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all duration-200 ${
+                          loan.status === 'Menunggu Persetujuan'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200 group-hover:bg-amber-100 group-hover:border-amber-300' :
+                          loan.status === 'Sedang Dipinjam'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100 group-hover:border-blue-300' :
+                          'bg-violet-50 text-violet-700 border-violet-200 group-hover:bg-violet-100 group-hover:border-violet-300'
                         }`}>
+                          <span className={`w-1 h-1 rounded-full ${
+                            loan.status === 'Menunggu Persetujuan' ? 'bg-amber-500' :
+                            loan.status === 'Sedang Dipinjam' ? 'bg-blue-500' :
+                            'bg-violet-500'
+                          }`}></span>
                           {loan.status}
                         </span>
                       </td>
@@ -358,7 +423,14 @@ export default function DashboardPage() {
                   ))}
                   {(!filteredLoans || filteredLoans.length === 0) && (
                     <tr>
-                      <td colSpan={3} className="px-6 py-20 text-center text-slate-400 italic font-medium">Tidak ada peminjaman aktif.</td>
+                      <td colSpan={3} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100">
+                            <ClipboardList className="h-6 w-6 text-slate-400" />
+                          </div>
+                          <p className="text-sm font-medium text-slate-500">Tidak ada peminjaman</p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -367,80 +439,106 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Aktivitas Terbaru Section (Bottom on mobile, Left on desktop) */}
-        <div className="lg:col-span-3 order-2 lg:order-1 w-full lg:w-auto rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden border-t-4 border-t-slate-500">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-slate-500" />
-              <h2 className="text-lg font-bold text-slate-800">Aktivitas Terbaru</h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className={`relative transition-all duration-300 ${isActivityMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-40 sm:w-60"}`}>
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Cari aktivitas..." 
-                  value={activitySearch}
-                  onChange={(e) => { setActivitySearch(e.target.value); }}
-                  className="rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full"
-                />
+        {/* Aktivitas Terbaru Section - Bottom */}
+        <div className="w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-slate-100">
+          {/* Header */}
+          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
+                  <Clock className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Aktivitas Terbaru</h2>
+                  <p className="text-xs text-slate-300 mt-1">Perubahan sistem real-time</p>
+                </div>
               </div>
-              <button 
-                onClick={() => setIsActivityMinimized(!isActivityMinimized)}
-                className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500 cursor-pointer"
-              >
-                {isActivityMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-              </button>
+              <div className="flex items-center gap-2">
+                <div className={`relative transition-all duration-300 ${isActivityMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-40 sm:w-56"}`}>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari..."
+                    value={activitySearch}
+                    onChange={(e) => { setActivitySearch(e.target.value); }}
+                    className="rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 focus:border-white/40 focus:ring-1 focus:ring-white/20 focus:bg-white/15 outline-none transition-all w-full"
+                  />
+                </div>
+                <button
+                  onClick={() => setIsActivityMinimized(!isActivityMinimized)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                >
+                  {isActivityMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
           </div>
 
+          {/* Table Container */}
           <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isActivityMinimized ? "max-h-0" : "max-h-[600px]"}`}>
             <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="sticky top-0 bg-slate-50 z-10">
-                  <tr className="border-b border-slate-300">
-                    <th className="px-4 py-3 font-bold text-slate-700 w-[120px]"><Calendar className="inline h-3 w-3 mr-1" /> Tanggal</th>
-                    <th className="px-4 py-3 font-bold text-slate-700"><User className="inline h-3 w-3 mr-1" /> Dibuat Oleh</th>
-                    <th className="px-4 py-3 font-bold text-slate-700 text-center">Aksi</th>
-                    <th className="px-4 py-3 font-bold text-slate-700"><LayoutGrid className="inline h-3 w-3 mr-1" /> Item / Kode Transaksi</th>
+              <table className="w-full text-left text-sm">
+                <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider w-[130px]">Tanggal</th>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Pengguna</th>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider text-center w-[110px]">Tipe</th>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Item</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredActivities.map((activity, idx) => (
-                    <tr 
-                      key={activity.id} 
+                  {filteredActivities.map((activity) => (
+                    <tr
+                      key={activity.id}
                       onClick={() => handleActivityClick(activity)}
-                      className={`cursor-pointer transition-colors hover:bg-slate-50 ${idx % 2 === 0 ? "bg-slate-100" : "bg-white"}`}
+                      className="cursor-pointer group hover:bg-slate-50/80 transition-colors duration-200"
                     >
-                      <td className="px-4 py-3 text-slate-600">
-                        <div className="flex flex-col leading-tight">
-                          <span className="text-sm text-slate-700 font-semibold">{formatActivityDate(activity.date).datePart}</span>
-                          <span className="text-xs text-slate-400 font-medium">{formatActivityDate(activity.date).timePart}</span>
+                      <td className="px-6 py-3.5">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-slate-900">{formatActivityDate(activity.date).datePart}</span>
+                          <span className="text-xs text-slate-500">{formatActivityDate(activity.date).timePart}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-semibold text-slate-700 cursor-pointer">{activity.createdBy}</span>
+                      <td className="px-6 py-3.5">
+                        <span className="text-sm font-medium text-slate-700 inline-flex items-center gap-2">
+                          <span className="flex h-2 w-2 rounded-full bg-slate-400"></span>
+                          {activity.createdBy}
+                        </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-block w-[140px] text-center text-xs font-semibold uppercase px-2 py-0.5 rounded-full border shadow-sm ${
-                          activity.action === 'Peminjaman' ? 'bg-amber-50 text-amber-600 border-amber-500' :
-                          activity.action === 'Pengembalian' ? 'bg-blue-50 text-blue-600 border-blue-500' :
-                          'bg-emerald-50 text-emerald-600 border-emerald-500'
+                      <td className="px-6 py-3.5 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all duration-200 ${
+                          activity.action === 'Peminjaman'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200 group-hover:bg-amber-100 group-hover:border-amber-300' :
+                          activity.action === 'Pengembalian'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100 group-hover:border-blue-300' :
+                          'bg-emerald-50 text-emerald-700 border-emerald-200 group-hover:bg-emerald-100 group-hover:border-emerald-300'
                         }`}>
+                          <span className={`w-1 h-1 rounded-full ${
+                            activity.action === 'Peminjaman' ? 'bg-amber-500' :
+                            activity.action === 'Pengembalian' ? 'bg-blue-500' :
+                            'bg-emerald-500'
+                          }`}></span>
                           {activity.action}
                         </span>
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-slate-400" />
-                          <span className="text-sm text-slate-700 font-semibold">{activity.item}</span>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-2.5 group-hover:text-slate-900 transition-colors duration-200">
+                          <Package className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                          <span className="text-sm font-medium text-slate-700 truncate">{activity.item}</span>
                         </div>
                       </td>
                     </tr>
                   ))}
                   {filteredActivities.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-20 text-center text-slate-400 italic font-medium">Tidak ada aktivitas ditemukan.</td>
+                      <td colSpan={4} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100">
+                            <Clock className="h-6 w-6 text-slate-400" />
+                          </div>
+                          <p className="text-sm font-medium text-slate-500">Tidak ada aktivitas</p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>
