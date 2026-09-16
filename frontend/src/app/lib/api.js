@@ -158,6 +158,7 @@ export function mapPeminjamanToBackend(frontendData) {
   if (frontendData.namaPeminjam !== undefined) mapped.nama_peminjam = frontendData.namaPeminjam;
   if (frontendData.penerimaAset !== undefined) mapped.penerima_aset = frontendData.penerimaAset;
   if (frontendData.alasanPeminjaman !== undefined) mapped.alasan_peminjaman = frontendData.alasanPeminjaman;
+  if (frontendData.keperluanList !== undefined) mapped.keperluan_list = frontendData.keperluanList;
   if (frontendData.tanggalPeminjaman !== undefined) mapped.tanggal_peminjaman = frontendData.tanggalPeminjaman;
   if (frontendData.tanggalPengembalian !== undefined) mapped.tanggal_pengembalian = frontendData.tanggalPengembalian;
   if (frontendData.status !== undefined) mapped.status = frontendData.status;

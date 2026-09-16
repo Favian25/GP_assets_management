@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getAllUsers, createUser, updateUser, updateUserRole, deleteUser } from "../lib/userService";
 import { getUserContext } from "../lib/authService";
+import { getAllPegawai } from "../lib/pegawaiService";
 import { 
   Eye, EyeOff, Search, Plus, Pencil, Trash2, X, Check, 
   ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, 
@@ -21,6 +22,7 @@ const getRoleBadge = (role) => {
     "admin": "bg-blue-50 text-blue-700 border-blue-200",
     "supervisor": "bg-amber-50 text-amber-700 border-amber-200",
     "user": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "guest": "bg-orange-50 text-orange-700 border-orange-200",
   };
   return s[role] || "bg-slate-100 text-slate-600 border-slate-200";
 };
@@ -42,6 +44,7 @@ export default function KelolaUserPage() {
   // Table options (Search, Sort, Pagination)
   const [searchName, setSearchName] = useState("");
   const [searchRole, setSearchRole] = useState("");
+  const [searchGuestStatus, setSearchGuestStatus] = useState(""); // "" | "guest" | "non-guest"
   const [sortOrder, setSortOrder] = useState(""); // "" | "asc" | "desc"
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -51,6 +54,7 @@ export default function KelolaUserPage() {
   const [showEditModal, setShowEditModal] = useState(null);
   const [showRoleModal, setShowRoleModal] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [showGuestDetailModal, setShowGuestDetailModal] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Input states
@@ -58,13 +62,19 @@ export default function KelolaUserPage() {
   const [showEditPw, setShowEditPw] = useState(false);
 
   // Add user form
-  const [newUser, setNewUser] = useState({ namaLengkap: "", email: "", password: "", role: "user" });
+  const [newUser, setNewUser] = useState({ namaLengkap: "", email: "", password: "", role: "user", pegawaiId: undefined, nomorHp: "", keterangan: "" });
   // Edit user form
-  const [editForm, setEditForm] = useState({ namaLengkap: "", password: "", role: "" });
+  const [editForm, setEditForm] = useState({ namaLengkap: "", email: "", password: "", role: "", nomorHp: "", keterangan: "" });
   const [selectedRole, setSelectedRole] = useState("");
   const [lightboxImg, setLightboxImg] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Autocomplete states
+  const [pegawaiList, setPegawaiList] = useState([]);
+  const [filteredPegawai, setFilteredPegawai] = useState([]);
+  const [showPegawaiDropdown, setShowPegawaiDropdown] = useState(false);
+  const [pegawaiLoading, setPegawaiLoading] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -120,17 +130,61 @@ export default function KelolaUserPage() {
     return false;
   };
 
+  // Fetch pegawai for autocomplete
+  const fetchPegawaiList = useCallback(async () => {
+    try {
+      setPegawaiLoading(true);
+      const data = await getAllPegawai();
+      setPegawaiList(data);
+    } catch (error) {
+      console.error("Error fetching pegawai:", error);
+      setPegawaiList([]);
+    } finally {
+      setPegawaiLoading(false);
+    }
+  }, []);
+
+  // Handle nama lengkap autocomplete
+  const handleNamaLengkapChange = (value) => {
+    setNewUser(p => ({...p, namaLengkap: value}));
+
+    if (value.trim().length > 0) {
+      const filtered = pegawaiList.filter(p =>
+        p.namaLengkap.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredPegawai(filtered);
+      setShowPegawaiDropdown(true);
+    } else {
+      setFilteredPegawai([]);
+      setShowPegawaiDropdown(false);
+    }
+  };
+
+  // Handle pegawai selection
+  const handleSelectPegawai = (pegawai) => {
+    setNewUser(p => ({...p, pegawaiId: pegawai.id, namaLengkap: pegawai.namaLengkap, email: pegawai.email || ""}));
+    setShowPegawaiDropdown(false);
+  };
+
   const handleAddUser = async (e) => {
     e.preventDefault();
     if (!newUser.namaLengkap || !newUser.email || !newUser.password) {
       showToast("Semua field wajib diisi", "error"); return;
     }
+
+    // Validation: Regular user MUST have pegawaiId
+    if (newUser.pegawaiId !== null && (newUser.pegawaiId === undefined || newUser.pegawaiId === "")) {
+      showToast("❌ Regular user harus pilih pegawai dari dropdown nama lengkap", "error");
+      return;
+    }
+
     try {
       setSubmitting(true);
       await createUser(newUser);
-      showToast("User berhasil ditambahkan!");
+      const userType = newUser.pegawaiId === null ? "👤 Guest" : "👨 Regular";
+      showToast(`User ${userType} berhasil ditambahkan!`);
       setShowAddModal(false);
-      setNewUser({ namaLengkap: "", email: "", password: "", role: "user" });
+      setNewUser({ namaLengkap: "", email: "", password: "", role: "user", pegawaiId: null, nomorHp: "", keterangan: "" });
       fetchUsers();
     } catch (err) {
       showToast(err.response?.data?.message || "Gagal menambah user", "error");
@@ -138,7 +192,17 @@ export default function KelolaUserPage() {
   };
 
   const openEditModal = (user) => {
-    setEditForm({ namaLengkap: user.namaLengkap, password: "", role: user.role });
+    const isGuest = !user.pegawaiId;
+    setEditForm({
+      namaLengkap: user.namaLengkap,
+      email: user.email,
+      password: "",
+      role: user.role,
+      pegawaiId: user.pegawaiId || null,
+      nomorHp: user.nomorHp || "",
+      keterangan: user.keterangan || "",
+      isGuest
+    });
     setShowEditPw(false);
     setShowEditModal(user);
   };
@@ -146,6 +210,10 @@ export default function KelolaUserPage() {
   const handleEditUser = async (e) => {
     e.preventDefault();
     if (!showEditModal) return;
+    if (!editForm.namaLengkap || !editForm.email) {
+      showToast("Nama lengkap dan email wajib diisi", "error");
+      return;
+    }
     try {
       setSubmitting(true);
       await updateUser(showEditModal.id, editForm);
@@ -177,15 +245,34 @@ export default function KelolaUserPage() {
       await deleteUser(showDeleteConfirm.id);
       showToast("User berhasil dihapus!");
       setShowDeleteConfirm(null);
-      
+
       // Jika men-delete item terakhir di halaman saat ini, mundur 1 halaman (opsional, tapi good UX)
       if (currentData.length === 1 && currentPage > 1) {
         setCurrentPage(prev => prev - 1);
       }
-      
+
       fetchUsers();
     } catch (err) {
       showToast(err.response?.data?.message || "Gagal menghapus user", "error");
+    } finally { setSubmitting(false); }
+  };
+
+  const handleToggleActive = async (user) => {
+    try {
+      setSubmitting(true);
+      const response = await fetch(`${BACKEND_URL}/api/users/${user.id}/toggle-active`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+      });
+      const result = await response.json();
+      if (result.success) {
+        showToast(result.message || "Status user berhasil diubah!");
+        fetchUsers();
+      } else {
+        showToast(result.message || "Gagal mengubah status user", "error");
+      }
+    } catch (err) {
+      showToast("Gagal mengubah status user", "error");
     } finally { setSubmitting(false); }
   };
 
@@ -200,6 +287,9 @@ export default function KelolaUserPage() {
     else setSortOrder("");
   };
 
+  // Helper: check if user is guest (pegawai_id is null)
+  const isGuestUser = (user) => user.pegawaiId === null || user.pegawaiId === undefined;
+
   // Filter & Sort
   const processedUsers = useMemo(() => {
     let result = [...users];
@@ -209,8 +299,19 @@ export default function KelolaUserPage() {
       const q = searchName.toLowerCase();
       result = result.filter(u => u.namaLengkap?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
     }
+
+    // Role filter
     if (searchRole) {
       result = result.filter(u => u.role === searchRole);
+    }
+
+    // Guest status filter
+    if (searchGuestStatus) {
+      if (searchGuestStatus === "guest") {
+        result = result.filter(u => isGuestUser(u));
+      } else if (searchGuestStatus === "non-guest") {
+        result = result.filter(u => !isGuestUser(u));
+      }
     }
 
     // Sort
@@ -221,7 +322,7 @@ export default function KelolaUserPage() {
     }
 
     return result;
-  }, [users, searchName, searchRole, sortOrder]);
+  }, [users, searchName, searchRole, searchGuestStatus, sortOrder]);
 
   // Pagination Variables
   const totalItems = processedUsers.length;
@@ -273,6 +374,7 @@ export default function KelolaUserPage() {
   const countAdmin = users.filter(u => u.role === "admin").length;
   const countSupervisor = users.filter(u => u.role === "supervisor").length;
   const countUser = users.filter(u => u.role === "user").length;
+  const countGuest = users.filter(u => isGuestUser(u)).length;
 
   return (
     <div>
@@ -292,12 +394,13 @@ export default function KelolaUserPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         {[
           { label: "Total User", count: totalManagedUsers, color: "bg-violet-600", customIcon: <Users /> },
           { label: "Admin", count: countAdmin, color: "bg-blue-600", customIcon: <Shield /> },
           { label: "Supervisor", count: countSupervisor, color: "bg-amber-500", customIcon: <ClipboardList /> },
           { label: "User", count: countUser, color: "bg-emerald-600", customIcon: <User /> },
+          { label: "Guest", count: countGuest, color: "bg-cyan-500", customIcon: <Users /> },
         ].map(stat => (
           <div key={stat.label} className={`relative overflow-hidden rounded-2xl ${stat.color} p-4 text-white shadow-lg transition-all hover:scale-[1.03] hover:shadow-xl group`}>
             {/* Decorative background elements */}
@@ -348,6 +451,7 @@ export default function KelolaUserPage() {
               />
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
             </div>
+            {/* Role Filter */}
             <select
               value={searchRole}
               onChange={(e) => {
@@ -356,17 +460,37 @@ export default function KelolaUserPage() {
               }}
               className="w-full sm:w-40 rounded-lg border-2 border-slate-200 px-3 py-2 text-sm text-slate-700 bg-white hover:border-slate-300 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer transition-colors"
               style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
+              title="Filter by Role"
             >
               <option value="">Semua Role</option>
-              <option value="super admin">Super Admin</option>
-              <option value="admin">Admin</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="user">User</option>
+              <option value="super admin">⭐ Super Admin</option>
+              <option value="admin">🛡️ Admin</option>
+              <option value="supervisor">📊 Supervisor</option>
+              <option value="user">👥 User</option>
+            </select>
+
+            {/* Guest Status Filter */}
+            <select
+              value={searchGuestStatus}
+              onChange={(e) => {
+                setSearchGuestStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-56 rounded-lg border-2 border-slate-200 px-3 py-2 text-sm text-slate-700 bg-white hover:border-slate-300 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer transition-colors"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
+              title="Filter by User Type"
+            >
+              <option value="">Semua Tipe User</option>
+              <option value="guest">👤 Guest (Magang/PKL/Freelance)</option>
+              <option value="non-guest">👨 Regular User</option>
             </select>
           </div>
 
           {/* Tambah Button */}
-          <button onClick={() => setShowAddModal(true)}
+          <button onClick={() => {
+            setShowAddModal(true);
+            fetchPegawaiList();
+          }}
             className="cursor-pointer flex w-full justify-center items-center gap-2 rounded-lg bg-primary px-4 py-2 sm:w-auto sm:px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">
             <Plus className="h-4 w-4" />
             Tambah User
@@ -391,6 +515,7 @@ export default function KelolaUserPage() {
                   </button>
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Email</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Status</th>
                 <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Role</th>
                 <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Terdaftar</th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-center w-[160px] uppercase text-[10px] tracking-wider">Aksi</th>
@@ -424,22 +549,53 @@ export default function KelolaUserPage() {
                   <td className="px-5 py-3 font-semibold text-slate-800">{user.namaLengkap}</td>
                   <td className="px-5 py-3 text-slate-600">{user.email}</td>
                   <td className="px-5 py-3">
-                    <span className={`inline-block rounded-full border px-2.5 py-0.5 font-semibold capitalize shadow-sm ${getRoleBadge(user.role)}`}>{user.role}</span>
+                    {user.role !== "super admin" && (
+                      <>
+                        {isGuestUser(user) ? (
+                          <span className="inline-block rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 shadow-sm">👤 Guest</span>
+                        ) : (
+                          <span className="inline-block rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 shadow-sm">👨 Regular</span>
+                        )}
+                      </>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
+                    <span className={`inline-block rounded-full border px-2.5 py-0.5 font-semibold capitalize shadow-sm text-xs ${getRoleBadge(user.role)}`}>{user.role}</span>
                   </td>
                   <td className="px-5 py-3 text-slate-500 text-sm">{formatDate(user.createdAt)}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-center gap-1.5">
                       {canManageUser(user.role) ? (
                         <>
+                          {/* Detail Guest (hanya untuk guest) */}
+                          {user.role === "guest" && (
+                            <button onClick={() => setShowGuestDetailModal(user)}
+                              className="cursor-pointer rounded-lg bg-indigo-100 p-1.5 text-indigo-600 transition-colors hover:bg-indigo-600 hover:text-white" title="Lihat Detail">
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
                           {/* Edit */}
                           <button onClick={() => openEditModal(user)}
                             className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Edit User">
                             <Pencil className="h-4 w-4" />
                           </button>
                           {/* Change Role */}
-                          <button onClick={() => { setShowRoleModal(user); setSelectedRole(user.role); }}
+                          <button onClick={() => {
+                            if (isGuestUser(user)) {
+                              showToast("👤 Guest user tidak bisa mengubah role", "error");
+                            } else {
+                              setShowRoleModal(user);
+                              setSelectedRole(user.role);
+                            }
+                          }}
                             className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Ubah Role">
                             <Shield className="h-4 w-4" />
+                          </button>
+                          {/* Toggle Active/Inactive */}
+                          <button onClick={() => handleToggleActive(user)} disabled={submitting}
+                            className={`cursor-pointer rounded-lg p-1.5 transition-colors ${user.isActive ? "bg-green-100 text-green-600 hover:bg-green-600 hover:text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white"}`}
+                            title={user.isActive ? "Nonaktifkan User" : "Aktifkan User"}>
+                            {user.isActive ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                           </button>
                           {/* Delete */}
                           <button onClick={() => setShowDeleteConfirm(user)}
@@ -471,12 +627,64 @@ export default function KelolaUserPage() {
                   <button type="button" onClick={() => setShowAddModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
                 </div>
                 <form onSubmit={handleAddUser} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                  {/* Guest Toggle */}
+                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <input
+                      type="checkbox"
+                      id="isGuest"
+                      checked={newUser.pegawaiId === null}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNewUser(p => ({...p, pegawaiId: null, role: "user"}));
+                        } else {
+                          setNewUser(p => ({...p, pegawaiId: undefined, namaLengkap: "", email: "", role: "user"}));
+                        }
+                      }}
+                      className="w-4 h-4 cursor-pointer accent-blue-600"
+                    />
+                    <label htmlFor="isGuest" className="flex-1 text-sm font-medium text-blue-900 cursor-pointer">
+                      <span className="block">👤 User Guest (Magang/PKL/Freelance)</span>
+                      <span className="text-xs text-blue-700">Tidak linked ke pegawai. Atau uncheck untuk pilih pegawai dari dropdown nama.</span>
+                    </label>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
+                    <div className="relative">
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
-                      <input type="text" value={newUser.namaLengkap} onChange={(e) => setNewUser(p => ({...p, namaLengkap: e.target.value}))} placeholder="Masukkan nama lengkap"
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
-                        onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                      <input
+                        type="text"
+                        value={newUser.namaLengkap}
+                        onChange={(e) => handleNamaLengkapChange(e.target.value)}
+                        onFocus={() => newUser.namaLengkap && setShowPegawaiDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowPegawaiDropdown(false), 200)}
+                        placeholder="Masukkan nama lengkap"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        required
+                        onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")}
+                        onInput={(e) => e.target.setCustomValidity("")}
+                      />
+                      {/* Autocomplete Dropdown */}
+                      {showPegawaiDropdown && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                          {pegawaiLoading ? (
+                            <div className="px-3 py-2 text-sm text-slate-500 text-center">Loading...</div>
+                          ) : filteredPegawai.length > 0 ? (
+                            filteredPegawai.map((pegawai) => (
+                              <button
+                                key={pegawai.id}
+                                type="button"
+                                onClick={() => handleSelectPegawai(pegawai)}
+                                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-primary hover:text-white transition-colors"
+                              >
+                                <div className="font-medium">{pegawai.namaLengkap}</div>
+                                <div className="text-xs opacity-70">{pegawai.email || pegawai.nomorHp || "Tanpa kontak"}</div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-slate-500 text-center">Tidak ada pegawai yang sesuai</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-rose-500">*</span></label>
@@ -494,14 +702,48 @@ export default function KelolaUserPage() {
                       <EyeIcon show={showNewPw} onClick={() => setShowNewPw(!showNewPw)} />
                     </div>
                   </div>
+
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
-                    <select value={newUser.role} onChange={(e) => setNewUser(p => ({...p, role: e.target.value}))}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    <select
+                      value={newUser.role}
+                      onChange={(e) => setNewUser(p => ({...p, role: e.target.value}))}
+                      disabled={newUser.pegawaiId === null}
+                      className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors ${newUser.pegawaiId === null ? "border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed" : "border-slate-200 text-slate-700 focus:border-primary focus:ring-primary"}`}
+                    >
                       {getRoleOptions().map(r => (<option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase() + r.slice(1)}</option>))}
                     </select>
-                    {currentUserRole === "admin" && <p className="mt-1 text-xs text-slate-400">Admin hanya bisa membuat role Supervisor dan User</p>}
+                    {newUser.pegawaiId === null && <p className="mt-1 text-xs text-blue-600">👤 Guest user otomatis role: User</p>}
+                    {currentUserRole === "admin" && newUser.pegawaiId !== null && <p className="mt-1 text-xs text-slate-400">Admin hanya bisa membuat role Supervisor dan User</p>}
                   </div>
+
+                  {newUser.pegawaiId === null && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
+                          <input type="tel" value={newUser.nomorHp} onChange={(e) => setNewUser(p => ({...p, nomorHp: e.target.value}))} placeholder="Contoh: 081234567890"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-sm font-medium text-slate-700">Keterangan</label>
+                          <input type="text" value={newUser.keterangan} onChange={(e) => setNewUser(p => ({...p, keterangan: e.target.value}))} placeholder="Contoh: Magang 3 bulan"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                        </div>
+                      </div>
+                      <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <p className="text-sm font-medium text-emerald-900">✅ Status: Guest User</p>
+                        <p className="text-xs text-emerald-700 mt-1">Tidak linked ke pegawai. Ideal untuk magang, PKL, atau freelancer yang temporary.</p>
+                      </div>
+                    </>
+                  )}
+
+                  {newUser.pegawaiId !== null && newUser.pegawaiId !== undefined && (
+                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                      <p className="text-sm font-medium text-slate-900">✅ Status: Regular User</p>
+                      <p className="text-xs text-slate-700 mt-1">Linked ke pegawai: <span className="font-semibold">{newUser.namaLengkap}</span></p>
+                    </div>
+                  )}
                   <div className="flex items-center justify-end gap-3 pt-2">
                     <button type="button" onClick={() => setShowAddModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
                     <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-hover disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
@@ -528,9 +770,10 @@ export default function KelolaUserPage() {
                         onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-                      <input type="email" value={showEditModal.email} disabled
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-500 bg-slate-50 cursor-not-allowed" />
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-rose-500">*</span></label>
+                      <input type="email" value={editForm.email} onChange={(e) => setEditForm(p => ({...p, email: e.target.value}))} placeholder="email@example.com"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                        onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? "Format email tidak valid" : "Email wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                     </div>
                   </div>
                   <div>
@@ -542,6 +785,22 @@ export default function KelolaUserPage() {
                     </div>
                     <p className="mt-1 text-xs text-slate-400">Kosongkan jika tidak ingin mengubah password. Tidak ada batasan karakter.</p>
                   </div>
+
+                  {editForm.isGuest && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
+                        <input type="tel" value={editForm.nomorHp} onChange={(e) => setEditForm(p => ({...p, nomorHp: e.target.value}))} placeholder="Contoh: 081234567890"
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-slate-700">Keterangan</label>
+                        <input type="text" value={editForm.keterangan} onChange={(e) => setEditForm(p => ({...p, keterangan: e.target.value}))} placeholder="Contoh: Magang 3 bulan"
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
                     <select value={editForm.role} onChange={(e) => setEditForm(p => ({...p, role: e.target.value}))}
@@ -580,6 +839,43 @@ export default function KelolaUserPage() {
                 <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
                   <button onClick={() => setShowRoleModal(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
                   <button onClick={handleUpdateRole} disabled={submitting || selectedRole === showRoleModal.role} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Detail Guest User */}
+          {showGuestDetailModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowGuestDetailModal(null)}>
+              <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-indigo-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
+                  <h2 className="text-lg font-bold text-slate-800">Detail User Guest</h2>
+                  <button type="button" onClick={() => setShowGuestDetailModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nama Lengkap</label>
+                    <p className="text-sm font-medium text-slate-800 mt-1">{showGuestDetailModal.namaLengkap}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</label>
+                    <p className="text-sm font-medium text-slate-800 mt-1">{showGuestDetailModal.email}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nomor HP</label>
+                    <p className="text-sm font-medium text-slate-800 mt-1">{showGuestDetailModal.nomorHp || "-"}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Keterangan</label>
+                    <p className="text-sm font-medium text-slate-800 mt-1 break-words">{showGuestDetailModal.keterangan || "-"}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Terdaftar</label>
+                    <p className="text-sm font-medium text-slate-800 mt-1">{formatDate(showGuestDetailModal.createdAt)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
+                  <button onClick={() => setShowGuestDetailModal(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Tutup</button>
                 </div>
               </div>
             </div>

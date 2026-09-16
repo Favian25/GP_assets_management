@@ -204,14 +204,14 @@ export default function DaftarAsetPage() {
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { 
+  useEffect(() => {
     setMounted(true);
     const ctx = getUserContext();
     if (ctx) {
       const role = ctx.role || "user";
       setUserRole(role);
-      // Failsafe RBAC
-      if (!["super admin", "admin"].includes(role)) {
+      // Allow all roles to view asset list, but with limited functionality for users/guests
+      if (!["super admin", "admin", "supervisor", "user", "guest"].includes(role)) {
         router.push("/?error=unauthorized");
       }
     }
@@ -252,12 +252,14 @@ export default function DaftarAsetPage() {
     }
   }, [loading]);
 
-  useEffect(() => { 
-    if (["super admin", "admin"].includes(userRole)) {
-      fetchAssets(); 
-      fetchDependencies();
+  useEffect(() => {
+    if (mounted) {
+      fetchAssets();
+      if (["super admin", "admin"].includes(userRole)) {
+        fetchDependencies();
+      }
     }
-  }, [fetchAssets, userRole]);
+  }, [fetchAssets, userRole, mounted]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -560,11 +562,13 @@ export default function DaftarAsetPage() {
               ))}
             </select>
           </div>
-          <button onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
-            className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">
-            <Plus className="h-4 w-4" />
-            Tambah Aset
-          </button>
+          {["super admin", "admin"].includes(userRole) && (
+            <button onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
+              className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">
+              <Plus className="h-4 w-4" />
+              Tambah Aset
+            </button>
+          )}
         </div>
 
         {/* Table Controls (Pagination Top) & Table */}
@@ -580,7 +584,9 @@ export default function DaftarAsetPage() {
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center uppercase tracking-wider">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
                 <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center uppercase tracking-wider">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
                 <th className="w-[180px] px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Kondisi</th>
-                <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
+                {!["user", "guest"].includes(userRole) && (
+                  <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -607,17 +613,35 @@ export default function DaftarAsetPage() {
                   </td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
                   <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
-                  <td className="w-[180px] px-5 py-3 text-center"><span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer block w-full rounded-full border py-1 text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span></td>
-                  <td className="w-[110px] px-5 py-3">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>
-                      <button onClick={() => openEdit(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-4 w-4" /></button>
-                      <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-4 w-4" /></button>
-                    </div>
+                  <td className="w-[180px] px-5 py-3 text-center">
+                    <span
+                      onClick={() => {
+                        if (["super admin", "admin"].includes(userRole)) {
+                          setShowKondisiModal(item);
+                          setNewKondisi(item.kondisi);
+                        }
+                      }}
+                      className={`block w-full rounded-full border py-1 text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${["super admin", "admin"].includes(userRole) ? "cursor-pointer" : "cursor-not-allowed opacity-75"} ${getKondisiBadge(item.kondisi)}`}
+                    >
+                      {item.kondisi}
+                    </span>
                   </td>
+                  {!["user", "guest"].includes(userRole) && (
+                    <td className="w-[110px] px-5 py-3">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>
+                        {["super admin", "admin"].includes(userRole) && (
+                          <>
+                            <button onClick={() => openEdit(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-4 w-4" /></button>
+                            <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-4 w-4" /></button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
-              {assets.length === 0 && (<tr><td colSpan={8} className="px-5 py-10 text-center text-slate-400">Tidak ada data aset ditemukan.</td></tr>)}
+              {assets.length === 0 && (<tr><td colSpan={["user", "guest"].includes(userRole) ? 7 : 8} className="px-5 py-10 text-center text-slate-400">Tidak ada data aset ditemukan.</td></tr>)}
             </tbody>
           </table>
         </div>
@@ -692,7 +716,9 @@ export default function DaftarAsetPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4 gap-3 bg-white rounded-b-2xl shrink-0">
-                  <button onClick={() => {openEdit(showDetail); setShowDetail(null);}} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 shadow-sm">Edit Aset</button>
+                  {["super admin", "admin"].includes(userRole) && (
+                    <button onClick={() => {openEdit(showDetail); setShowDetail(null);}} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 shadow-sm">Edit Aset</button>
+                  )}
                   <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm">Tutup</button>
                 </div>
               </div>

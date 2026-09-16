@@ -4,13 +4,34 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import { getPeminjamanById, updatePeminjaman } from "../../../../lib/peminjamanService";
+import {
+  getPeminjamanById,
+  updatePeminjaman,
+  getItemsWithPricing,
+  swapPeminjamanItem,
+  addItemToPeminjaman,
+} from "../../../../lib/peminjamanService";
+import { getAllAssets } from "../../../../lib/assetService";
+import { getAllAksesoris } from "../../../../lib/aksesorisService";
 import { getUserContext } from "../../../../lib/authService";
-import { ChevronLeft, ChevronRight, FileText, Check, X, Calendar, User, Package, Lock, Plus, Camera, Image as ImageIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  FileText,
+  Check,
+  X,
+  Calendar,
+  Package,
+  Plus,
+  Camera,
+  ImageIcon,
+  Trash2,
+  ArrowLeftRight,
+  PackagePlus,
+} from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, "");
   }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000`;
@@ -19,12 +40,15 @@ const getBackendURL = () => {
 };
 const BACKEND_URL = getBackendURL();
 
-// Helper: parse bukti data yang bisa berupa string JSON atau array (jika kolom MySQL bertipe JSON)
 const parseBuktiImages = (data) => {
   if (!data) return [];
   if (Array.isArray(data)) return data;
-  if (typeof data === 'string') {
-    try { return JSON.parse(data); } catch { return []; }
+  if (typeof data === "string") {
+    try {
+      return JSON.parse(data);
+    } catch {
+      return [];
+    }
   }
   return [];
 };
@@ -32,31 +56,20 @@ const parseBuktiImages = (data) => {
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-};
-
-const formatDatetimeForMySQL = (dateStr) => {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 19).replace("T", " ");
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
 };
 
 const formatDateTime = (dateString) => {
   if (!dateString) return "-";
   return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
-  }).format(new Date(dateString)) + " WIB";
-};
-
-const getStatusLabel = (status) => {
-  const map = {
-    "Menunggu Persetujuan": "Menunggu Persetujuan",
-    "Sedang Dipinjam": "Sedang Dipinjam",
-    "Menunggu Verifikasi": "Menunggu Verifikasi",
-    "Peminjaman Selesai": "Peminjaman Selesai",
-  };
-  return map[status] || status;
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(dateString));
 };
 
 const getStatusBadge = (status) => {
@@ -69,148 +82,284 @@ const getStatusBadge = (status) => {
   return s[status] || "bg-slate-50 text-slate-700 border-slate-200";
 };
 
+const getKondisiBadge = (kondisi) => {
+  const badges = {
+    "Siap Digunakan": "bg-green-100 text-green-800",
+    Rusak: "bg-red-100 text-red-800",
+    "Rusak Berat": "bg-red-900 text-white",
+    Maintenance: "bg-yellow-100 text-yellow-800",
+  };
+  return badges[kondisi] || "bg-gray-100 text-gray-800";
+};
+
 export default function EditPeminjamanPage() {
   const router = useRouter();
   const params = useParams();
   const peminjamanId = params.id;
 
+  // State
   const [data, setData] = useState(null);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Editable fields only
+  // Return form state
   const [tanggalPengembalian, setTanggalPengembalian] = useState("");
-  const [status, setStatus] = useState("");
   const [penerimaAset, setPenerimaAset] = useState("");
   const [buktiFiles, setBuktiFiles] = useState([]);
   const [buktiPreviews, setBuktiPreviews] = useState([]);
   const [existingBuktiPeminjaman, setExistingBuktiPeminjaman] = useState([]);
-  const [lightboxData, setLightboxData] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Swap/Add Item state
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedItemForSwap, setSelectedItemForSwap] = useState(null);
+  const [allItems, setAllItems] = useState([]);
+  const [swapNewItem, setSwapNewItem] = useState(null);
+  const [addNewItem, setAddNewItem] = useState(null);
+  const [swapJumlah, setSwapJumlah] = useState(1);
+  const [addJumlah, setAddJumlah] = useState(1);
+
+  // Other state
+  const [currentUser, setCurrentUser] = useState(null);
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Initialize
   useEffect(() => {
     setMounted(true);
     const ctx = getUserContext();
-    setCurrentUserId(ctx?.id);
-    if (toast) { const t = setTimeout(() => setToast(null), 4000); return () => clearTimeout(t); } 
-  }, [toast]);
-  
-  const showToast = (message, type = "success") => setToast({ message, type });
+    setCurrentUser(ctx);
 
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const showToast = (message, type = "success") =>
+    setToast({ message, type });
+
+  // Fetch data
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await getPeminjamanById(peminjamanId);
-      
-      // PERMISSION CHECK: Only owner or admin/super admin
-      const user = getUserContext();
-      const isOwner = result.userId === user?.id;
-      const isAdmin = ["super admin", "admin"].includes(user?.role);
-      
-      if (!isOwner && !isAdmin) {
-        showToast("Akses ditolak. Anda tidak memiliki izin untuk mengedit data ini.", "error");
-        setTimeout(() => router.push("/aset/peminjaman"), 1500);
-        return;
+      const [peminjamanData, itemsData, assets, aksesoris] = await Promise.all([
+        getPeminjamanById(peminjamanId),
+        getItemsWithPricing(peminjamanId),
+        getAllAssets(),
+        getAllAksesoris(),
+      ]);
+
+      setData(peminjamanData);
+      setItems(itemsData || []);
+      setExistingBuktiPeminjaman(
+        parseBuktiImages(peminjamanData.buktiPeminjaman)
+      );
+
+      // Auto-fill penerima_aset if empty
+      if (!peminjamanData.penerimaAset && currentUser) {
+        setPenerimaAset(currentUser.nama || "");
+      } else {
+        setPenerimaAset(peminjamanData.penerimaAset || "");
       }
 
-      setData(result);
-      setTanggalPengembalian(formatDateForInput(result.tanggalPengembalian));
-      setStatus(result.status);
-      setPenerimaAset(result.penerimaAset || "");
-      
-      // Parse bukti - handle both JSON string and already-parsed array
-      setExistingBuktiPeminjaman(parseBuktiImages(result.buktiPeminjaman));
+      // Combine all items for swap/add modal
+      const combined = [
+        ...assets
+          .filter((a) => a.kondisi === "Siap Digunakan")
+          .map((a) => ({
+            id: a.id,
+            nama: a.namaAset,
+            kode: a.kodeAset,
+            harga: a.hargaAset || 0,
+            stok: a.jumlah,
+            kondisi: a.kondisi,
+            tipe: "asset",
+          })),
+        ...aksesoris
+          .filter((ak) => ak.kondisi === "Siap Digunakan")
+          .map((ak) => ({
+            id: ak.id,
+            nama: ak.namaAksesoris,
+            kode: ak.kodeAksesoris,
+            harga: ak.hargaAset || 0,
+            stok: ak.jumlahUnit,
+            kondisi: ak.kondisi,
+            tipe: "aksesoris",
+          })),
+      ];
+      setAllItems(combined);
     } catch (err) {
-      console.error("Error fetching peminjaman:", err);
+      console.error("Error fetching data:", err);
       showToast("Gagal memuat data", "error");
     } finally {
       setLoading(false);
     }
-  }, [peminjamanId, router]);
+  }, [peminjamanId, currentUser]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (mounted) {
+      fetchData();
+    }
+  }, [mounted, fetchData]);
 
+  // File handling
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    handleFiles(files);
-  };
-
-  const handleFiles = (newFiles) => {
     const validTypes = ["image/jpeg", "image/jpg", "image/png"];
     let filesToAdd = [];
-    let isValid = true;
 
-    newFiles.forEach(file => {
+    for (let file of files) {
       if (!validTypes.includes(file.type)) {
-        showToast("Format file tidak didukung (harus JPG/PNG)", "error");
-        isValid = false;
+        showToast("Format file harus JPG/JPEG/PNG", "error");
         return;
       }
       filesToAdd.push(file);
-    });
-
-    if (!isValid) return;
+    }
 
     if (buktiFiles.length + filesToAdd.length > 5) {
-      showToast("Maksimal 5 gambar diperbolehkan", "error");
+      showToast("Maksimal 5 gambar", "error");
       return;
     }
 
-    const updatedFiles = [...buktiFiles, ...filesToAdd];
-    setBuktiFiles(updatedFiles);
-
-    const previews = updatedFiles.map(f => URL.createObjectURL(f));
-    setBuktiPreviews(previews);
+    const updated = [...buktiFiles, ...filesToAdd];
+    setBuktiFiles(updated);
+    setBuktiPreviews(updated.map((f) => URL.createObjectURL(f)));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const removeFile = (index) => {
+    const updated = buktiFiles.filter((_, i) => i !== index);
+    setBuktiFiles(updated);
+    setBuktiPreviews(updated.map((f) => URL.createObjectURL(f)));
+  };
 
-    // Cek apakah status sudah diubah ke Pengembalian
-    if (status !== "Menunggu Verifikasi") {
-      showToast("Ubah status menjadi 'Pengembalian Alat' terlebih dahulu sebelum menyimpan", "error");
+  // Swap item handler
+  const handleSwapItem = async () => {
+    if (!selectedItemForSwap || !swapNewItem) {
+      showToast("Pilih item lama dan baru", "error");
       return;
     }
 
-    // Validasi semua data pengembalian wajib lengkap
-    if (!tanggalPengembalian) {
-      showToast("Tanggal pengembalian wajib diisi", "error");
-      return;
-    }
-    if (!penerimaAset || !penerimaAset.trim()) {
-      showToast("Penerima alat wajib diisi", "error");
-      return;
-    }
-    if (buktiFiles.length === 0) {
-      showToast("Bukti pengembalian wajib diisi (minimal 1 gambar)", "error");
+    if (swapJumlah > selectedItemForSwap.stok) {
+      showToast("Jumlah melebihi stok", "error");
       return;
     }
 
     try {
       setSubmitting(true);
-      await updatePeminjaman(peminjamanId, {
-        tanggalPengembalian: tanggalPengembalian ? formatDatetimeForMySQL(tanggalPengembalian) : null,
-        status,
-        penerimaAset,
-      }, buktiFiles);
-      showToast("Data pengembalian berhasil disimpan!");
-      setTimeout(() => router.push("/aset/peminjaman"), 1500);
+      await swapPeminjamanItem(peminjamanId, {
+        oldItemId: selectedItemForSwap.id,
+        oldItemType: selectedItemForSwap.tipe,
+        newItemId: swapNewItem.id,
+        newItemType: swapNewItem.tipe,
+        jumlah: swapJumlah,
+      });
+
+      showToast("Item berhasil ditukar!");
+      setShowSwapModal(false);
+      setSelectedItemForSwap(null);
+      setSwapNewItem(null);
+      setSwapJumlah(1);
+
+      // Reload items
+      const newItems = await getItemsWithPricing(peminjamanId);
+      setItems(newItems || []);
     } catch (err) {
-      showToast(err.response?.data?.message || "Gagal memperbarui data", "error");
+      showToast(err.message || "Gagal menukar item", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
+  // Add item handler
+  const handleAddItem = async () => {
+    if (!addNewItem) {
+      showToast("Pilih item yang ingin ditambahkan", "error");
+      return;
+    }
+
+    if (addJumlah > addNewItem.stok) {
+      showToast("Jumlah melebihi stok", "error");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await addItemToPeminjaman(peminjamanId, {
+        itemId: addNewItem.id,
+        itemType: addNewItem.tipe,
+        jumlah: addJumlah,
+      });
+
+      showToast("Item berhasil ditambahkan!");
+      setShowAddModal(false);
+      setAddNewItem(null);
+      setAddJumlah(1);
+
+      // Reload items
+      const newItems = await getItemsWithPricing(peminjamanId);
+      setItems(newItems || []);
+    } catch (err) {
+      showToast(err.message || "Gagal menambah item", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Form submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!tanggalPengembalian) {
+      showToast("Tanggal pengembalian wajib diisi", "error");
+      return;
+    }
+
+    if (!penerimaAset?.trim()) {
+      showToast("Penerima aset wajib diisi", "error");
+      return;
+    }
+
+    if (buktiFiles.length === 0) {
+      showToast("Upload bukti pengembalian minimal 1 gambar", "error");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const dateStr = tanggalPengembalian;
+
+      await updatePeminjaman(
+        peminjamanId,
+        {
+          tanggal_pengembalian: dateStr,
+          status: "Menunggu Verifikasi",
+          penerima_aset: penerimaAset,
+        },
+        buktiFiles
+      );
+
+      showToast("Data pengembalian berhasil disimpan!");
+      setTimeout(() => {
+        router.push("/aset/peminjaman");
+      }, 1500);
+    } catch (err) {
+      showToast(err.message || "Gagal menyimpan data", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!mounted || loading) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Edit Pengembalian</h1></div>
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-8 animate-pulse space-y-3">
-          {[1,2,3,4].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-32 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/></div>))}
+      <div className="min-h-screen bg-slate-50 py-6 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-slate-600">Memuat data...</p>
+          </div>
         </div>
       </div>
     );
@@ -218,278 +367,527 @@ export default function EditPeminjamanPage() {
 
   if (!data) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center py-20 text-slate-500">Data peminjaman tidak ditemukan.</div>
+      <div className="min-h-screen bg-slate-50 py-6 px-4">
+        <div className="max-w-4xl mx-auto text-center py-20 text-slate-500">
+          Data peminjaman tidak ditemukan
+        </div>
       </div>
     );
   }
 
+  const canReturnItems = data.status === "Sedang Dipinjam";
+
   return (
-    <>
-    <div className="max-w-4xl mx-auto">
-      {/* Toast */}
-      {typeof document !== 'undefined' && toast && createPortal(
-        <div className={`fixed top-20 right-6 z-9999 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
-          {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-          {toast.message}
-        </div>,
-        document.body
-      )}
-
-      {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => router.push("/aset/peminjaman")} className="cursor-pointer rounded-lg bg-primary p-2 text-white hover:bg-primary-hover shadow-sm transition-colors">
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Edit Pengembalian #{data.kodePinjam}</h1>
-          <p className="text-sm text-slate-500">Update data pengembalian alat</p>
+    <div className="min-h-screen bg-slate-50 py-6 px-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="p-2 hover:bg-white rounded-lg transition"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              Detail Peminjaman #{data.kodePinjam}
+            </h1>
+            <p className="text-sm text-slate-500">
+              Status: <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(data.status)}`}>{data.status}</span>
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Info Read-Only */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-slate-400 mb-6">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-            <FileText className="h-4 w-4 text-slate-400" />
-            Data Peminjaman (Read-Only)
+        {/* Info Read-Only */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Data Peminjaman
           </h2>
-          <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs text-center font-semibold uppercase shadow-sm ${getStatusBadge(data.status)}`}>{getStatusLabel(data.status)}</span>
-        </div>
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">No. Peminjaman</label>
-            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm font-mono font-semibold text-slate-700">{data.kodePinjam}</div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">
+                Nama Peminjam
+              </label>
+              <div className="bg-slate-50 rounded-lg px-3 py-2 text-slate-900">
+                {data.namaPeminjam}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">
+                Tanggal Peminjaman
+              </label>
+              <div className="bg-slate-50 rounded-lg px-3 py-2 text-slate-900">
+                {formatDateTime(data.tanggalPeminjaman)}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">
+                Yang Menyerahkan
+              </label>
+              <div className="bg-slate-50 rounded-lg px-3 py-2 text-slate-900">
+                {data.yangMenyerahkan || "-"}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">
+                Disetujui Oleh
+              </label>
+              <div className="bg-slate-50 rounded-lg px-3 py-2 text-slate-900">
+                {data.approvedBy || "-"}
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="text-xs font-medium text-slate-600 block mb-1">
+                Alasan/Keperluan Peminjaman
+              </label>
+              <div className="bg-slate-50 rounded-lg px-3 py-2 text-slate-900 min-h-[60px]">
+                {data.alasanPeminjaman || "-"}
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Nama Peminjam</label>
-            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-700">{data.namaPeminjam}</div>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Tanggal Peminjaman</label>
-            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-700">{formatDateTime(data.tanggalPeminjaman)}</div>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Yang Menyerahkan</label>
-            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-700">{data.yangMenyerahkan || "-"}</div>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Alasan Peminjaman</label>
-            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-700 min-h-[60px]">{data.alasanPeminjaman || "-"}</div>
-          </div>
-          
-          {/* Existing Bukti Peminjaman */}
+
+          {/* Bukti Peminjaman */}
           {existingBuktiPeminjaman.length > 0 && (
-            <div className="sm:col-span-2">
-              <label className="mb-2 block text-xs font-medium text-slate-500">Bukti Peminjaman</label>
-              <div className="flex flex-wrap justify-center gap-3">
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <label className="text-xs font-medium text-slate-600 block mb-2">
+                Bukti Peminjaman
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {existingBuktiPeminjaman.map((path, idx) => (
-                  <div 
-                    key={idx} 
-                    className="relative h-24 w-[calc(33.333%-12px)] min-w-[120px] rounded-lg overflow-hidden border border-slate-200 group cursor-zoom-in shadow-sm hover:border-primary/50 transition-colors" 
-                    onClick={() => setLightboxData({ images: existingBuktiPeminjaman, index: idx })}
-                  >
-                    <Image src={`${BACKEND_URL}${path}`} alt={`Bukti Peminjaman ${idx + 1}`} fill className="object-cover group-hover:scale-110 transition-transform duration-300" unoptimized />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                  </div>
+                  <img
+                    key={idx}
+                    src={`${BACKEND_URL}${path}`}
+                    alt={`Bukti ${idx + 1}`}
+                    className="h-24 w-full object-cover rounded-lg border border-slate-200"
+                  />
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Items Read-Only */}
-        {data.items && data.items.length > 0 && (
-          <div className="px-6 pb-6">
-            <label className="mb-2 block text-xs font-medium text-slate-500">Daftar Alat Dipinjam</label>
-            <div className="rounded-lg border border-slate-200 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead><tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-4 py-2 text-left font-semibold text-slate-600 w-10">No</th>
-                  <th className="px-4 py-2 text-left font-semibold text-slate-600 w-32">Kode Aset</th>
-                  <th className="px-4 py-2 text-left font-semibold text-slate-600">Nama Aset</th>
-                  <th className="px-4 py-2 text-center font-semibold text-slate-600 w-36">Jumlah Dipinjam</th>
-                </tr></thead>
-                <tbody>
-                  {data.items.map((item, i) => (
-                    <tr key={item.id} className="border-b border-slate-100 last:border-0">
-                      <td className="px-4 py-2 text-slate-500">{i + 1}</td>
-                      <td className="px-4 py-2 text-xs text-slate-500 font-mono font-semibold">{item.kodeAset}</td>
-                      <td className="px-4 py-2 text-slate-700 font-medium">{item.namaAset}</td>
-                      <td className="px-4 py-2 text-center font-semibold text-slate-700">{item.jumlah}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Editable Section */}
-      <form onSubmit={handleSubmit}>
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-amber-500 mb-6">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-              <Package className="h-4 w-4 text-amber-500" />
-              Data Pengembalian
+        {/* Items List */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Item yang Dipinjam ({items.length})
             </h2>
+
+            {canReturnItems && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSwapModal(true)}
+                  className="flex items-center gap-2 px-3 py-1 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 transition"
+                >
+                  <ArrowLeftRight className="w-4 h-4" /> Tukar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
+                >
+                  <PackagePlus className="w-4 h-4" /> Tambah
+                </button>
+              </div>
+            )}
           </div>
-          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Status <span className="text-rose-500">*</span></label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                <option value={data?.status || ""}>{data?.status || "Pilih Status"}</option>
-                {data?.status !== "Menunggu Verifikasi" && (
-                  <option value="Menunggu Verifikasi">Pengembalian Alat</option>
-                )}
-              </select>
+
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {items.length === 0 ? (
+              <p className="text-center text-slate-500 py-4">Tidak ada item</p>
+            ) : (
+              items.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex justify-between items-center"
+                >
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">{item.namaAset}</p>
+                    <p className="text-xs text-slate-500">
+                      {item.kodeAset} • {item.kategori}
+                    </p>
+                    <div className="flex gap-1 mt-1">
+                      <span className={`text-xs px-2 py-0.5 rounded ${getKondisiBadge(item.kondisi)}`}>
+                        {item.kondisi}
+                      </span>
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                        {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Qty: {item.jumlah}
+                    </p>
+                    {item.hargaUnit > 0 && (
+                      <p className="text-xs text-emerald-600 font-semibold">
+                        Rp {(item.hargaUnit * item.jumlah).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Total Value */}
+          {items.some((it) => it.hargaUnit > 0) && (
+            <div className="mt-4 pt-4 border-t border-slate-200 text-right">
+              <p className="text-sm text-slate-600">Total Nilai Aset:</p>
+              <p className="text-2xl font-bold text-emerald-600">
+                Rp{" "}
+                {items
+                  .reduce((sum, item) => sum + (item.hargaUnit * item.jumlah || 0), 0)
+                  .toLocaleString()}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Return Form - Conditional */}
+        {canReturnItems && (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Return Info */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-900">
+                ✓ Aset sedang dipinjam. Isi data pengembalian di bawah.
+              </p>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Pengembalian <span className="text-rose-500">*</span></label>
-              <div className="relative">
-                {!tanggalPengembalian && (
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">
-                    dd/mm/yyyy, --:--
-                  </span>
-                )}
-                <input 
-                  type="datetime-local" 
-                  value={tanggalPengembalian} 
-                  onChange={(e) => setTanggalPengembalian(e.target.value)} 
-                  onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
-                  required
-                  onInvalid={(e) => e.target.setCustomValidity("Tanggal pengembalian wajib diisi")} 
-                  onInput={(e) => e.target.setCustomValidity("")}
-                  className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer ${!tanggalPengembalian ? 'text-transparent' : 'text-slate-700 placeholder:text-slate-400'}`} 
+            {/* Tanggal Pengembalian */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Data Pengembalian
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Tanggal Pengembalian *
+                  </label>
+                  <input
+                    type="date"
+                    value={tanggalPengembalian}
+                    onChange={(e) => setTanggalPengembalian(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                    required
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Jam akan otomatis diisi saat menyimpan
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Penerima Aset *
+                  </label>
+                  <input
+                    type="text"
+                    value={penerimaAset}
+                    onChange={(e) => setPenerimaAset(e.target.value)}
+                    placeholder="Nama orang yang menerima"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bukti Pengembalian */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <Camera className="w-5 h-5" />
+                Bukti Pengembalian ({buktiFiles.length}/5)
+              </h3>
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary hover:bg-blue-50 transition"
+              >
+                <ImageIcon className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-slate-700">
+                  Klik atau drag gambar
+                </p>
+                <p className="text-xs text-slate-500">PNG, JPG max 5 gambar</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
               </div>
-            </div>
 
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Penerima Alat <span className="text-rose-500">*</span></label>
-              <input type="text" placeholder="Siapa yang menerima alat yang dikembalikan" value={penerimaAset} onChange={(e) => setPenerimaAset(e.target.value)} required
-                onInvalid={(e) => e.target.setCustomValidity("Penerima alat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
-            </div>
-
-            {/* Bukti Pengembalian Upload */}
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Bukti Pengembalian <span className="text-rose-500">*</span></label>
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  {/* Opsi Kamera */}
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="bukti-kamera"
-                  />
-                  <label htmlFor="bukti-kamera" className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-emerald-500 hover:text-emerald-600 transition-colors">
-                    <Camera className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm font-semibold text-slate-700">Buka Kamera</span>
-                  </label>
-
-                  {/* Opsi Galeri */}
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="bukti-galeri"
-                  />
-                  <label htmlFor="bukti-galeri" className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-emerald-500 hover:text-emerald-600 transition-colors">
-                    <ImageIcon className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm font-semibold text-slate-700">Pilih Galeri</span>
-                  </label>
-                </div>
-                <p className="text-xs text-slate-500 mt-4">Maks. 5 file (JPG/PNG)</p>
-              </div>
-
-              {/* Previews */}
               {buktiPreviews.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {buktiPreviews.map((src, idx) => (
-                    <div key={idx} className="relative group h-20 rounded-lg overflow-hidden border border-slate-200">
-                      <Image src={src} alt="Preview Bukti" fill unoptimized className="object-cover" />
-                      <button type="button" 
-                        onClick={() => {
-                          const newFiles = [...buktiFiles]; newFiles.splice(idx, 1); setBuktiFiles(newFiles);
-                          const newPreviews = [...buktiPreviews]; newPreviews.splice(idx, 1); setBuktiPreviews(newPreviews);
-                        }}
-                        className="absolute top-1 right-1 rounded-full bg-rose-500 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-600 shadow-sm"
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
+                  {buktiPreviews.map((preview, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={preview}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 mb-10">
-          <button type="button" onClick={() => router.push("/aset/peminjaman")}
-            className="cursor-pointer rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
-            Batal
-          </button>
-          <button type="submit" disabled={submitting}
-            className="cursor-pointer rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">
-            {submitting ? "Menyimpan..." : "Simpan Perubahan"}
-          </button>
-        </div>
-      </form>
-    </div>
-
-    {/* Lightbox Overlay */}
-    {mounted && typeof document !== 'undefined' && lightboxData && createPortal(
-      <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4 cursor-pointer transition-opacity animate-in fade-in duration-300" onClick={() => setLightboxData(null)}>
-        <div className="relative flex items-center gap-4 w-full max-w-5xl h-[85vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
-          {lightboxData.images.length > 1 && (
-            <button 
-              onClick={() => setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length }))}
-              className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-sm shadow-xl"
-            >
-              <ChevronLeft className="h-8 w-8" />
-            </button>
-          )}
-          
-          <div className="relative flex-1 h-full">
-            <Image 
-              src={`${BACKEND_URL}${lightboxData.images[lightboxData.index]}`} 
-              alt="Preview Bukti Full" 
-              fill 
-              className="rounded-xl object-contain shadow-2xl cursor-default" 
-              unoptimized 
-            />
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm">
-              {lightboxData.index + 1} / {lightboxData.images.length}
+            {/* Submit Button */}
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="px-6 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-6 py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                {submitting ? "Menyimpan..." : "Simpan Pengembalian"}
+              </button>
             </div>
-          </div>
+          </form>
+        )}
 
-          {lightboxData.images.length > 1 && (
-            <button 
-              onClick={() => setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length }))}
-              className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors backdrop-blur-sm shadow-xl"
-            >
-              <ChevronRight className="h-8 w-8" />
-            </button>
-          )}
-        </div>
-        <button className="absolute right-6 top-6 text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" onClick={() => setLightboxData(null)}>
-          <X className="h-8 w-8" />
-        </button>
-      </div>,
-      document.body
-    )}
-    </>
+        {/* Info jika belum bisa dikembalikan */}
+        {!canReturnItems && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
+            <p className="text-sm text-amber-900">
+              Aset hanya dapat dikembalikan saat status "Sedang Dipinjam".<br />
+              Status saat ini: <span className="font-semibold">{data.status}</span>
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Swap Item Modal */}
+      {showSwapModal && canReturnItems &&
+        createPortal(
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">
+                Tukar Barang
+              </h3>
+
+              <div className="space-y-4">
+                {/* Pilih item yang ingin ditukar */}
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-2">
+                    Item yang Ditukar
+                  </label>
+                  <select
+                    value={selectedItemForSwap?.id || ""}
+                    onChange={(e) => {
+                      const selected = items.find((it) => it.id == e.target.value);
+                      setSelectedItemForSwap(selected);
+                    }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:outline-none"
+                  >
+                    <option value="">-- Pilih Item --</option>
+                    {items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.namaAset} (qty: {item.jumlah})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Pilih item pengganti */}
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-2">
+                    Item Pengganti
+                  </label>
+                  <select
+                    value={swapNewItem?.id || ""}
+                    onChange={(e) => {
+                      const selected = allItems.find((it) => it.id == e.target.value);
+                      setSwapNewItem(selected);
+                    }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:outline-none"
+                  >
+                    <option value="">-- Pilih Item Pengganti --</option>
+                    {allItems
+                      .filter(
+                        (it) =>
+                          !(items.some(
+                            (item) =>
+                              item.id === it.id && item.tipe === it.tipe
+                          ))
+                      )
+                      .map((item) => (
+                        <option key={`${item.tipe}-${item.id}`} value={item.id}>
+                          {item.nama} (stok: {item.stok})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* Jumlah */}
+                {selectedItemForSwap && (
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 block mb-2">
+                      Jumlah
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={selectedItemForSwap.jumlah}
+                      value={swapJumlah}
+                      onChange={(e) =>
+                        setSwapJumlah(Math.min(parseInt(e.target.value) || 1, selectedItemForSwap.jumlah))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSwapModal(false);
+                    setSelectedItemForSwap(null);
+                    setSwapNewItem(null);
+                    setSwapJumlah(1);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSwapItem}
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {submitting ? "Menukar..." : "Tukar"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Add Item Modal */}
+      {showAddModal && canReturnItems &&
+        createPortal(
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">
+                Tambah Barang
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-2">
+                    Item yang Ditambahkan
+                  </label>
+                  <select
+                    value={addNewItem?.id || ""}
+                    onChange={(e) => {
+                      const selected = allItems.find((it) => it.id == e.target.value);
+                      setAddNewItem(selected);
+                    }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:outline-none"
+                  >
+                    <option value="">-- Pilih Item --</option>
+                    {allItems
+                      .filter(
+                        (it) =>
+                          !(items.some(
+                            (item) =>
+                              item.id === it.id && item.tipe === it.tipe
+                          ))
+                      )
+                      .map((item) => (
+                        <option key={`${item.tipe}-${item.id}`} value={item.id}>
+                          {item.nama} (stok: {item.stok})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {addNewItem && (
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 block mb-2">
+                      Jumlah
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={addNewItem.stok}
+                      value={addJumlah}
+                      onChange={(e) =>
+                        setAddJumlah(Math.min(parseInt(e.target.value) || 1, addNewItem.stok))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setAddNewItem(null);
+                    setAddJumlah(1);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {submitting ? "Menambah..." : "Tambah"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Toast */}
+      {toast &&
+        createPortal(
+          <div
+            className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg text-white font-medium shadow-lg ${
+              toast.type === "success" ? "bg-green-600" : "bg-red-600"
+            }`}
+          >
+            {toast.message}
+          </div>,
+          document.body
+        )}
+    </div>
   );
 }

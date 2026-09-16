@@ -63,6 +63,11 @@ const authController = {
         return res.status(401).json({ success: false, message: 'Password salah' });
       }
 
+      // Cek apakah akun aktif
+      if (user.is_active === 0 || user.is_active === false) {
+        return res.status(403).json({ success: false, message: 'Akun Anda telah dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.' });
+      }
+
       // Generate payload & token
       const payload = {
         userId: user.id,

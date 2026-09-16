@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getUserContext } from "../lib/authService";
-import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu, BarChart2, ShieldAlert, Activity, X } from "lucide-react";
+import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu, BarChart2, ShieldAlert, Activity, X, History, Users2 } from "lucide-react";
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMobileOpen }) {
   const pathname = usePathname();
@@ -86,7 +86,15 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
           <div className={`flex flex-1 items-center justify-center transition-all duration-500 overflow-hidden ${isCollapsed ? "lg:max-w-0 lg:opacity-0 lg:invisible" : "max-w-full opacity-100 visible"}`}>
             <Link href="/" className="flex items-center justify-center w-full">
               <div className="flex h-8 w-auto items-center justify-center bg-transparent relative">
-                <Image src="/LOGO GALERIA KARYA MEDIA - TRANSPARANT PUTIH ( LANDSCAPE ).png" alt="Galeria Karya Media Logo" width={110} height={110} className="h-full w-auto object-contain" style={{ width: 'auto' }} priority />
+                <Image
+                  src="/LOGO%20GALERIA%20KARYA%20MEDIA%20-%20TRANSPARANT%20PUTIH%20%28%20LANDSCAPE%20%29.png"
+                  alt="Galeria Karya Media Logo"
+                  width={110}
+                  height={110}
+                  className="h-full w-auto object-contain"
+                  style={{ width: 'auto' }}
+                  priority
+                />
               </div>
             </Link>
           </div>
@@ -191,6 +199,21 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
                   </div>
                   <span className="text-[13px] whitespace-nowrap">Peminjaman Aset</span>
                 </Link>
+
+                {/* Riwayat - Visible for all roles */}
+                <Link
+                  href="/riwayat"
+                  className={`flex items-center h-10 rounded-lg transition-all duration-300 ${
+                    isActive("/riwayat")
+                      ? "bg-primary text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <div className="flex w-12 h-full items-center justify-center shrink-0">
+                    <History className="h-4 w-4" />
+                  </div>
+                  <span className="text-[13px] whitespace-nowrap">Riwayat Saya</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -278,22 +301,41 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
 
           {/* Kelola User - Only Super Admin & Admin */}
           {["super admin", "admin"].includes(userRole) && (
-            <Link
-              href="/kelola-user"
-              className={`group flex items-center h-11 rounded-lg transition-all duration-300 ${
-                isActive("/kelola-user")
-                  ? "bg-primary text-white"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
-              }`}
-              title={isCollapsed ? "Kelola User" : ""}
-            >
-              <div className="flex w-12 h-full items-center justify-center shrink-0">
-                <Users className="h-5 w-5" />
-              </div>
-              <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100 ml-1"}`}>
-                Kelola User
-              </span>
-            </Link>
+            <>
+              <Link
+                href="/kelola-user"
+                className={`group flex items-center h-11 rounded-lg transition-all duration-300 ${
+                  isActive("/kelola-user")
+                    ? "bg-primary text-white"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
+                }`}
+                title={isCollapsed ? "Kelola User" : ""}
+              >
+                <div className="flex w-12 h-full items-center justify-center shrink-0">
+                  <Users className="h-5 w-5" />
+                </div>
+                <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100 ml-1"}`}>
+                  Kelola User
+                </span>
+              </Link>
+
+              <Link
+                href="/kelola-pegawai"
+                className={`group flex items-center h-11 rounded-lg transition-all duration-300 ${
+                  isActive("/kelola-pegawai")
+                    ? "bg-primary text-white"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
+                }`}
+                title={isCollapsed ? "Kelola Pegawai" : ""}
+              >
+                <div className="flex w-12 h-full items-center justify-center shrink-0">
+                  <Users2 className="h-5 w-5" />
+                </div>
+                <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100 ml-1"}`}>
+                  Kelola Pegawai
+                </span>
+              </Link>
+            </>
           )}
         </nav>
       </aside>

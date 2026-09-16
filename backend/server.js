@@ -11,6 +11,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const brandRoutes = require("./routes/brandRoutes");
 const aksesorisRoutes = require("./routes/aksesorisRoutes");
+const pegawaiRoutes = require("./routes/pegawaiRoutes");
 
 const os = require("os");
 
@@ -65,6 +66,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/aksesoris", aksesorisRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/pegawai", pegawaiRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

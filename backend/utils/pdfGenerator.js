@@ -18,17 +18,23 @@ function getLogoBase64() {
 }
 
 /**
- * Formats a date string to Indonesian locale.
+ * Formats a date string to Indonesian locale (without time).
  */
 function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }) + ' WIB';
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/**
+ * Formats a number as Indonesian currency (Rupiah).
+ */
+function formatRupiah(amount) {
+  if (!amount) return "Rp -";
+  return "Rp " + parseInt(amount).toLocaleString("id-ID");
 }
 
 /**
@@ -57,15 +63,22 @@ function generateLoanPDF(data) {
   // Helper to return color/badge styling based on status
   const statusStyle = getStatusStyle(data.status);
 
-  // Build table rows
-  const itemRows = (data.items || []).map((item, idx) => `
+  // Build table rows with pricing
+  const itemRows = (data.items || []).map((item, idx) => {
+    const hargaUnit = parseInt(item.harga_aset || item.hargaUnit || 0);
+    const jumlah = parseInt(item.jumlah || 0);
+    const totalHarga = hargaUnit * jumlah;
+    return `
     <tr>
       <td style="text-align:center; padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px;">${idx + 1}</td>
       <td style="padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px; font-family:'Courier New',monospace; font-weight:600;">${item.kode_aset || '-'}</td>
       <td style="padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px;">${item.nama_aset || '-'}</td>
       <td style="text-align:center; padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px; font-weight:700;">${item.jumlah}</td>
+      <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #ddd; font-size:11px; font-family:'Courier New',monospace;">${formatRupiah(hargaUnit)}</td>
+      <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #ddd; font-size:11px; font-family:'Courier New',monospace; font-weight:600;">${formatRupiah(totalHarga)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const html = `<!DOCTYPE html>
 <html>
@@ -316,7 +329,7 @@ function generateLoanPDF(data) {
   <div class="double-line"></div>
 
   <!-- ===== DOCUMENT TITLE ===== -->
-  <div class="doc-title">Bukti Transaksi Peminjaman Aset</div>
+  <div class="doc-title">Bukti Peminjaman Aset</div>
 
   <!-- ===== INFO GRID ===== -->
   <div class="info-grid">
@@ -343,8 +356,14 @@ function generateLoanPDF(data) {
         <span class="info-value">: <span class="status-badge" style="background:${statusStyle.bg}; color:${statusStyle.color}; border-color:${statusStyle.border};">${(data.status || '-').toUpperCase()}</span></span>
       </div>
       <div class="info-row">
-        <span class="info-label">Alasan</span>
-        <span class="info-value">: ${data.alasan_peminjaman || '-'}</span>
+        <span class="info-label">Keperluan</span>
+        <span class="info-value">: ${
+          data.keperluan_list && typeof data.keperluan_list === 'string'
+            ? data.keperluan_list
+            : Array.isArray(data.keperluan_list)
+            ? data.keperluan_list.join(', ')
+            : data.alasan_peminjaman || '-'
+        }</span>
       </div>
       <div class="info-row">
         <span class="info-label">Disetujui Oleh</span>
@@ -377,6 +396,8 @@ function generateLoanPDF(data) {
         <th style="width:130px; text-align:left;">Kode Item</th>
         <th style="text-align:left;">Nama Barang</th>
         <th style="width:50px; text-align:center;">Qty</th>
+        <th style="width:100px; text-align:right;">Harga Unit</th>
+        <th style="width:100px; text-align:right;">Total</th>
       </tr>
     </thead>
     <tbody>

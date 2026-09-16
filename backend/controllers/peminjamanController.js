@@ -45,10 +45,17 @@ const peminjamanController = {
   // CREATE peminjaman baru
   createPeminjaman: async (req, res) => {
     try {
-      const { nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, items } = req.body;
+      const { nama_peminjam, alasan_peminjaman, keperluan_list, tanggal_peminjaman, yang_menyerahkan, items } = req.body;
+      const callerRole = req.user?.role;
+      const isUserRole = ['user', 'guest'].includes(callerRole);
 
-      if (!nama_peminjam || !tanggal_peminjaman || !yang_menyerahkan || !alasan_peminjaman) {
-        return res.status(400).json({ success: false, message: "Nama, tanggal, yang menyerahkan, dan alasan peminjaman wajib diisi!" });
+      if (!nama_peminjam || !tanggal_peminjaman || !alasan_peminjaman) {
+        return res.status(400).json({ success: false, message: "Nama, tanggal, dan keperluan peminjaman wajib diisi!" });
+      }
+
+      // yang_menyerahkan wajib hanya untuk superadmin, admin, supervisor
+      if (!isUserRole && !yang_menyerahkan) {
+        return res.status(400).json({ success: false, message: "Yang menyerahkan wajib diisi!" });
       }
 
       let itemsArray = items;
@@ -91,12 +98,19 @@ const peminjamanController = {
       // Auto-generate kode pinjam
       const kode_pinjam = await Peminjaman.getNextKodePinjam();
 
+      // Parse keperluan_list jika string
+      let keperluanListParsed = keperluan_list;
+      if (typeof keperluan_list === 'string') {
+        try { keperluanListParsed = JSON.parse(keperluan_list); } catch { keperluanListParsed = null; }
+      }
+
       // req.user.userId from verifyToken middleware
       const result = await Peminjaman.create(
         { 
           kode_pinjam, 
           nama_peminjam, 
-          alasan_peminjaman, 
+          alasan_peminjaman,
+          keperluan_list: keperluanListParsed,
           tanggal_peminjaman, 
           yang_menyerahkan, 
           bukti_peminjaman: buktiPeminjamanUrls,
@@ -323,13 +337,13 @@ const peminjamanController = {
     try {
       const { generateLoanPDF } = require('../utils/pdfGenerator');
       const data = await Peminjaman.getById(req.params.id);
-      
+
       if (!data) {
         return res.status(404).json({ success: false, message: "Data tidak ditemukan" });
       }
 
       const htmlContent = await generateLoanPDF(data);
-      
+
       res.setHeader('Content-Type', 'text/html');
       res.send(htmlContent);
     } catch (error) {
@@ -337,6 +351,103 @@ const peminjamanController = {
       if (!res.headersSent) {
         res.status(500).json({ success: false, message: "Gagal memproses dokumen cetak" });
       }
+    }
+  },
+
+  // SWAP item saat Sedang Dipinjam
+  swapItem: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { old_item_id, old_item_type, new_item_id, new_item_type, jumlah } = req.body;
+      if (!old_item_id || !old_item_type || !new_item_id || !new_item_type || !jumlah) {
+        return res.status(400).json({ success: false, message: 'Data tidak lengkap' });
+      }
+      await Peminjaman.swapItem(id, old_item_id, old_item_type, new_item_id, new_item_type, jumlah);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'UPDATE',
+        entityType: 'Peminjaman',
+        entityId: id,
+        details: `Menukar barang pada peminjaman ID ${id}`
+      });
+
+      res.status(200).json({ success: true, message: 'Barang berhasil ditukar' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  // ADD item saat Sedang Dipinjam
+  addItemWhileBorrowed: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { item_id, item_type, jumlah } = req.body;
+      if (!item_id || !item_type || !jumlah) {
+        return res.status(400).json({ success: false, message: 'Data tidak lengkap' });
+      }
+      await Peminjaman.addItemWhileBorrowed(id, item_id, item_type, jumlah);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'UPDATE',
+        entityType: 'Peminjaman',
+        entityId: id,
+        details: `Menambah barang pada peminjaman ID ${id}`
+      });
+
+      res.status(200).json({ success: true, message: 'Barang berhasil ditambahkan' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  // GET riwayat peminjaman per user
+  getMyHistory: async (req, res) => {
+    try {
+      const userId = req.user?.userId;
+      const data = await Peminjaman.getByUserId(userId);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Server Error' });
+    }
+  },
+
+  // GET peminjaman by status
+  getPeminjamanByStatus: async (req, res) => {
+    try {
+      const { status } = req.params;
+      const data = await Peminjaman.getByStatus(status);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      console.error("Error get peminjaman by status:", error);
+      res.status(500).json({ success: false, message: 'Server Error' });
+    }
+  },
+
+  // GET peminjaman by nama peminjam (for borrowing history)
+  getPeminjamanByNamaPeminjam: async (req, res) => {
+    try {
+      const { nama_peminjam } = req.params;
+      const data = await Peminjaman.getByNamaPeminjam(nama_peminjam);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      console.error("Error get peminjaman by nama peminjam:", error);
+      res.status(500).json({ success: false, message: 'Server Error' });
+    }
+  },
+
+  // GET items with pricing
+  getItemsWithPricing: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const data = await Peminjaman.getItemsWithPricing(id);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      console.error("Error get items with pricing:", error);
+      res.status(500).json({ success: false, message: 'Server Error' });
     }
   },
 };

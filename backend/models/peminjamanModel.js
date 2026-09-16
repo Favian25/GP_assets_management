@@ -34,19 +34,25 @@ const Peminjaman = {
   // GET data berdasarkan ID (header + items)
   getById: async (id) => {
     const [headers] = await db.query(
-      `SELECT p.*, u.nama_lengkap as created_by_name 
-       FROM peminjaman p 
-       LEFT JOIN users u ON p.user_id = u.id 
-       WHERE p.id = ?`, 
+      `SELECT p.*, u.nama_lengkap as created_by_name,
+              pegawai.nama_lengkap as nama_peminjam_pegawai,
+              pegawai.nomor_hp as nama_peminjam_nomor_hp
+       FROM peminjaman p
+       LEFT JOIN users u ON p.user_id = u.id
+       LEFT JOIN tbl_pegawai pegawai ON pegawai.nama_lengkap = p.nama_peminjam
+       WHERE p.id = ?`,
       [id]
     );
     if (!headers[0]) return null;
 
     const [items] = await db.query(
-      `SELECT pi.*, 
-              COALESCE(a.nama_aset, ak.nama_aksesoris) AS nama_aset, 
-              COALESCE(a.kode_aset, ak.kode_aksesoris) AS kode_aset, 
-              COALESCE(a.jumlah, ak.jumlah_unit) AS stok_tersedia
+      `SELECT pi.*,
+              COALESCE(a.nama_aset, ak.nama_aksesoris) AS nama_aset,
+              COALESCE(a.kode_aset, ak.kode_aksesoris) AS kode_aset,
+              COALESCE(a.jumlah, ak.jumlah_unit) AS stok_tersedia,
+              COALESCE(a.harga_aset, ak.harga_aset) AS harga_aset,
+              COALESCE(a.kategori, ak.kategori) AS kategori,
+              COALESCE(a.merek, ak.merek) AS merek
        FROM peminjaman_items pi
        LEFT JOIN assets a ON pi.asset_id = a.id
        LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
@@ -64,16 +70,20 @@ const Peminjaman = {
       await connection.beginTransaction();
 
       const {
-        kode_pinjam, nama_peminjam, alasan_peminjaman,
+        kode_pinjam, nama_peminjam, alasan_peminjaman, keperluan_list,
         tanggal_peminjaman, yang_menyerahkan, bukti_peminjaman
       } = headerData;
 
       // Insert header
       const [headerResult] = await connection.query(
         `INSERT INTO peminjaman 
-          (kode_pinjam, nama_peminjam, alasan_peminjaman, tanggal_peminjaman, yang_menyerahkan, status, bukti_peminjaman, user_id)
-         VALUES (?, ?, ?, ?, ?, 'Menunggu Persetujuan', ?, ?)`,
-        [kode_pinjam, nama_peminjam, alasan_peminjaman || null, tanggal_peminjaman, yang_menyerahkan || null, bukti_peminjaman || null, headerData.user_id || null]
+          (kode_pinjam, nama_peminjam, alasan_peminjaman, keperluan_list, tanggal_peminjaman, yang_menyerahkan, status, bukti_peminjaman, user_id)
+         VALUES (?, ?, ?, ?, ?, ?, 'Menunggu Persetujuan', ?, ?)`,
+        [
+          kode_pinjam, nama_peminjam, alasan_peminjaman || null,
+          keperluan_list ? JSON.stringify(keperluan_list) : null,
+          tanggal_peminjaman, yang_menyerahkan || null, bukti_peminjaman || null, headerData.user_id || null
+        ]
       );
 
       const peminjamanId = headerResult.insertId;
@@ -308,6 +318,181 @@ const Peminjaman = {
     );
     return rows;
   },
+
+  // SWAP item saat sedang dipinjam (tukar barang)
+  swapItem: async (peminjamanId, oldItemId, oldItemType, newItemId, newItemType, jumlah) => {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // Cek status peminjaman
+      const [headers] = await connection.query('SELECT status FROM peminjaman WHERE id = ?', [peminjamanId]);
+      if (!headers[0]) throw new Error('Data peminjaman tidak ditemukan');
+      if (headers[0].status !== 'Sedang Dipinjam') throw new Error('Tukar barang hanya bisa saat status Sedang Dipinjam');
+
+      // Kembalikan stok barang lama
+      if (oldItemType === 'asset') {
+        await connection.query('UPDATE assets SET jumlah = jumlah + ? WHERE id = ?', [jumlah, oldItemId]);
+        await connection.query(
+          'DELETE FROM peminjaman_items WHERE peminjaman_id = ? AND asset_id = ?',
+          [peminjamanId, oldItemId]
+        );
+      } else {
+        await connection.query('UPDATE aksesoris SET jumlah_unit = jumlah_unit + ? WHERE id = ?', [jumlah, oldItemId]);
+        await connection.query(
+          'DELETE FROM peminjaman_items WHERE peminjaman_id = ? AND aksesoris_id = ?',
+          [peminjamanId, oldItemId]
+        );
+      }
+
+      // Cek stok barang baru
+      if (newItemType === 'asset') {
+        const [stokRows] = await connection.query('SELECT jumlah, nama_aset FROM assets WHERE id = ? FOR UPDATE', [newItemId]);
+        if (!stokRows[0]) throw new Error('Aset pengganti tidak ditemukan');
+        if (stokRows[0].jumlah < jumlah) throw new Error(`Stok "${stokRows[0].nama_aset}" tidak mencukupi`);
+        await connection.query('UPDATE assets SET jumlah = jumlah - ? WHERE id = ?', [jumlah, newItemId]);
+        await connection.query(
+          'INSERT INTO peminjaman_items (peminjaman_id, asset_id, jumlah) VALUES (?, ?, ?)',
+          [peminjamanId, newItemId, jumlah]
+        );
+      } else {
+        const [stokRows] = await connection.query('SELECT jumlah_unit, nama_aksesoris FROM aksesoris WHERE id = ? FOR UPDATE', [newItemId]);
+        if (!stokRows[0]) throw new Error('Aksesoris pengganti tidak ditemukan');
+        if (stokRows[0].jumlah_unit < jumlah) throw new Error(`Stok "${stokRows[0].nama_aksesoris}" tidak mencukupi`);
+        await connection.query('UPDATE aksesoris SET jumlah_unit = jumlah_unit - ? WHERE id = ?', [jumlah, newItemId]);
+        await connection.query(
+          'INSERT INTO peminjaman_items (peminjaman_id, aksesoris_id, jumlah) VALUES (?, ?, ?)',
+          [peminjamanId, newItemId, jumlah]
+        );
+      }
+
+      await connection.commit();
+      return true;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  },
+
+  // ADD item tambahan saat sedang dipinjam
+  addItemWhileBorrowed: async (peminjamanId, itemId, itemType, jumlah) => {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [headers] = await connection.query('SELECT status FROM peminjaman WHERE id = ?', [peminjamanId]);
+      if (!headers[0]) throw new Error('Data peminjaman tidak ditemukan');
+      if (headers[0].status !== 'Sedang Dipinjam') throw new Error('Tambah barang hanya bisa saat status Sedang Dipinjam');
+
+      if (itemType === 'asset') {
+        const [stokRows] = await connection.query('SELECT jumlah, nama_aset FROM assets WHERE id = ? FOR UPDATE', [itemId]);
+        if (!stokRows[0]) throw new Error('Aset tidak ditemukan');
+        if (stokRows[0].jumlah < jumlah) throw new Error(`Stok "${stokRows[0].nama_aset}" tidak mencukupi`);
+        await connection.query('UPDATE assets SET jumlah = jumlah - ? WHERE id = ?', [jumlah, itemId]);
+        await connection.query(
+          'INSERT INTO peminjaman_items (peminjaman_id, asset_id, jumlah) VALUES (?, ?, ?)',
+          [peminjamanId, itemId, jumlah]
+        );
+      } else {
+        const [stokRows] = await connection.query('SELECT jumlah_unit, nama_aksesoris FROM aksesoris WHERE id = ? FOR UPDATE', [itemId]);
+        if (!stokRows[0]) throw new Error('Aksesoris tidak ditemukan');
+        if (stokRows[0].jumlah_unit < jumlah) throw new Error(`Stok "${stokRows[0].nama_aksesoris}" tidak mencukupi`);
+        await connection.query('UPDATE aksesoris SET jumlah_unit = jumlah_unit - ? WHERE id = ?', [jumlah, itemId]);
+        await connection.query(
+          'INSERT INTO peminjaman_items (peminjaman_id, aksesoris_id, jumlah) VALUES (?, ?, ?)',
+          [peminjamanId, itemId, jumlah]
+        );
+      }
+
+      await connection.commit();
+      return true;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  },
+
+  // GET peminjaman berdasarkan user_id (untuk riwayat user)
+  getByUserId: async (userId) => {
+    const [rows] = await db.query(
+      `SELECT p.*,
+        (SELECT COUNT(*) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id) AS total_items,
+        (SELECT GROUP_CONCAT(COALESCE(a.nama_aset, ak.nama_aksesoris) SEPARATOR ', ')
+         FROM peminjaman_items pi
+         LEFT JOIN assets a ON pi.asset_id = a.id
+         LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
+         WHERE pi.peminjaman_id = p.id) AS daftar_aset
+       FROM peminjaman p
+       WHERE p.user_id = ?
+       ORDER BY p.created_at DESC`,
+      [userId]
+    );
+    return rows;
+  },
+
+  // GET peminjaman berdasarkan nama_peminjam (untuk riwayat pegawai)
+  getByNamaPeminjam: async (namaPeminjam) => {
+    const [rows] = await db.query(
+      `SELECT p.*,
+        (SELECT COUNT(*) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id) AS total_items,
+        (SELECT GROUP_CONCAT(COALESCE(a.nama_aset, ak.nama_aksesoris) SEPARATOR ', ')
+         FROM peminjaman_items pi
+         LEFT JOIN assets a ON pi.asset_id = a.id
+         LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
+         WHERE pi.peminjaman_id = p.id) AS daftar_aset,
+        (SELECT SUM(COALESCE(a.harga_aset, ak.harga_aset) * pi.jumlah)
+         FROM peminjaman_items pi
+         LEFT JOIN assets a ON pi.asset_id = a.id
+         LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
+         WHERE pi.peminjaman_id = p.id) AS total_nilai_aset
+       FROM peminjaman p
+       WHERE p.nama_peminjam = ?
+       ORDER BY p.created_at DESC`,
+      [namaPeminjam]
+    );
+    return rows;
+  },
+
+  // GET peminjaman by status
+  getByStatus: async (status) => {
+    const [rows] = await db.query(
+      `SELECT p.*,
+        (SELECT COUNT(*) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id) AS total_items,
+        (SELECT GROUP_CONCAT(COALESCE(a.nama_aset, ak.nama_aksesoris) SEPARATOR ', ')
+         FROM peminjaman_items pi
+         LEFT JOIN assets a ON pi.asset_id = a.id
+         LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
+         WHERE pi.peminjaman_id = p.id) AS daftar_aset
+       FROM peminjaman p
+       WHERE p.status = ?
+       ORDER BY p.created_at DESC`,
+      [status]
+    );
+    return rows;
+  },
+
+  // GET items dengan pricing information
+  getItemsWithPricing: async (peminjamanId) => {
+    const [items] = await db.query(
+      `SELECT pi.*,
+              COALESCE(a.nama_aset, ak.nama_aksesoris) AS nama_aset,
+              COALESCE(a.kode_aset, ak.kode_aksesoris) AS kode_aset,
+              COALESCE(a.harga_aset, ak.harga_aset) AS harga_unit,
+              COALESCE(a.harga_aset, ak.harga_aset) * pi.jumlah AS harga_total,
+              COALESCE(a.kategori, ak.kategori) AS kategori,
+              COALESCE(a.merek, ak.merek) AS merek
+       FROM peminjaman_items pi
+       LEFT JOIN assets a ON pi.asset_id = a.id
+       LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
+       WHERE pi.peminjaman_id = ?`,
+      [peminjamanId]
+    );
+    return items;
+  }
 };
 
 module.exports = Peminjaman;

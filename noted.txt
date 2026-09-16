@@ -1,0 +1,106 @@
+CATATAN TUGAS - PEMINJAMAN ASET GALERIA
+
+
+1. STATUS "SEDANG DIPINJAM"
+   1.1 Menukar barang ketika ada kendala di lokasi
+   1.2 Menambah barang yang kurang (human error)
+
+
+2. PENGATURAN TANGGAL & WAKTU
+   2.1 Tanggal cukup tanggal, bulan, tahun (tanpa jam)
+   2.2 Jam diambil otomatis saat pengguna klik "Simpan Peminjaman"
+
+
+3. PERBAIKAN PDF PEMINJAMAN
+   3.1 Judul "Bukti Transaksi Peminjaman Aset" -> "Bukti Peminjaman Aset"
+   3.2 "Tanggal Pinjam" cukup tanggal, bulan, tahun (tanpa jam)
+
+
+4. FORM "TAMBAH PEMINJAMAN"
+   4.1 "Nama Peminjam" dibuat dropdown nama pegawai tetap
+   4.2 "Yang Menyerahkan" dibuat dropdown nama pegawai tetap
+   4.3 Filtering pegawai pada "Nama Peminjam" dan "Yang Menyerahkan"
+       masing-masing punya akses tersendiri berdasarkan role
+   4.4 "Yang Menyerahkan" untuk role "user" jangan ditampilkan,
+       cukup ditampilkan untuk role "superadmin", "admin", dan "supervisor"
+   4.5 "Yang Menyerahkan" terisi otomatis ketika memilih
+       "Setujui Peminjaman Alat", sesuai dengan role siapa yang menyetujui
+   4.6 "Alasan Peminjaman" diganti menjadi "Keperluan Peminjaman"
+   4.7 Tambahkan button "+" ketika ada lebih dari 1 keperluan/acara
+
+
+5. FORM "DATA PENGEMBALIAN"
+   5.1 "Status" di-disable, langsung pilih "Pengembalian Alat"
+   5.2 "Tanggal Pengembalian" cukup tanggal, bulan, tahun (tanpa jam),
+       jam diisi otomatis sesuai waktu submit
+   5.3 "Penerima Alat" otomatis terisi sesuai yang menyetujui
+       (sama seperti bagian "Yang Menyerahkan")
+
+
+6. SUDAH SELESAI (DONE)
+   6.1 Logo sidebar pecah -> DONE
+   6.2 Icon web ganti logo Galeria -> DONE
+
+
+7. FITUR ROLE PENGGUNA
+   7.1 Tambah fitur riwayat peminjaman
+   7.2 Daftar Aset
+       - Tanpa kolom "Aksi"
+       - Kolom "Kondisi" di-disable
+   7.3 Daftar Aksesoris
+       - Tanpa kolom "Aksi"
+       - Kolom "Kondisi" di-disable
+
+
+8. UI FORM PEMINJAMAN ASET
+   8.1 Dibuat Card Grid
+   8.2 Tujuan: mempermudah pengguna memilih barang yang dipinjam
+
+
+9. TAMBAHAN DATABASE
+   9.1 tbl_Pegawai
+       - id
+       - nama_lengkap
+       - tempat_lahir
+       - tanggal_lahir
+       - alamat
+       - email
+       - nomor_hp
+   9.2 tbl_user
+       - id
+       - nama_pegawai (relasi ke tbl_Pegawai)
+       - Role
+       - email (ambil dari tabel Pegawai)
+       - Password
+
+
+10. FORM "TAMBAH USER BARU"
+    10.1 "Nama Lengkap" dibuat dropdown, data diambil dari tbl_pegawai
+    10.2 "Email" diambil otomatis dari tbl_pegawai
+
+
+11. HALAMAN "KELOLA USER"
+    11.1 Pada kolom "Aksi" tambahkan button untuk
+         mengaktifkan sekaligus menonaktifkan akun
+    11.2 Tambah fitur "Guest" untuk PKL
+
+
+12. HAK AKSES DASHBOARD
+    12.1 Superadmin  = Bisa mengakses seluruh fitur
+    12.2 Admin       = Sama seperti superadmin, kecuali kelola user
+    12.3 Supervisor  = Hanya bisa menyetujui peminjaman dan pengembalian
+    12.4 User        = Hanya bisa meminjam
+
+
+13. PEMBAGIAN JENIS ASET
+    13.1 Galeria Studio
+    13.2 Galeria Production
+
+
+14. FITUR TAMBAHAN
+    14.1 Pengisian all role untuk seluruh pegawai, konfirmasi via WA ke admin
+    14.2 Peminjaman barang boleh dobel
+    14.3 Pop up alert: penerima aset sesama user perlu konfirmasi via WhatsApp
+         setelah pengajuan pengembalian, lalu konfirmasi "Batal" atau "Lanjut"
+    14.4 Harga ditampilkan, agar pegawai lebih bertanggung jawab
+         atas barang yang dipinjam

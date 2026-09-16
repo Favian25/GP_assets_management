@@ -33,31 +33,55 @@ const upload = multer({
 
 const { verifyToken, requireRole } = require("../middlewares/authMiddleware");
 
-// GET kode pinjam berikutnya (harus di atas /:id)
-router.get("/next-kode", peminjamanController.getNextKode);
+// ===== PRIORITY ROUTES (specific patterns BEFORE dynamic :id) =====
 
-// GET semua peminjaman
-router.get("/", peminjamanController.getAllPeminjaman);
+// GET kode pinjam berikutnya
+router.get("/next-kode", peminjamanController.getNextKode);
 
 // SEARCH peminjaman
 router.get("/search", peminjamanController.searchPeminjaman);
 
+// GET my history (user's own borrowing history)
+router.get("/my-history", verifyToken, peminjamanController.getMyHistory);
+
+// GET by status
+router.get("/status/:status", peminjamanController.getPeminjamanByStatus);
+
+// GET by nama peminjam (for borrowing history page)
+router.get("/nama/:nama_peminjam", peminjamanController.getPeminjamanByNamaPeminjam);
+
+// ===== DYNAMIC ROUTES WITH :id =====
+
+// GET items with pricing
+router.get("/:id/items-pricing", peminjamanController.getItemsWithPricing);
+
+// SWAP item saat Sedang Dipinjam
+router.put("/:id/swap-item", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.swapItem);
+
+// ADD item saat Sedang Dipinjam
+router.put("/:id/add-item", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.addItemWhileBorrowed);
+
+// APPROVE peminjaman (must be before PUT /:id)
+router.put("/:id/approve", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.approvePeminjaman);
+
+// DOWNLOAD PDF (must be before GET /:id)
+router.get("/:id/pdf", peminjamanController.generatePDF);
+
 // GET peminjaman by ID
 router.get("/:id", peminjamanController.getPeminjamanById);
 
-// CREATE peminjaman baru (tambah verifyToken & upload array)
+// ===== STATIC ROUTES (no :id) =====
+
+// GET semua peminjaman
+router.get("/", peminjamanController.getAllPeminjaman);
+
+// CREATE peminjaman baru
 router.post("/", verifyToken, upload.array("bukti", 5), peminjamanController.createPeminjaman);
 
-// UPDATE pengembalian peminjaman (tambah verifyToken & upload array)
+// UPDATE pengembalian peminjaman
 router.put("/:id", verifyToken, upload.array("bukti", 5), peminjamanController.updatePeminjaman);
-
-// APPROVE peminjaman (verifyToken & check role)
-router.put("/:id/approve", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.approvePeminjaman);
 
 // DELETE peminjaman
 router.delete("/:id", verifyToken, peminjamanController.deletePeminjaman);
-
-// DOWNLOAD PDF
-router.get("/:id/pdf", peminjamanController.generatePDF);
 
 module.exports = router;

@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { getAllPeminjaman, deletePeminjaman, searchPeminjaman, approvePeminjaman, downloadPeminjamanPDF, getPeminjamanById } from "../../lib/peminjamanService";
+import { getAllPeminjaman, deletePeminjaman, searchPeminjaman, approvePeminjaman, downloadPeminjamanPDF, getPeminjamanById, swapPeminjamanItem, addItemToPeminjaman } from "../../lib/peminjamanService";
+import { getAllAssets } from "../../lib/assetService";
+import { getAllAksesoris } from "../../lib/aksesorisService";
 import { getUserContext } from "../../lib/authService";
-import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, X, AlertTriangle, ChevronUp, ChevronDown, FileText } from "lucide-react";
+import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, X, AlertTriangle, ChevronUp, ChevronDown, FileText, ArrowLeftRight, PackagePlus } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 const getBackendURL = () => {
@@ -141,6 +143,13 @@ export default function PeminjamanAsetPage() {
   const [lightboxData, setLightboxData] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  // Swap & Add Item Modal States
+  const [showSwapModal, setShowSwapModal] = useState(null); // item to swap { peminjaman, oldItem }
+  const [showAddItemModal, setShowAddItemModal] = useState(null); // peminjaman to add to
+  const [borrowableItems, setBorrowableItems] = useState([]);
+  const [swapNewItem, setSwapNewItem] = useState(null);
+  const [addNewItem, setAddNewItem] = useState(null);
+  const [addNewJumlah, setAddNewJumlah] = useState(1);
 
   useEffect(() => {
     setMounted(true);
@@ -212,8 +221,23 @@ export default function PeminjamanAsetPage() {
 
   // Filtering, Sorting & Pagination
   const filteredData = dataList.filter(item => {
-    if (!statusFilter) return true;
-    return item.status === statusFilter;
+    // Filter by status
+    if (statusFilter && item.status !== statusFilter) return false;
+
+    // Role-based filtering
+    if (userRole === "user" || userRole === "guest") {
+      // Users can only see their own peminjaman
+      return item.namaPeminjam === userName || item.userId === currentUserId;
+    }
+
+    if (userRole === "supervisor") {
+      // Supervisors can see all peminjaman, optionally filter to what they approved
+      // For now, show all (can be enhanced to show only approved-by-them)
+      return true;
+    }
+
+    // Admins and super admins see all
+    return true;
   });
 
   const sorted = [...filteredData].sort((a, b) => {
@@ -256,6 +280,73 @@ export default function PeminjamanAsetPage() {
     catch (err) { showToast(err.response?.data?.message || "Gagal menyetujui data", "error"); }
     finally { setSubmitting(false); }
   };
+
+  // Fetch borrowable items for swap/add modals
+  const fetchBorrowableItems = async () => {
+    try {
+      const [assets, aksesoris] = await Promise.all([getAllAssets(), getAllAksesoris()]);
+      const combined = [
+        ...assets.map(a => ({
+          id: a.id, namaItem: a.namaAset, kodeItem: a.kodeAset, stok: a.jumlah, kondisi: a.kondisi, itemType: 'asset'
+        })),
+        ...aksesoris.map(ak => ({
+          id: ak.id, namaItem: ak.namaAksesoris, kodeItem: ak.kodeAksesoris, stok: ak.jumlahUnit, kondisi: ak.kondisi, itemType: 'aksesoris'
+        }))
+      ].filter(i => i.kondisi === 'Siap Digunakan' && i.stok > 0);
+      setBorrowableItems(combined);
+    } catch (e) { console.error('Error fetching borrowable items:', e); }
+  };
+
+  const handleOpenSwapModal = (peminjaman, oldItem) => {
+    setSwapNewItem(null);
+    setShowSwapModal({ peminjaman, oldItem });
+    fetchBorrowableItems();
+  };
+
+  const handleSwapItem = async () => {
+    if (!showSwapModal || !swapNewItem) { showToast('Pilih barang pengganti terlebih dahulu', 'error'); return; }
+    try {
+      setSubmitting(true);
+      await swapPeminjamanItem(showSwapModal.peminjaman.id, {
+        oldItemId: showSwapModal.oldItem.assetId || showSwapModal.oldItem.aksesorisId,
+        oldItemType: showSwapModal.oldItem.assetId ? 'asset' : 'aksesoris',
+        newItemId: swapNewItem.id,
+        newItemType: swapNewItem.itemType,
+        jumlah: showSwapModal.oldItem.jumlah,
+      });
+      showToast('Barang berhasil ditukar!');
+      setShowSwapModal(null);
+      if (showDetail) {
+        const detail = await getPeminjamanById(showDetail.id);
+        setShowDetail(detail);
+      }
+      fetchData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menukar barang', 'error');
+    } finally { setSubmitting(false); }
+  };
+
+  const handleAddItem = async () => {
+    if (!showAddItemModal || !addNewItem) { showToast('Pilih barang yang akan ditambahkan', 'error'); return; }
+    try {
+      setSubmitting(true);
+      await addItemToPeminjaman(showAddItemModal.id, {
+        itemId: addNewItem.id,
+        itemType: addNewItem.itemType,
+        jumlah: addNewJumlah,
+      });
+      showToast('Barang berhasil ditambahkan!');
+      setShowAddItemModal(null);
+      if (showDetail) {
+        const detail = await getPeminjamanById(showDetail.id);
+        setShowDetail(detail);
+      }
+      fetchData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menambahkan barang', 'error');
+    } finally { setSubmitting(false); }
+  };
+
 
   const getPageNumbers = () => {
     const p = [];
@@ -474,7 +565,10 @@ export default function PeminjamanAsetPage() {
                                 <tr className="bg-slate-50 border-b border-slate-200">
                                   <th className="px-4 py-2 text-left font-semibold text-slate-600 w-10">No</th>
                                   <th className="px-4 py-2 text-left font-semibold text-slate-600">Nama Alat</th>
-                                  <th className="px-4 py-2 text-center font-semibold text-slate-600 w-32">Jumlah</th>
+                                  <th className="px-4 py-2 text-center font-semibold text-slate-600 w-20">Jml</th>
+                                  {showDetail.status === 'Sedang Dipinjam' && canApprove && (
+                                    <th className="px-4 py-2 text-center font-semibold text-slate-600 w-20">Aksi</th>
+                                  )}
                                 </tr>
                               </thead>
                               <tbody>
@@ -483,6 +577,18 @@ export default function PeminjamanAsetPage() {
                                     <td className="px-4 py-2 text-slate-500">{i + 1}</td>
                                     <td className="px-4 py-2 text-slate-700 font-medium">{it.namaAset}</td>
                                     <td className="px-4 py-2 text-center font-semibold text-slate-700">{it.jumlah}</td>
+                                    {showDetail.status === 'Sedang Dipinjam' && canApprove && (
+                                      <td className="px-4 py-2 text-center">
+                                        <button
+                                          onClick={() => handleOpenSwapModal(showDetail, it)}
+                                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors cursor-pointer"
+                                          title="Tukar Barang"
+                                        >
+                                          <ArrowLeftRight className="h-3 w-3" />
+                                          Tukar
+                                        </button>
+                                      </td>
+                                    )}
                                   </tr>
                                 ))}
                               </tbody>
@@ -490,6 +596,16 @@ export default function PeminjamanAsetPage() {
                           </div>
                         ) : (
                           <span className="text-sm text-slate-500">-</span>
+                        )}
+                        {/* Tambah Barang button when Sedang Dipinjam */}
+                        {showDetail.status === 'Sedang Dipinjam' && canApprove && (
+                          <button
+                            onClick={() => { setAddNewItem(null); setAddNewJumlah(1); setShowAddItemModal(showDetail); fetchBorrowableItems(); }}
+                            className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors cursor-pointer w-full justify-center"
+                          >
+                            <PackagePlus className="h-4 w-4" />
+                            Tambah Barang Kurang
+                          </button>
                         )}
                       </div>
                       
@@ -613,6 +729,106 @@ export default function PeminjamanAsetPage() {
                 <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
                   <button onClick={() => setShowApproveConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
                   <button onClick={handleApprove} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Tukar Barang */}
+          {showSwapModal && (
+            <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-300" onClick={() => setShowSwapModal(null)}>
+              <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-amber-50 rounded-t-2xl">
+                  <div className="flex items-center gap-2">
+                    <ArrowLeftRight className="h-5 w-5 text-amber-600" />
+                    <h2 className="text-lg font-bold text-amber-800">Tukar Barang</h2>
+                  </div>
+                  <button onClick={() => setShowSwapModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                    <p className="text-xs font-semibold text-amber-700 uppercase mb-1">Barang yang Ditukar</p>
+                    <p className="text-sm font-bold text-amber-900">{showSwapModal.oldItem.namaAset} (x{showSwapModal.oldItem.jumlah})</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Pilih Barang Pengganti <span className="text-rose-500">*</span></label>
+                    <select
+                      value={swapNewItem?.id ? `${swapNewItem.itemType}-${swapNewItem.id}` : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (!val) { setSwapNewItem(null); return; }
+                        const found = borrowableItems.find(i => `${i.itemType}-${i.id}` === val);
+                        setSwapNewItem(found || null);
+                      }}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 bg-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">-- Pilih barang pengganti --</option>
+                      {borrowableItems.map(i => (
+                        <option key={`${i.itemType}-${i.id}`} value={`${i.itemType}-${i.id}`}>
+                          {i.namaItem} ({i.kodeItem}) - Stok: {i.stok}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-3 px-6 py-4 border-t border-slate-100">
+                  <button onClick={() => setShowSwapModal(null)} className="flex-1 cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
+                  <button onClick={handleSwapItem} disabled={submitting || !swapNewItem} className="flex-1 cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-60">
+                    {submitting ? 'Memproses...' : 'Tukar Barang'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Tambah Barang */}
+          {showAddItemModal && (
+            <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-300" onClick={() => setShowAddItemModal(null)}>
+              <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-blue-50 rounded-t-2xl">
+                  <div className="flex items-center gap-2">
+                    <PackagePlus className="h-5 w-5 text-blue-600" />
+                    <h2 className="text-lg font-bold text-blue-800">Tambah Barang</h2>
+                  </div>
+                  <button onClick={() => setShowAddItemModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-6 space-y-4">
+                  <p className="text-xs text-slate-500">Tambah barang yang kurang akibat human error pada peminjaman <strong className="text-slate-700">{showAddItemModal.kodePinjam}</strong></p>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Barang yang Ditambah <span className="text-rose-500">*</span></label>
+                    <select
+                      value={addNewItem?.id ? `${addNewItem.itemType}-${addNewItem.id}` : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (!val) { setAddNewItem(null); return; }
+                        const found = borrowableItems.find(i => `${i.itemType}-${i.id}` === val);
+                        setAddNewItem(found || null);
+                      }}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 bg-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">-- Pilih barang --</option>
+                      {borrowableItems.map(i => (
+                        <option key={`${i.itemType}-${i.id}`} value={`${i.itemType}-${i.id}`}>
+                          {i.namaItem} ({i.kodeItem}) - Stok: {i.stok}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Jumlah <span className="text-rose-500">*</span></label>
+                    <input
+                      type="number" min="1" max={addNewItem?.stok || 99} value={addNewJumlah}
+                      onChange={(e) => setAddNewJumlah(parseInt(e.target.value) || 1)}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    {addNewItem && <p className="text-xs text-slate-500 mt-1">Stok tersedia: {addNewItem.stok}</p>}
+                  </div>
+                </div>
+                <div className="flex gap-3 px-6 py-4 border-t border-slate-100">
+                  <button onClick={() => setShowAddItemModal(null)} className="flex-1 cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
+                  <button onClick={handleAddItem} disabled={submitting || !addNewItem} className="flex-1 cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-60">
+                    {submitting ? 'Memproses...' : 'Tambah Barang'}
+                  </button>
                 </div>
               </div>
             </div>

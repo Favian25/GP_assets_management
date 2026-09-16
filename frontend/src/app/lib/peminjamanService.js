@@ -145,3 +145,79 @@ export const downloadPeminjamanPDF = async (id) => {
     throw error;
   }
 };
+
+// 10. SWAP item saat Sedang Dipinjam (tukar barang)
+export const swapPeminjamanItem = async (id, data) => {
+  try {
+    const response = await api.put(`/peminjaman/${id}/swap-item`, {
+      old_item_id: data.oldItemId,
+      old_item_type: data.oldItemType,
+      new_item_id: data.newItemId,
+      new_item_type: data.newItemType,
+      jumlah: data.jumlah,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error swapping item for peminjaman ${id}:`, error);
+    throw error;
+  }
+};
+
+// 11. ADD item tambahan saat Sedang Dipinjam
+export const addItemToPeminjaman = async (id, data) => {
+  try {
+    const response = await api.put(`/peminjaman/${id}/add-item`, {
+      item_id: data.itemId,
+      item_type: data.itemType,
+      jumlah: data.jumlah,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error adding item to peminjaman ${id}:`, error);
+    throw error;
+  }
+};
+
+// 12. GET riwayat peminjaman milik user sendiri
+export const getMyPeminjamanHistory = async () => {
+  try {
+    const response = await api.get("/peminjaman/my-history");
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching my peminjaman history:", error);
+    throw error;
+  }
+};
+
+// 13. GET peminjaman by status
+export const getPeminjamanByStatus = async (status) => {
+  try {
+    const response = await api.get(`/peminjaman/status/${status}`);
+    return mapPeminjamanArrayToFrontend(response.data.data || []);
+  } catch (error) {
+    console.error(`Error fetching peminjaman by status ${status}:`, error);
+    throw error;
+  }
+};
+
+// 14. GET peminjaman by nama peminjam (for borrowing history by pegawai)
+export const getPeminjamanByNamaPeminjam = async (namaPeminjam) => {
+  try {
+    const response = await api.get(`/peminjaman/nama/${encodeURIComponent(namaPeminjam)}`);
+    return mapPeminjamanArrayToFrontend(response.data.data || []);
+  } catch (error) {
+    console.error(`Error fetching peminjaman by nama ${namaPeminjam}:`, error);
+    throw error;
+  }
+};
+
+// 15. GET items dengan pricing
+export const getItemsWithPricing = async (id) => {
+  try {
+    const response = await api.get(`/peminjaman/${id}/items-pricing`);
+    return response.data.data || [];
+  } catch (error) {
+    console.error(`Error fetching items with pricing for peminjaman ${id}:`, error);
+    throw error;
+  }
+};

@@ -38,12 +38,45 @@ const upload = multer({
   fileFilter,
 });
 
-// Routes
-router.get('/', verifyToken, requireRole('super admin', 'admin'), userController.getAllUsers);
-router.post('/', verifyToken, requireRole('super admin', 'admin'), userController.createUser);
+// ===== PRIORITY ROUTES (specific patterns BEFORE :id) =====
+
+// GET my profile
+router.get('/me', verifyToken, userController.getMyProfile);
+
+// GET users by role
+router.get('/role/:role', verifyToken, userController.getUsersByRole);
+
+// GET active users
+router.get('/active', verifyToken, userController.getActiveUsers);
+
+// GET users with pagination
+router.get('/paginated', verifyToken, requireRole('super admin', 'admin'), userController.getAllWithPagination);
+
+// ===== SELF PROFILE ROUTES =====
+
+// UPDATE my profile
 router.put('/profile/me', verifyToken, upload.single('fotoProfil'), userController.updateMyProfile);
+
+// ===== ADMIN ROUTES =====
+
+// GET all users
+router.get('/', verifyToken, requireRole('super admin', 'admin'), userController.getAllUsers);
+
+// CREATE new user
+router.post('/', verifyToken, requireRole('super admin', 'admin'), userController.createUser);
+
+// ===== DYNAMIC ROUTES WITH :id =====
+
+// UPDATE user
 router.put('/:id', verifyToken, requireRole('super admin', 'admin'), upload.single('fotoProfil'), userController.updateUser);
+
+// UPDATE user role
 router.put('/:id/role', verifyToken, requireRole('super admin', 'admin'), userController.updateUserRole);
+
+// TOGGLE user active/inactive
+router.put('/:id/toggle-active', verifyToken, requireRole('super admin', 'admin'), userController.toggleUserActive);
+
+// DELETE user
 router.delete('/:id', verifyToken, requireRole('super admin', 'admin'), userController.deleteUser);
 
 module.exports = router;
