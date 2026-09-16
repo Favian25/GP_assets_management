@@ -338,69 +338,84 @@ export default function DashboardPage() {
       <div className="mt-8 flex flex-col gap-8">
 
         {/* Peminjaman Aktif Section - Top */}
-        <div className="w-full rounded-xl border border-blue-200 bg-white shadow-sm overflow-hidden border-t-4 border-t-blue-500">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-blue-50/50">
-            <div className="flex items-center gap-3">
-              <ClipboardList className="h-5 w-5 text-blue-500" />
-              <h2 className="text-lg font-bold text-blue-800">Peminjaman Aktif</h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className={`relative transition-all duration-300 ${isLoanMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-28 sm:w-36"}`}>
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Cari peminjaman..." 
-                  value={loanSearch}
-                  onChange={(e) => setLoanSearch(e.target.value)}
-                  className="rounded-lg border border-slate-200 py-1.5 pl-8 pr-3 text-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full"
-                />
+        <div className="w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-slate-100">
+          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-blue-600 to-blue-700">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
+                  <ClipboardList className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Peminjaman Aktif</h2>
+                  <p className="text-xs text-blue-100 mt-1">Daftar aset yang sedang dipinjam</p>
+                </div>
               </div>
-              <button 
-                onClick={() => setIsLoanMinimized(!isLoanMinimized)}
-                className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-500 cursor-pointer"
-              >
-                {isLoanMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-              </button>
+              <div className="flex items-center gap-2">
+                <div className={`relative transition-all duration-300 ${isLoanMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-40 sm:w-56"}`}>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari..."
+                    value={loanSearch}
+                    onChange={(e) => setLoanSearch(e.target.value)}
+                    className="rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 focus:border-white/40 focus:ring-1 focus:ring-white/20 focus:bg-white/15 outline-none transition-all w-full"
+                  />
+                </div>
+                <button
+                  onClick={() => setIsLoanMinimized(!isLoanMinimized)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+                >
+                  {isLoanMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
           </div>
 
+          {/* Table Container */}
           <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isLoanMinimized ? "max-h-0" : "max-h-[600px]"}`}>
             <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
               <table className="w-full text-left text-sm">
-                <thead className="sticky top-0 bg-blue-50 z-10">
-                  <tr className="border-b border-blue-200">
-                    <th className="px-5 py-3 font-bold text-blue-800">Peminjam</th>
-                    <th className="px-5 py-3 font-bold text-blue-800">Alat Dipinjam</th>
-                    <th className="px-5 py-3 font-bold text-blue-800 text-center">Status</th>
+                <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Peminjam</th>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Alat Dipinjam</th>
+                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider text-center w-[110px]">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-blue-50">
-                  {filteredLoans?.map((loan, idx) => (
-                    <tr 
-                      key={loan.id} 
-                      className={`cursor-pointer transition-colors hover:bg-blue-50/50 ${idx % 2 === 0 ? "bg-slate-100/50" : "bg-white"}`}
+                <tbody className="divide-y divide-slate-100">
+                  {filteredLoans?.map((loan) => (
+                    <tr
+                      key={loan.id}
                       onClick={() => {
                         router.push(`/aset/peminjaman?search=${loan.kodePinjam}`);
                       }}
+                      className="cursor-pointer group hover:bg-slate-50/80 transition-colors duration-200"
                     >
-                      <td className="px-5 py-3">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-slate-800">{loan.namaPeminjam}</span>
-                          <span className="text-xs text-blue-800 font-mono font-semibold mt-0.5">{loan.kodePinjam}</span>
+                      <td className="px-6 py-3.5">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-slate-900">{loan.namaPeminjam}</span>
+                          <span className="text-xs text-slate-500">{loan.kodePinjam}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <Package className="h-3.5 w-3.5 text-slate-400" />
-                          <span className="text-sm font-semibold text-slate-600">{loan.totalItems || 0} Alat</span>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                          <span className="text-sm font-medium text-slate-700">{loan.totalItems || 0} Alat</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
-                        <span className={`inline-block w-[140px] text-center px-2 py-1 rounded-full border text-xs uppercase font-semibold shadow-sm ${
-                          loan.status === 'Menunggu Persetujuan' ? 'bg-amber-50 text-amber-700 border-amber-500' :
-                          loan.status === 'Sedang Dipinjam' ? 'bg-blue-50 text-blue-700 border-blue-500' :
-                          'bg-violet-50 text-violet-700 border-violet-500'
+                      <td className="px-6 py-3.5 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all duration-200 ${
+                          loan.status === 'Menunggu Persetujuan'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200 group-hover:bg-amber-100 group-hover:border-amber-300' :
+                          loan.status === 'Sedang Dipinjam'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100 group-hover:border-blue-300' :
+                          'bg-violet-50 text-violet-700 border-violet-200 group-hover:bg-violet-100 group-hover:border-violet-300'
                         }`}>
+                          <span className={`w-1 h-1 rounded-full ${
+                            loan.status === 'Menunggu Persetujuan' ? 'bg-amber-500' :
+                            loan.status === 'Sedang Dipinjam' ? 'bg-blue-500' :
+                            'bg-violet-500'
+                          }`}></span>
                           {loan.status}
                         </span>
                       </td>
@@ -408,7 +423,14 @@ export default function DashboardPage() {
                   ))}
                   {(!filteredLoans || filteredLoans.length === 0) && (
                     <tr>
-                      <td colSpan={3} className="px-6 py-20 text-center text-slate-400 italic font-medium">Tidak ada peminjaman aktif.</td>
+                      <td colSpan={3} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100">
+                            <ClipboardList className="h-6 w-6 text-slate-400" />
+                          </div>
+                          <p className="text-sm font-medium text-slate-500">Tidak ada peminjaman</p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>
