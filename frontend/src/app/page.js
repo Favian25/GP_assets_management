@@ -4,10 +4,10 @@ import { useState, useEffect, cloneElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getDashboardStats } from "./lib/assetService";
-import { 
-  Package, CheckCircle2, AlertCircle, Settings, AlertTriangle, 
-  RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus, 
-  Calendar, User, Clock, LayoutGrid, Cpu, Check, X
+import {
+  Package, CheckCircle2, AlertCircle, Settings, AlertTriangle,
+  RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus,
+  Calendar, User, Clock, LayoutGrid, Cpu, Check, X, Zap, TrendingUp
 } from "lucide-react";
 import { getUserContext } from "./lib/authService";
 import { createPortal } from "react-dom";
@@ -18,14 +18,20 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState("user");
+  const [userName, setUserName] = useState("User");
   const [toast, setToast] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   useEffect(() => {
     setMounted(true);
     const ctx = getUserContext();
-    if (ctx) setUserRole(ctx.role || "user");
-    
+    if (ctx) {
+      setUserRole(ctx.role || "user");
+      setUserName(ctx.name || "User");
+    }
+
     // Check for unauthorized error from redirect
     const err = new URLSearchParams(window.location.search).get("error");
     if (err === "unauthorized") {
@@ -50,16 +56,37 @@ export default function DashboardPage() {
 
   const fetchStats = async () => {
     try {
-      setLoading(true);
+      setIsRefreshing(true);
       setError(null);
       const data = await getDashboardStats();
       setStats(data);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching dashboard stats:", err);
       setError("Gagal memuat statistik dashboard. Pastikan backend berjalan.");
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  // Get greeting berdasarkan waktu
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Pagi";
+    if (hour < 15) return "Siang";
+    if (hour < 18) return "Sore";
+    return "Malam";
+  };
+
+  // Format last updated time
+  const formatLastUpdated = () => {
+    const now = new Date();
+    const diff = Math.floor((now - lastUpdated) / 1000);
+    if (diff < 60) return "Baru saja";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m yang lalu`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h yang lalu`;
+    return lastUpdated.toLocaleDateString("id-ID");
   };
 
   const [activitySearch, setActivitySearch] = useState("");
@@ -232,11 +259,31 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-        <p className="text-sm text-slate-500">
-          Selamat datang di Sistem Pencatatan Asset Galeria Karya Media
+      {/* Enhanced Header */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-3xl font-black text-slate-900">
+                Selamat {getGreeting()}, {userName}! 👋
+              </h1>
+            </div>
+            <p className="text-sm text-slate-600">
+              Sistem Pencatatan Asset Galeria Karya Media
+            </p>
+          </div>
+          <button
+            onClick={() => fetchStats()}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-primary-hover text-white font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-60 cursor-pointer"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Memperbarui..." : "Perbarui"}
+          </button>
+        </div>
+        <p className="text-xs text-slate-500 mt-3 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Terakhir diperbarui: {formatLastUpdated()}
         </p>
       </div>
 
@@ -244,7 +291,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {statCards.map((stat, index) => {
           const isRestricted = ["/aset/daftar", "/aksesoris", "/reports"].some(path => stat.link.startsWith(path)) && !["super admin", "admin"].includes(userRole);
-          
+
           return (
             <Link
               key={index}
@@ -255,30 +302,33 @@ export default function DashboardPage() {
                   showToast("Akses Dibatasi: Anda tidak memiliki izin untuk mengakses halaman ini.", "error");
                 }
               }}
-              className={`relative overflow-hidden rounded-2xl ${stat.color} p-5 text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl group block ${isRestricted ? "cursor-not-allowed opacity-90" : "cursor-pointer"}`}
+              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.color} p-6 text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 group block ${isRestricted ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
             >
-            {/* Decorative background elements */}
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 transition-transform group-hover:scale-125" />
-            
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md shadow-inner">
-                  {cloneElement(stat.icon, { className: "h-6 w-6 text-white" })}
+              {/* Decorative animated gradient background */}
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/[0.08] transition-transform duration-500 group-hover:scale-150 group-hover:translate-x-2 group-hover:-translate-y-2" />
+              <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/[0.05] transition-transform duration-500 group-hover:scale-125" />
+
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 backdrop-blur-lg shadow-lg border border-white/30">
+                    {cloneElement(stat.icon, { className: "h-7 w-7 text-white" })}
+                  </div>
+                  <TrendingUp className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-black leading-none mb-0.5">
+
+                <div>
+                  <span className="text-4xl font-black leading-none mb-2 block">
                     {stats ? stat.value : "—"}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">
+                  <span className="text-xs font-bold uppercase tracking-widest opacity-90 block">
                     {stat.title}
                   </span>
                 </div>
-              </div>
 
-              <div className="mt-6 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider group-hover:translate-x-1 transition-transform">
-                Lihat Selengkapnya <ChevronRight className="h-3 w-3" />
+                <div className="mt-6 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide opacity-90 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                  Lihat <ChevronRight className="h-4 w-4" />
+                </div>
               </div>
-            </div>
             </Link>
           );
         })}
