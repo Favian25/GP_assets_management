@@ -44,6 +44,7 @@ const Aksesoris = {
       jumlah_unit,
       harga_aset,
       tanggal_pembelian,
+      jenis_aset,
       kondisi,
       lokasi,
       gambar,
@@ -51,9 +52,9 @@ const Aksesoris = {
     } = data;
 
     const [result] = await db.query(
-      `INSERT INTO aksesoris 
-        (kode_aksesoris, nama_aksesoris, kategori, merek, model, jumlah_unit, harga_aset, tanggal_pembelian, kondisi, lokasi, gambar, keterangan, jumlah_total, user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO aksesoris
+        (kode_aksesoris, nama_aksesoris, kategori, merek, model, jumlah_unit, harga_aset, tanggal_pembelian, jenis_aset, kondisi, lokasi, gambar, keterangan, jumlah_total, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         kode_aksesoris,
         nama_aksesoris,
@@ -63,6 +64,7 @@ const Aksesoris = {
         jumlah_unit || null,
         harga_aset || null,
         tanggal_pembelian || null,
+        jenis_aset || null,
         kondisi || "Siap Digunakan",
         lokasi || null,
         gambar || null,
@@ -86,6 +88,7 @@ const Aksesoris = {
       jumlah_unit,
       harga_aset,
       tanggal_pembelian,
+      jenis_aset,
       kondisi,
       lokasi,
       gambar,
@@ -96,7 +99,7 @@ const Aksesoris = {
       `UPDATE aksesoris SET
         kode_aksesoris = ?, nama_aksesoris = ?, kategori = ?,
         merek = ?, model = ?, jumlah_unit = ?, harga_aset = ?,
-        tanggal_pembelian = ?, kondisi = ?, lokasi = ?, gambar = ?,
+        tanggal_pembelian = ?, jenis_aset = ?, kondisi = ?, lokasi = ?, gambar = ?,
         keterangan = ?, jumlah_total = ?
        WHERE id = ?`,
       [
@@ -108,6 +111,7 @@ const Aksesoris = {
         jumlah_unit || null,
         harga_aset || null,
         tanggal_pembelian || null,
+        jenis_aset || null,
         kondisi || "Siap Digunakan",
         lokasi || null,
         gambar || null,

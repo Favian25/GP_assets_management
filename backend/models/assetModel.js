@@ -45,6 +45,7 @@ const Asset = {
       no_sn,
       spesifikasi,
       lokasi_aset,
+      jenis_aset,
       kondisi,
       unit,
       gambar,
@@ -55,9 +56,9 @@ const Asset = {
     } = data;
 
     const [result] = await db.query(
-      `INSERT INTO assets 
-        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian, user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO assets
+        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, jenis_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         kode_aset,
         nama_aset,
@@ -68,6 +69,7 @@ const Asset = {
         no_sn || null,
         spesifikasi || null,
         lokasi_aset || null,
+        jenis_aset || null,
         kondisi || "Siap Digunakan",
         unit || null,
         gambar || null,
@@ -95,6 +97,7 @@ const Asset = {
       no_sn,
       spesifikasi,
       lokasi_aset,
+      jenis_aset,
       kondisi,
       unit,
       gambar,
@@ -108,7 +111,7 @@ const Asset = {
       `UPDATE assets SET
         kode_aset = ?, nama_aset = ?, pengguna = ?, kategori = ?,
         merek = ?, model = ?, no_sn = ?, spesifikasi = ?,
-        lokasi_aset = ?, kondisi = ?, unit = ?, gambar = ?, keterangan = ?,
+        lokasi_aset = ?, jenis_aset = ?, kondisi = ?, unit = ?, gambar = ?, keterangan = ?,
         jumlah = ?, jumlah_total = ?, harga_aset = ?, tanggal_pembelian = ?
        WHERE id = ?`,
       [
@@ -121,6 +124,7 @@ const Asset = {
         no_sn || null,
         spesifikasi || null,
         lokasi_aset || null,
+        jenis_aset || null,
         kondisi || "Siap Digunakan",
         unit || null,
         gambar || null,
