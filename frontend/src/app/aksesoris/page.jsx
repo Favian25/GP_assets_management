@@ -26,8 +26,10 @@ const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 const emptyForm = {
   kodeAksesoris: "", namaAksesoris: "", kategori: "", merek: "", model: "",
   lokasi: "", kondisi: "", keterangan: "",
-  jumlahUnit: "", hargaAset: "", tanggalPembelian: "",
+  jumlahUnit: "", hargaAset: "", tanggalPembelian: "", jenisAset: "",
 };
+
+const jenisAsetOptions = ["Galeria Studio", "Galeria Production"];
 
 // =====================================================
 // Helper components (outside to prevent re-mount)
@@ -349,8 +351,9 @@ export default function AksesorisPage() {
       kodeAksesoris: item.kodeAksesoris || "", namaAksesoris: item.namaAksesoris || "",
       kategori: item.kategori || "", merek: item.merek || "", model: item.model || "",
       lokasi: item.lokasi || "", kondisi: item.kondisi || "", keterangan: item.keterangan || "",
-      jumlahUnit: item.jumlahUnit || "", hargaAset: item.hargaAset || "", 
+      jumlahUnit: item.jumlahUnit || "", hargaAset: item.hargaAset || "",
       tanggalPembelian: item.tanggalPembelian ? item.tanggalPembelian.split('T')[0] : "",
+      jenisAset: item.jenisAset || "",
     });
     // Ensure existing values are in dropdown lists if deleted previously
     if (item.kategori && !kategoriList.includes(item.kategori)) setKategoriList(prev => [...prev, item.kategori]);
@@ -443,6 +446,7 @@ export default function AksesorisPage() {
             }} 
           />
           <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} />
+          <SelectField label="Jenis Aset" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Aset" />
         </div>
       </div>
       <hr className="border-slate-200" />
@@ -663,13 +667,14 @@ export default function AksesorisPage() {
                     <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Aksesoris</h4>
                     <div className="space-y-2.5">
                       {[
-                        ["Kode Aksesoris", showDetail.kodeAksesoris], 
-                        ["Nama Aksesoris", showDetail.namaAksesoris], 
-                        ["Model", showDetail.model], 
-                        ["Kategori", showDetail.kategori], 
-                        ["Merek", showDetail.merek], 
-                        ["Jumlah", `${showDetail.jumlahUnit ?? "-"} Tersisa dari Total ${showDetail.jumlahTotal ?? showDetail.jumlahUnit ?? "-"}`], 
-                        ["Harga", formatRupiah(showDetail.hargaAset)], 
+                        ["Kode Aksesoris", showDetail.kodeAksesoris],
+                        ["Nama Aksesoris", showDetail.namaAksesoris],
+                        ["Model", showDetail.model],
+                        ["Kategori", showDetail.kategori],
+                        ["Merek", showDetail.merek],
+                        ["Jenis Aset", showDetail.jenisAset],
+                        ["Jumlah", `${showDetail.jumlahUnit ?? "-"} Tersisa dari Total ${showDetail.jumlahTotal ?? showDetail.jumlahUnit ?? "-"}`],
+                        ["Harga", formatRupiah(showDetail.hargaAset)],
                         ["Tanggal Pembelian", showDetail.tanggalPembelian ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(showDetail.tanggalPembelian)) : "-"],
                       ].map(([l, v]) => (
                         <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
