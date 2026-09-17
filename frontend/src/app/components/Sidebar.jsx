@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getUserContext } from "../lib/authService";
-import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu, BarChart2, ShieldAlert, Activity, X, History, Users2 } from "lucide-react";
+import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu, BarChart2, ShieldAlert, Activity, X, History, Users2, UserCog } from "lucide-react";
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMobileOpen }) {
   const pathname = usePathname();
@@ -312,7 +312,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
                 title={isCollapsed ? "Kelola User" : ""}
               >
                 <div className="flex w-12 h-full items-center justify-center shrink-0">
-                  <Users className="h-5 w-5" />
+                  <UserCog className="h-5 w-5" />
                 </div>
                 <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100 ml-1"}`}>
                   Kelola User
