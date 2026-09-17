@@ -56,6 +56,7 @@ const fieldMapToBackend = {
   hargaAset: "harga_aset",
   tanggalPembelian: "tanggal_pembelian",
   userId: "user_id",
+  jenisAset: "jenis_aset",
 };
 
 // Mapping: Backend key → Frontend key (reverse)
@@ -201,6 +202,7 @@ const aksesorisFieldMapToBackend = {
   gambar: "gambar",
   keterangan: "keterangan",
   userId: "user_id",
+  jenisAset: "jenis_aset",
 };
 
 const aksesorisFieldMapToFrontend = Object.fromEntries(

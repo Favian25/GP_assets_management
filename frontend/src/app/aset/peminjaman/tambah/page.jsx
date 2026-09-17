@@ -25,7 +25,7 @@ export default function TambahPeminjamanPage() {
   const [namaPeminjam, setNamaPeminjam] = useState("");
   const [yangMenyerahkan, setYangMenyerahkan] = useState("");
   const [tanggalPeminjaman, setTanggalPeminjaman] = useState("");
-  const [keperluanList, setKeperluanList] = useState([{ keperluan: "", tanggal: "" }]);
+  const [keperluanList, setKeperluanList] = useState([{ keperluan: "" }]);
   const [items, setItems] = useState([]);
   const [buktiFiles, setBuktiFiles] = useState([]);
   const [buktiPreviews, setBuktiPreviews] = useState([]);
@@ -42,6 +42,7 @@ export default function TambahPeminjamanPage() {
   const [viewMode, setViewMode] = useState("list"); // "list" atau "grid"
   const [itemSearch, setItemSearch] = useState("");
   const [itemFilter, setItemFilter] = useState("semua"); // "semua" | "asset" | "aksesoris"
+  const [brandFilter, setBrandFilter] = useState("semua"); // "semua" | "Galeria Studio" | "Galeria Production"
   const fileInputRef = useRef(null);
 
   // Initialize user context
@@ -50,10 +51,11 @@ export default function TambahPeminjamanPage() {
     if (ctx) {
       setUserRole(ctx.role || "");
       setUserId(ctx.id);
-      setUserName(ctx.nama || "");
-      // Untuk non-user roles, pre-fill yang_menyerahkan
-      if (ctx.role !== "user" && ctx.role !== "guest") {
-        setYangMenyerahkan(ctx.nama || "");
+      setUserName(ctx.namaLengkap || "");
+      
+      // Untuk non-super admin, autofill nama peminjam
+      if (ctx.role !== "super admin") {
+        setNamaPeminjam(ctx.namaLengkap || "");
       }
     }
   }, []);
@@ -97,6 +99,7 @@ export default function TambahPeminjamanPage() {
             stok: a.jumlah,
             kondisi: a.kondisi,
             gambar: a.gambar,
+            jenisAset: a.jenisAset,
             tipe: "asset",
           })),
         ...aksesoris
@@ -111,6 +114,7 @@ export default function TambahPeminjamanPage() {
             stok: ak.jumlahUnit,
             kondisi: ak.kondisi,
             gambar: ak.gambar,
+            jenisAset: ak.jenisAset,
             tipe: "aksesoris",
           })),
       ];
@@ -132,8 +136,9 @@ export default function TambahPeminjamanPage() {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed.namaPeminjam) setNamaPeminjam(parsed.namaPeminjam);
-          if (parsed.yangMenyerahkan) setYangMenyerahkan(parsed.yangMenyerahkan);
+          // Hanya restore namaPeminjam untuk super admin (non-super admin sudah autofill)
+          if (parsed.namaPeminjam && userRole === "super admin") setNamaPeminjam(parsed.namaPeminjam);
+          if (parsed.yangMenyerahkan && userRole === "super admin") setYangMenyerahkan(parsed.yangMenyerahkan);
           if (parsed.tanggalPeminjaman) setTanggalPeminjaman(parsed.tanggalPeminjaman);
           if (parsed.keperluanList) setKeperluanList(parsed.keperluanList);
           if (parsed.items) setItems(parsed.items);
@@ -141,7 +146,7 @@ export default function TambahPeminjamanPage() {
       }
       setIsLoaded(true);
     }
-  }, [isLoaded]);
+  }, [isLoaded, userRole]);
 
   // Save temp data
   useEffect(() => {
@@ -193,7 +198,7 @@ export default function TambahPeminjamanPage() {
 
   // Keperluan management
   const addKeperluan = () => {
-    setKeperluanList([...keperluanList, { keperluan: "", tanggal: "" }]);
+    setKeperluanList([...keperluanList, { keperluan: "" }]);
   };
 
   const removeKeperluan = (index) => {
@@ -240,6 +245,7 @@ export default function TambahPeminjamanPage() {
         jumlah: 1,
         kategori: item.kategori,
         merek: item.merek,
+        jenisAset: item.jenisAset,
       },
     ]);
   };
@@ -258,15 +264,13 @@ export default function TambahPeminjamanPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const showYangMenyerahkan = userRole !== "user" && userRole !== "guest";
-
     // Validation
     if (!namaPeminjam || !tanggalPeminjaman) {
       showToast("Nama peminjam dan tanggal harus diisi", "error");
       return;
     }
 
-    if (showYangMenyerahkan && !yangMenyerahkan) {
+    if (userRole === "super admin" && !yangMenyerahkan) {
       showToast("Yang menyerahkan harus diisi", "error");
       return;
     }
@@ -297,9 +301,8 @@ export default function TambahPeminjamanPage() {
     try {
       setSubmitting(true);
 
-      // Combine tanggal from first keperluan if available
-      const firstKeperluan = keperluanList[0];
-      const dateStr = firstKeperluan.tanggal || tanggalPeminjaman;
+      // Gunakan tanggalPeminjaman
+      const dateStr = tanggalPeminjaman;
 
       await createPeminjaman(
         {
@@ -330,18 +333,31 @@ export default function TambahPeminjamanPage() {
   };
 
   // Helper functions
-  const getKondisiBadge = (kondisi) => {
+  const getKondisiBadge = (kondisi, isList = false) => {
+    const borderClass = isList ? " border " : "";
     const badges = {
-      "Siap Digunakan": "bg-green-100 text-green-800",
-      Rusak: "bg-red-100 text-red-800",
-      "Rusak Berat": "bg-red-900 text-white",
-      Maintenance: "bg-yellow-100 text-yellow-800",
+      "Siap Digunakan": `bg-green-100 text-green-800${isList ? " border-green-200" : ""}`,
+      Rusak: `bg-red-100 text-red-800${isList ? " border-red-200" : ""}`,
+      "Rusak Berat": `bg-red-900 text-white${isList ? " border-red-800" : ""}`,
+      Maintenance: `bg-yellow-100 text-yellow-800${isList ? " border-yellow-200" : ""}`,
     };
-    return badges[kondisi] || "bg-gray-100 text-gray-800";
+    return (badges[kondisi] || `bg-gray-100 text-gray-800${isList ? " border-gray-200" : ""}`) + borderClass;
   };
 
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + item.harga * item.jumlah, 0);
+  };
+
+  const renderBrandBadge = (jenisAset, isList = false) => {
+    const borderClass = isList ? " border " : "";
+    const baseClass = `${isList ? "w-[84px]" : "w-auto"} text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold shrink-0`;
+    if (jenisAset === "Galeria Studio") {
+      return <span className={`${baseClass} bg-amber-100 text-amber-700${borderClass}${isList ? "border-amber-200" : ""}`}>Studio</span>;
+    }
+    if (jenisAset === "Galeria Production") {
+      return <span className={`${baseClass} bg-teal-100 text-teal-700${borderClass}${isList ? "border-teal-200" : ""}`}>Production</span>;
+    }
+    return null;
   };
 
   // Filtered items for search & filter
@@ -351,11 +367,12 @@ export default function TambahPeminjamanPage() {
       item.kode.toLowerCase().includes(itemSearch.toLowerCase()) ||
       (item.kategori && item.kategori.toLowerCase().includes(itemSearch.toLowerCase())) ||
       (item.merek && item.merek.toLowerCase().includes(itemSearch.toLowerCase()));
-    const matchFilter = itemFilter === "semua" || item.tipe === itemFilter;
-    return matchSearch && matchFilter;
+    const matchTipe = itemFilter === "semua" || item.tipe === itemFilter;
+    const matchBrand = brandFilter === "semua" || item.jenisAset === brandFilter;
+    return matchSearch && matchTipe && matchBrand;
   });
 
-  if (itemFilter === "semua") {
+  if (itemFilter === "semua" && brandFilter === "semua") {
     filteredItems.sort((a, b) => a.nama.localeCompare(b.nama));
   }
 
@@ -408,7 +425,8 @@ export default function TambahPeminjamanPage() {
                   placeholder="Masukkan nama peminjam"
                   value={namaPeminjam}
                   onChange={(e) => setNamaPeminjam(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                  readOnly={userRole !== "super admin"}
+                  className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none ${userRole !== "super admin" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""}`}
                   required
                 />
               </div>
@@ -427,8 +445,8 @@ export default function TambahPeminjamanPage() {
                 />
               </div>
 
-              {/* Yang Menyerahkan - Manual Input, Conditional */}
-              {(userRole !== "user" && userRole !== "guest") && (
+              {/* Yang Menyerahkan - Hanya visible untuk super admin */}
+              {userRole === "super admin" && (
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Yang Menyerahkan *
@@ -441,9 +459,6 @@ export default function TambahPeminjamanPage() {
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                     required
                   />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Anda: {userName} ({userRole})
-                  </p>
                 </div>
               )}
             </div>
@@ -477,21 +492,15 @@ export default function TambahPeminjamanPage() {
                     className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                     required={idx === 0}
                   />
-                  <input
-                    type="date"
-                    value={k.tanggal}
-                    onChange={(e) => updateKeperluan(idx, "tanggal", e.target.value)}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                  />
-                  {keperluanList.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeKeperluan(idx)}
-                      className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeKeperluan(idx)}
+                    className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition shrink-0"
+                    disabled={keperluanList.length === 1}
+                    style={{ opacity: keperluanList.length === 1 ? 0.5 : 1 }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -517,29 +526,33 @@ export default function TambahPeminjamanPage() {
                     className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                   />
                 </div>
-                {/* Filter Buttons */}
-                <div className="flex gap-1.5">
-                  {[{ key: "semua", label: "Semua" }, { key: "asset", label: "Aset" }, { key: "aksesoris", label: "Aksesoris" }].map((f) => (
-                    <button
-                      key={f.key}
-                      type="button"
-                      onClick={() => setItemFilter(f.key)}
-                      className={`cursor-pointer px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                        itemFilter === f.key
-                          ? "bg-primary text-white hover:bg-primary-hover"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
+                {/* Filter Dropdowns */}
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={itemFilter}
+                    onChange={(e) => setItemFilter(e.target.value)}
+                    className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white"
+                  >
+                    <option value="semua">Semua Tipe</option>
+                    <option value="asset">Aset</option>
+                    <option value="aksesoris">Aksesoris</option>
+                  </select>
+                  <select
+                    value={brandFilter}
+                    onChange={(e) => setBrandFilter(e.target.value)}
+                    className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white"
+                  >
+                    <option value="semua">Semua Brand</option>
+                    <option value="Galeria Studio">Galeria Studio</option>
+                    <option value="Galeria Production">Galeria Production</option>
+                  </select>
                 </div>
                 {/* View Mode Toggle */}
                 <div className="flex gap-1.5">
                   <button
                     type="button"
                     onClick={() => setViewMode("list")}
-                    className={`cursor-pointer px-3 py-1.5 text-sm rounded-lg transition ${
+                    className={`cursor-pointer px-3 py-2 text-sm rounded-lg transition ${
                       viewMode === "list"
                         ? "bg-primary text-white hover:bg-primary-hover"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -550,7 +563,7 @@ export default function TambahPeminjamanPage() {
                   <button
                     type="button"
                     onClick={() => setViewMode("grid")}
-                    className={`cursor-pointer px-3 py-1.5 text-sm rounded-lg transition ${
+                    className={`cursor-pointer px-3 py-2 text-sm rounded-lg transition ${
                       viewMode === "grid"
                         ? "bg-primary text-white hover:bg-primary-hover"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -576,7 +589,7 @@ export default function TambahPeminjamanPage() {
                     } ${item.kondisi !== "Siap Digunakan" || item.stok <= 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {/* Gambar */}
-                    <div className="mb-3 h-32 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
+                    <div className="mb-3 h-40 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
                       {item.gambar ? (
                         <Image
                           src={item.gambar}
@@ -595,15 +608,16 @@ export default function TambahPeminjamanPage() {
                     <p className="text-xs text-slate-500">{item.kode}</p>
 
                     {/* Badge */}
-                    <div className="flex gap-1 mt-2 flex-wrap">
-                      <span className={`w-20 text-center inline-block text-xs px-2 py-1 rounded-full font-semibold ${
+                    <div className="flex gap-1 mt-2 flex-nowrap items-center">
+                      {renderBrandBadge(item.jenisAset, false)}
+                      <span className={`shrink-0 text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold ${
                         item.tipe === "asset"
                           ? "bg-blue-100 text-blue-700"
                           : "bg-purple-100 text-purple-700"
                       }`}>
                         {item.tipe === "asset" ? "Aset" : "Aksesoris"}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${getKondisiBadge(item.kondisi)}`}>
+                      <span className={`shrink-0 text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(item.kondisi, false)}`}>
                         {item.kondisi}
                       </span>
                     </div>
@@ -640,10 +654,11 @@ export default function TambahPeminjamanPage() {
                     } ${item.kondisi !== "Siap Digunakan" || item.stok <= 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <div className="flex items-center gap-2 flex-1">
-                      <span className={`w-20 text-center inline-block text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                      {renderBrandBadge(item.jenisAset, true)}
+                      <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
                         item.tipe === "asset"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-purple-100 text-purple-700"
+                          ? "bg-blue-100 text-blue-700 border-blue-200"
+                          : "bg-purple-100 text-purple-700 border-purple-200"
                       }`}>
                         {item.tipe === "asset" ? "Aset" : "Aksesoris"}
                       </span>
@@ -657,7 +672,7 @@ export default function TambahPeminjamanPage() {
                       {item.harga > 0 && (
                         <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString()}</span>
                       )}
-                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${getKondisiBadge(item.kondisi)}`}>
+                      <span className={`text-center inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
                         {item.kondisi}
                       </span>
                     </div>
@@ -685,10 +700,11 @@ export default function TambahPeminjamanPage() {
                   <div key={idx} className="p-3 rounded-lg border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     {/* Item Info */}
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className={`w-20 text-center inline-block text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                      {renderBrandBadge(item.jenisAset, true)}
+                      <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
                         item.tipe === "asset"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-purple-100 text-purple-700"
+                          ? "bg-blue-100 text-blue-700 border-blue-200"
+                          : "bg-purple-100 text-purple-700 border-purple-200"
                       }`}>
                         {item.tipe === "asset" ? "Aset" : "Aksesoris"}
                       </span>
