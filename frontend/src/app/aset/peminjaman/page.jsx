@@ -137,6 +137,10 @@ export default function PeminjamanAsetPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showApproveConfirm, setShowApproveConfirm] = useState(null);
   const [approveYangMenyerahkan, setApproveYangMenyerahkan] = useState("");
+  const [yangMenyerahkanSearch, setYangMenyerahkanSearch] = useState("");
+  const [userList, setUserList] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [showYangMenyerahkanDropdown, setShowYangMenyerahkanDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [userRole, setUserRole] = useState("user");
   const [userName, setUserName] = useState("");
@@ -171,6 +175,47 @@ export default function PeminjamanAsetPage() {
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
+
+  // Fetch user list untuk Yang Menyerahkan autocomplete
+  const fetchUserList = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/users`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setUserList(result.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    }
+  };
+
+  // Handle Yang Menyerahkan search
+  const handleYangMenyerahkanSearch = (value) => {
+    setYangMenyerahkanSearch(value);
+    setApproveYangMenyerahkan(value);
+
+    if (value.trim().length > 0) {
+      const filtered = userList.filter(u =>
+        u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
+        u.email?.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+      setShowYangMenyerahkanDropdown(true);
+    } else {
+      setFilteredUsers([]);
+      setShowYangMenyerahkanDropdown(false);
+    }
+  };
+
+  // Handle select Yang Menyerahkan
+  const handleSelectYangMenyerahkan = (user) => {
+    setApproveYangMenyerahkan(user.nama_lengkap);
+    setYangMenyerahkanSearch(user.nama_lengkap);
+    setShowYangMenyerahkanDropdown(false);
+    setFilteredUsers([]);
+  };
 
   const handleDownloadPDF = async (peminjamanId) => {
     try {
@@ -530,7 +575,7 @@ export default function PeminjamanAsetPage() {
                       )}
                       {/* Approve */}
                       {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && (
-                        <button onClick={() => { setShowApproveConfirm(item); setApproveYangMenyerahkan(item.yangMenyerahkan || ""); }} className="cursor-pointer rounded-lg bg-emerald-100 p-2 text-emerald-600 transition-all duration-150 hover:bg-emerald-600 hover:text-white hover:shadow-md" title="Setujui"><Check className="h-4 w-4" /></button>
+                        <button onClick={() => { setShowApproveConfirm(item); setApproveYangMenyerahkan(item.yangMenyerahkan || ""); setYangMenyerahkanSearch(item.yangMenyerahkan || ""); fetchUserList(); }} className="cursor-pointer rounded-lg bg-emerald-100 p-2 text-emerald-600 transition-all duration-150 hover:bg-emerald-600 hover:text-white hover:shadow-md" title="Setujui"><Check className="h-4 w-4" /></button>
                       )}
                       {/* Delete */}
                       {canDelete && (
@@ -746,18 +791,43 @@ export default function PeminjamanAsetPage() {
                   {showApproveConfirm.status === 'Menunggu Persetujuan' && (
                     <div className="mt-4 space-y-2">
                       <label className="block text-sm font-medium text-slate-700">Yang Menyerahkan <span className="text-rose-500">*</span></label>
-                      <input
-                        type="text"
-                        value={approveYangMenyerahkan}
-                        onChange={(e) => setApproveYangMenyerahkan(e.target.value)}
-                        placeholder="Nama orang yang menyerahkan aset"
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={yangMenyerahkanSearch}
+                          onChange={(e) => handleYangMenyerahkanSearch(e.target.value)}
+                          onFocus={() => { if (yangMenyerahkanSearch.trim().length > 0) setShowYangMenyerahkanDropdown(true); }}
+                          onBlur={() => setTimeout(() => setShowYangMenyerahkanDropdown(false), 200)}
+                          placeholder="Cari atau ketik nama..."
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+
+                        {/* Dropdown Autocomplete */}
+                        {showYangMenyerahkanDropdown && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                            {filteredUsers.length > 0 ? (
+                              filteredUsers.map((user) => (
+                                <button
+                                  key={user.id}
+                                  type="button"
+                                  onClick={() => handleSelectYangMenyerahkan(user)}
+                                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
+                                >
+                                  <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
+                                  <div className="text-xs text-slate-500">{user.email}</div>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-3 py-2 text-sm text-slate-500 text-center">Tidak ada user yang sesuai</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
                 <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
-                  <button onClick={() => { setShowApproveConfirm(null); setApproveYangMenyerahkan(""); }} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={() => { setShowApproveConfirm(null); setApproveYangMenyerahkan(""); setYangMenyerahkanSearch(""); setShowYangMenyerahkanDropdown(false); }} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
                   <button onClick={handleApprove} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
                 </div>
               </div>
