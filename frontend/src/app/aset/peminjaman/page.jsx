@@ -878,7 +878,7 @@ export default function PeminjamanAsetPage() {
                                   <div className="text-xs text-slate-500">{user.email}</div>
                                   <div className="text-xs text-slate-400 mt-0.5">
                                     <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium">
-                                      {user.role === 'super admin' ? '⭐ Super Admin' : user.role === 'admin' ? '👤 Admin' : '👥 Supervisor'}
+                                      {user.role === 'super admin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Supervisor'}
                                     </span>
                                   </div>
                                 </button>
@@ -922,7 +922,7 @@ export default function PeminjamanAsetPage() {
                                   <div className="text-xs text-slate-500">{user.email}</div>
                                   <div className="text-xs text-slate-400 mt-0.5">
                                     <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium">
-                                      {user.role === 'super admin' ? '⭐ Super Admin' : user.role === 'admin' ? '👤 Admin' : '👥 Supervisor'}
+                                      {user.role === 'super admin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Supervisor'}
                                     </span>
                                   </div>
                                 </button>
