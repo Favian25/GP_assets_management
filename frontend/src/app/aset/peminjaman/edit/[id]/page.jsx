@@ -336,7 +336,7 @@ export default function EditPeminjamanPage() {
       await updatePeminjaman(
         peminjamanId,
         {
-          tanggal_pengembalian: dateTimeStr,
+          tanggalPengembalian: dateTimeStr,
           status: "Menunggu Verifikasi",
         },
         buktiFiles
