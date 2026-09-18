@@ -748,7 +748,6 @@ export default function PeminjamanAsetPage() {
                     <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Pengembalian</h4>
                     <div className="space-y-2.5">
                       <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Penerima Aset</span><span className="text-sm text-slate-800">{showDetail.penerimaAset || "-"}</span></div>
                       <div className="flex items-start gap-3">
                         <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Diverifikasi Oleh</span>
                         <span className="text-sm text-slate-800">{showDetail.returnApprovedBy || "-"}</span>
