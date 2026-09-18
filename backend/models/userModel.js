@@ -67,12 +67,13 @@ const User = {
     return rows[0];
   },
 
-  // Update user by admin/super admin (nama, password, role, foto_profil, nomor_hp, keterangan)
+  // Update user by admin/super admin (nama, email, password, role, foto_profil, nomor_hp, keterangan)
   update: async (id, data) => {
     const fields = [];
     const values = [];
 
     if (data.nama_lengkap) { fields.push('nama_lengkap = ?'); values.push(data.nama_lengkap); }
+    if (data.email) { fields.push('email = ?'); values.push(data.email); }
     if (data.password) { fields.push('password = ?'); values.push(data.password); }
     if (data.role) { fields.push('role = ?'); values.push(data.role); }
     if (data.foto_profil !== undefined) { fields.push('foto_profil = ?'); values.push(data.foto_profil); }
