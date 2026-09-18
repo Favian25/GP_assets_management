@@ -106,7 +106,6 @@ export default function EditPeminjamanPage() {
 
   // Return form state
   const [tanggalPengembalian, setTanggalPengembalian] = useState("");
-  const [penerimaAset, setPenerimaAset] = useState("");
   const [buktiFiles, setBuktiFiles] = useState([]);
   const [buktiPreviews, setBuktiPreviews] = useState([]);
   const [existingBuktiPeminjaman, setExistingBuktiPeminjaman] = useState([]);
@@ -158,12 +157,7 @@ export default function EditPeminjamanPage() {
         parseBuktiImages(peminjamanData.buktiPeminjaman)
       );
 
-      // Auto-fill penerima_aset if empty
-      if (!peminjamanData.penerimaAset && currentUser) {
-        setPenerimaAset(currentUser.nama || "");
-      } else {
-        setPenerimaAset(peminjamanData.penerimaAset || "");
-      }
+      // Penerima Aset will be filled in the approval popup, not here
 
       // Combine all items for swap/add modal
       const combined = [
@@ -317,11 +311,6 @@ export default function EditPeminjamanPage() {
       return;
     }
 
-    if (!penerimaAset?.trim()) {
-      showToast("Penerima aset wajib diisi", "error");
-      return;
-    }
-
     if (buktiFiles.length === 0) {
       showToast("Upload bukti pengembalian minimal 1 gambar", "error");
       return;
@@ -336,7 +325,6 @@ export default function EditPeminjamanPage() {
         {
           tanggal_pengembalian: dateStr,
           status: "Menunggu Verifikasi",
-          penerima_aset: penerimaAset,
         },
         buktiFiles
       );
@@ -585,20 +573,6 @@ export default function EditPeminjamanPage() {
                   <p className="text-xs text-slate-500 mt-1">
                     Jam akan otomatis diisi saat menyimpan
                   </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Penerima Aset *
-                  </label>
-                  <input
-                    type="text"
-                    value={penerimaAset}
-                    onChange={(e) => setPenerimaAset(e.target.value)}
-                    placeholder="Nama orang yang menerima"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                    required
-                  />
                 </div>
               </div>
             </div>
