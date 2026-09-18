@@ -56,13 +56,13 @@ router.get("/nama/:nama_peminjam", peminjamanController.getPeminjamanByNamaPemin
 router.get("/:id/items-pricing", peminjamanController.getItemsWithPricing);
 
 // SWAP item saat Sedang Dipinjam
-router.put("/:id/swap-item", verifyToken, requireRole("admin", "supervisor"), peminjamanController.swapItem);
+router.put("/:id/swap-item", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.swapItem);
 
 // ADD item saat Sedang Dipinjam
-router.put("/:id/add-item", verifyToken, requireRole("admin", "supervisor"), peminjamanController.addItemWhileBorrowed);
+router.put("/:id/add-item", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.addItemWhileBorrowed);
 
 // APPROVE peminjaman (must be before PUT /:id)
-router.put("/:id/approve", verifyToken, requireRole("admin", "supervisor"), peminjamanController.approvePeminjaman);
+router.put("/:id/approve", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.approvePeminjaman);
 
 // DOWNLOAD PDF (must be before GET /:id)
 router.get("/:id/pdf", peminjamanController.generatePDF);
