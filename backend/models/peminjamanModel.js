@@ -189,7 +189,7 @@ const Peminjaman = {
   },
 
   // APPROVE peminjaman (Menunggu Persetujuan → Sedang Dipinjam, ATAU Menunggu Verifikasi → Peminjaman Selesai)
-  approve: async (id, approvedBy, yangMenyerahkan = null) => {
+  approve: async (id, approvedBy, yangMenyerahkan = null, penerimaAset = null) => {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
@@ -208,10 +208,10 @@ const Peminjaman = {
         );
         // Tidak mengembalikan stok karena memang sedang dipinjam
       } else if (currentStatus === 'Menunggu Verifikasi') {
-        // Approval 2: Barang kembali → simpan di return_approved_by
+        // Approval 2: Barang kembali → simpan di return_approved_by dan penerima_aset
         await connection.query(
-          "UPDATE peminjaman SET status = 'Peminjaman Selesai', return_approved_by = ? WHERE id = ?",
-          [approvedBy, id]
+          "UPDATE peminjaman SET status = 'Peminjaman Selesai', return_approved_by = ?, penerima_aset = ? WHERE id = ?",
+          [approvedBy, penerimaAset || null, id]
         );
 
         // Ambil items dan kembalikan stok

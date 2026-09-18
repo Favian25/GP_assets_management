@@ -251,7 +251,7 @@ const peminjamanController = {
   approvePeminjaman: async (req, res) => {
     try {
       const id = req.params.id;
-      const { approved_by, yang_menyerahkan } = req.body;
+      const { approved_by, yang_menyerahkan, penerima_aset } = req.body;
 
       const checkData = await Peminjaman.getById(id);
       if (!checkData) {
@@ -267,7 +267,12 @@ const peminjamanController = {
         return res.status(400).json({ success: false, message: "Yang Menyerahkan harus diisi" });
       }
 
-      await Peminjaman.approve(id, approved_by || "System", yang_menyerahkan || null);
+      // Untuk Menunggu Verifikasi, penerima_aset harus diisi
+      if (checkData.status === "Menunggu Verifikasi" && !penerima_aset?.trim()) {
+        return res.status(400).json({ success: false, message: "Penerima Aset harus diisi" });
+      }
+
+      await Peminjaman.approve(id, approved_by || "System", yang_menyerahkan || null, penerima_aset || null);
 
       // Notifikasi: approved
       const actionText = checkData.status === "Menunggu Persetujuan" ? "disetujui untuk dipinjam" : "diverifikasi pengembaliannya";

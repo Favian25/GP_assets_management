@@ -91,11 +91,12 @@ export const updatePeminjaman = async (id, data, files = []) => {
 };
 
 // 6. APPROVE Peminjaman
-export const approvePeminjaman = async (id, approvedBy, yangMenyerahkan = null) => {
+export const approvePeminjaman = async (id, approvedBy, yangMenyerahkan = null, penerimaAset = null) => {
   try {
     const response = await api.put(`/peminjaman/${id}/approve`, {
       approved_by: approvedBy,
-      yang_menyerahkan: yangMenyerahkan || null
+      yang_menyerahkan: yangMenyerahkan || null,
+      penerima_aset: penerimaAset || null
     });
     return response.data;
   } catch (error) {
