@@ -41,18 +41,16 @@ export const createPeminjaman = async (data, files = []) => {
     if (files && files.length > 0) {
       const formData = new FormData();
       Object.keys(backendData).forEach(key => {
-        if (key === "items") {
+        if (key === "items" || key === "keperluan_list") {
           formData.append(key, JSON.stringify(backendData[key]));
         } else {
-          formData.append(key, backendData[key]);
+          formData.append(key, backendData[key] || "");
         }
       });
       Array.from(files).forEach((file) => {
         formData.append("bukti", file);
       });
-      const response = await api.post("/peminjaman", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      const response = await api.post("/peminjaman", formData);
       return response.data;
     } else {
       const response = await api.post("/peminjaman", backendData);
@@ -60,6 +58,9 @@ export const createPeminjaman = async (data, files = []) => {
     }
   } catch (error) {
     console.error("Error creating peminjaman:", error);
+    if (error.response?.data?.message) {
+      console.error("Backend error message:", error.response.data.message);
+    }
     throw error;
   }
 };
@@ -77,9 +78,7 @@ export const updatePeminjaman = async (id, data, files = []) => {
       Array.from(files).forEach((file) => {
         formData.append("bukti", file);
       });
-      const response = await api.put(`/peminjaman/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      const response = await api.put(`/peminjaman/${id}`, formData);
       return response.data;
     } else {
       const response = await api.put(`/peminjaman/${id}`, backendData);
@@ -92,9 +91,12 @@ export const updatePeminjaman = async (id, data, files = []) => {
 };
 
 // 6. APPROVE Peminjaman
-export const approvePeminjaman = async (id, approvedBy) => {
+export const approvePeminjaman = async (id, approvedBy, yangMenyerahkan = null) => {
   try {
-    const response = await api.put(`/peminjaman/${id}/approve`, { approved_by: approvedBy });
+    const response = await api.put(`/peminjaman/${id}/approve`, {
+      approved_by: approvedBy,
+      yang_menyerahkan: yangMenyerahkan || null
+    });
     return response.data;
   } catch (error) {
     console.error(`Error approving peminjaman ${id}:`, error);

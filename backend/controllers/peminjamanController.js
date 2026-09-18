@@ -46,11 +46,22 @@ const peminjamanController = {
   createPeminjaman: async (req, res) => {
     try {
       const { nama_peminjam, alasan_peminjaman, keperluan_list, tanggal_peminjaman, yang_menyerahkan, items } = req.body;
+      console.log("DEBUG: req.body fields:", Object.keys(req.body));
+      console.log("DEBUG: nama_peminjam:", nama_peminjam);
+      console.log("DEBUG: tanggal_peminjaman:", tanggal_peminjaman);
+      console.log("DEBUG: alasan_peminjaman:", alasan_peminjaman);
+      console.log("DEBUG: items:", items);
       const callerRole = req.user?.role;
       const isUserRole = ['user', 'guest'].includes(callerRole);
 
-      if (!nama_peminjam || !tanggal_peminjaman || !alasan_peminjaman) {
-        return res.status(400).json({ success: false, message: "Nama, tanggal, dan keperluan peminjaman wajib diisi!" });
+      if (!nama_peminjam) {
+        return res.status(400).json({ success: false, message: "Nama peminjam wajib diisi!" });
+      }
+      if (!tanggal_peminjaman) {
+        return res.status(400).json({ success: false, message: "Tanggal peminjaman wajib diisi!" });
+      }
+      if (!alasan_peminjaman || alasan_peminjaman.trim() === "") {
+        return res.status(400).json({ success: false, message: "Alasan/keperluan peminjaman wajib diisi!" });
       }
 
       // yang_menyerahkan wajib hanya untuk superadmin, admin, supervisor
@@ -240,7 +251,7 @@ const peminjamanController = {
   approvePeminjaman: async (req, res) => {
     try {
       const id = req.params.id;
-      const { approved_by } = req.body;
+      const { approved_by, yang_menyerahkan } = req.body;
 
       const checkData = await Peminjaman.getById(id);
       if (!checkData) {
@@ -251,7 +262,12 @@ const peminjamanController = {
         return res.status(400).json({ success: false, message: "Status saat ini tidak membutuhkan persetujuan" });
       }
 
-      await Peminjaman.approve(id, approved_by || "System");
+      // Untuk Menunggu Persetujuan, yang_menyerahkan harus diisi
+      if (checkData.status === "Menunggu Persetujuan" && !yang_menyerahkan?.trim()) {
+        return res.status(400).json({ success: false, message: "Yang Menyerahkan harus diisi" });
+      }
+
+      await Peminjaman.approve(id, approved_by || "System", yang_menyerahkan || null);
 
       // Notifikasi: approved
       const actionText = checkData.status === "Menunggu Persetujuan" ? "disetujui untuk dipinjam" : "diverifikasi pengembaliannya";

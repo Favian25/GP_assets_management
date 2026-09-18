@@ -136,6 +136,7 @@ export default function PeminjamanAsetPage() {
   const [showDetail, setShowDetail] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showApproveConfirm, setShowApproveConfirm] = useState(null);
+  const [approveYangMenyerahkan, setApproveYangMenyerahkan] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [userRole, setUserRole] = useState("user");
   const [userName, setUserName] = useState("");
@@ -276,7 +277,18 @@ export default function PeminjamanAsetPage() {
 
   const handleApprove = async () => {
     if (!showApproveConfirm) return;
-    try { setSubmitting(true); await approvePeminjaman(showApproveConfirm.id, userName); showToast("Peminjaman berhasil disetujui!"); setShowApproveConfirm(null); fetchData(); }
+    if (showApproveConfirm.status === 'Menunggu Persetujuan' && !approveYangMenyerahkan.trim()) {
+      showToast("Yang Menyerahkan harus diisi", "error");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await approvePeminjaman(showApproveConfirm.id, userName, approveYangMenyerahkan);
+      showToast("Peminjaman berhasil disetujui!");
+      setShowApproveConfirm(null);
+      setApproveYangMenyerahkan("");
+      fetchData();
+    }
     catch (err) { showToast(err.response?.data?.message || "Gagal menyetujui data", "error"); }
     finally { setSubmitting(false); }
   };
@@ -358,23 +370,24 @@ export default function PeminjamanAsetPage() {
   };
 
   const Pagination = () => (
-    <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 gap-3">
-      <div className="hidden sm:flex items-center gap-3">
-        <p className="text-sm text-slate-500 text-nowrap">Menampilkan {paginatedData.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-semibold text-slate-700">{sorted.length}</span> data</p>
-        <div className="flex items-center gap-2">
-          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
-            className="cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-primary-hover shadow-sm transition-colors hover:bg-primary-hover">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 gap-4 bg-gradient-to-r from-slate-50/50 to-white border-t border-slate-200">
+      <div className="hidden sm:flex items-center gap-4">
+        <p className="text-sm text-slate-600 text-nowrap font-medium">Menampilkan {paginatedData.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-bold text-slate-800">{sorted.length}</span> data</p>
+        <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+          <label className="text-sm text-slate-600">Tampilkan</label>
+          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            className="cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary-hover shadow-sm transition-all hover:bg-primary-hover">
             {ROWS_OPTIONS.map(opt => <option key={opt} value={opt} className="bg-white text-slate-700">{opt}</option>)}
           </select>
-          <p className="text-sm text-slate-500 text-nowrap">baris per halaman</p>
+          <label className="text-sm text-slate-600">per halaman</label>
         </div>
       </div>
-      <div className="flex items-center gap-1">
-        <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Pertama"><ChevronsLeft className="h-4 w-4" /></button>
-        <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Sebelumnya"><ChevronLeft className="h-4 w-4" /></button>
-        {getPageNumbers().map((page, idx) => page === "..." ? (<span key={`e-${idx}`} className="min-w-[32px] px-1 py-1.5 text-center text-sm text-slate-400">...</span>) : (<button key={page} onClick={() => setCurrentPage(page)} className={`cursor-pointer min-w-[32px] rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${currentPage === page ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-100"}`}>{page}</button>))}
-        <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Berikutnya"><ChevronRight className="h-4 w-4" /></button>
-        <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Terakhir"><ChevronsRight className="h-4 w-4" /></button>
+      <div className="flex items-center gap-1.5">
+        <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="cursor-pointer rounded-lg p-1.5 text-sm text-slate-500 transition-all hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:text-slate-700" title="Halaman Pertama"><ChevronsLeft className="h-4 w-4" /></button>
+        <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="cursor-pointer rounded-lg p-1.5 text-sm text-slate-500 transition-all hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:text-slate-700" title="Sebelumnya"><ChevronLeft className="h-4 w-4" /></button>
+        {getPageNumbers().map((page, idx) => page === "..." ? (<span key={`e-${idx}`} className="min-w-[32px] px-1 py-1.5 text-center text-sm text-slate-400">...</span>) : (<button key={page} onClick={() => setCurrentPage(page)} className={`cursor-pointer min-w-[36px] rounded-lg px-2 py-1.5 text-sm font-semibold transition-all ${currentPage === page ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>{page}</button>))}
+        <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg p-1.5 text-sm text-slate-500 transition-all hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:text-slate-700" title="Berikutnya"><ChevronRight className="h-4 w-4" /></button>
+        <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg p-1.5 text-sm text-slate-500 transition-all hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:text-slate-700" title="Halaman Terakhir"><ChevronsRight className="h-4 w-4" /></button>
       </div>
     </div>
   );
@@ -424,7 +437,7 @@ export default function PeminjamanAsetPage() {
       </div>
 
       {/* Toolbar & Table Section */}
-      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
+      <div className="relative overflow-hidden rounded-xl border border-slate-300 bg-white shadow-md border-t-4 border-t-primary">
         
         {/* Table Loading Overlay */}
         {tableLoading && (
@@ -440,17 +453,17 @@ export default function PeminjamanAsetPage() {
         )}
 
         {/* Toolbar */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-6 border-b border-slate-300 bg-gradient-to-r from-slate-50/50 to-white">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
               <input type="text" placeholder="Cari peminjaman..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300" />
+                className="w-full rounded-lg border-2 border-slate-200 py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all hover:border-slate-300" />
             </div>
-            <select 
-              value={statusFilter} 
+            <select
+              value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full sm:w-56 rounded-lg border-2 border-slate-200 py-2 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
+              className="w-full sm:w-60 rounded-lg border-2 border-slate-200 py-2.5 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all hover:border-slate-300 outline-none cursor-pointer"
             >
               <option value="">Semua Status</option>
               {statusOptions.map(opt => (
@@ -460,7 +473,7 @@ export default function PeminjamanAsetPage() {
           </div>
           {canAdd && (
             <button onClick={() => router.push("/aset/peminjaman/tambah")}
-              className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">
+              className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-primary-hover hover:shadow-lg active:scale-95">
               <Plus className="h-4 w-4" />
               Pinjam Aset
             </button>
@@ -472,36 +485,39 @@ export default function PeminjamanAsetPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="px-5 py-3 font-bold text-slate-700 w-[80px]"><button onClick={() => handleSort("kodePinjam")} className="cursor-pointer flex items-center uppercase tracking-wider">No <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} /></button></th>
-                <th className="px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaPeminjam")} className="cursor-pointer flex items-center uppercase tracking-wider">Nama Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} /></button></th>
-                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Peminjaman Alat</th>
-                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Alasan</th>
-                <th className="px-5 py-3 font-bold text-slate-700 w-[170px]"><button onClick={() => handleSort("tanggalPeminjaman")} className="cursor-pointer flex items-center uppercase tracking-wider">Tgl Pinjam <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} /></button></th>
-                <th className="px-5 py-3 font-bold text-slate-700 w-[170px] uppercase tracking-wider">Tgl Kembali</th>
-                <th className="px-5 py-3 font-bold text-slate-700 w-[220px] text-center"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
-                <th className="px-5 py-3 font-bold text-slate-700 text-center w-[120px] uppercase tracking-wider">Aksi</th>
+              <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-b-slate-300">
+                <th className="px-6 py-4 font-bold text-slate-700 w-[130px] text-center"><button onClick={() => handleSort("kodePinjam")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider text-xs">No <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} /></button></th>
+                <th className="px-6 py-4 font-bold text-slate-700 text-center"><button onClick={() => handleSort("namaPeminjam")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider text-xs">Nama Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} /></button></th>
+                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs w-[110px]">Jumlah</th>
+                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs">Alasan</th>
+                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs w-[160px]"><button onClick={() => handleSort("tanggalPeminjaman")} className="cursor-pointer flex items-center justify-center w-full">Tgl Pinjam <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} /></button></th>
+                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs w-[160px]">Tgl Kembali</th>
+                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs w-[140px]"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center justify-center w-full">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
+                <th className="px-6 py-4 font-bold text-slate-700 text-center w-[130px] uppercase tracking-wider text-xs">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {paginatedData.map((item, index) => (
-                <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="px-5 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
-                  <td className="px-5 py-3 text-slate-700 font-semibold hover:text-primary cursor-pointer truncate" onClick={() => handleShowDetail(item)}>{item.namaPeminjam}</td>
-                  <td className="px-5 py-3 text-slate-600 max-w-[220px]">
-                    <span className="inline-block bg-slate-200 text-slate-700 rounded-full px-2.5 py-0.5 text-[10px] font-bold mr-1 shadow-sm border border-slate-300/60 uppercase tracking-wide">
-                      {item.totalItems || 0} Alat
+                <tr key={item.id} className={`border-b border-slate-200 transition-all duration-200 hover:bg-blue-50/50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
+                  <td className="px-6 py-4 font-mono text-xs font-bold text-slate-800 hover:text-primary cursor-pointer whitespace-nowrap text-center" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
+                  <td className="px-6 py-4 text-slate-800 font-semibold hover:text-primary cursor-pointer text-center" onClick={() => handleShowDetail(item)}>{item.namaPeminjam}</td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="inline-flex items-center justify-center bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-sm font-bold border border-blue-200 shadow-sm">
+                      {item.totalItems || 0}
                     </span>
-                    <span className="text-slate-700 text-[11px] truncate block mt-1 font-semibold tracking-wide uppercase">{item.daftarAset || "-"}</span>
                   </td>
-                  <td className="px-5 py-3 text-slate-600 text-sm max-w-[160px] truncate">{item.alasanPeminjaman || "-"}</td>
-                  <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPeminjaman)}</td>
-                  <td className="px-5 py-3 text-slate-600 text-sm">{formatDateTime(item.tanggalPengembalian)}</td>
-                  <td className="px-5 py-3 text-center"><span className={`block min-w-[180px] w-full max-w-[200px] mx-auto rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${getStatusBadge(item.status)}`}>{getStatusLabel(item.status)}</span></td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center justify-center gap-1.5">
+                  <td className="px-6 py-4 text-slate-600 text-sm max-w-[180px] truncate" title={item.alasanPeminjaman}>{item.alasanPeminjaman || "-"}</td>
+                  <td className="px-6 py-4 text-slate-600 text-xs text-center whitespace-nowrap">{formatDateTime(item.tanggalPeminjaman)}</td>
+                  <td className="px-6 py-4 text-slate-600 text-xs text-center whitespace-nowrap">{formatDateTime(item.tanggalPengembalian)}</td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`inline-block rounded-full border px-3 py-1.5 text-xs font-bold tracking-wide uppercase shadow-sm transition-all ${getStatusBadge(item.status)}`}>
+                      {getStatusLabel(item.status)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-center gap-1">
                       {/* Detail */}
-                      <button onClick={() => handleShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>
+                      <button onClick={() => handleShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-2 text-blue-600 transition-all duration-150 hover:bg-blue-600 hover:text-white hover:shadow-md" title="Detail"><Info className="h-4 w-4" /></button>
                       {/* Edit */}
                       {canEdit && (item.status === "Menunggu Persetujuan" || item.status === "Sedang Dipinjam") && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
                         <button onClick={() => {
@@ -510,25 +526,25 @@ export default function PeminjamanAsetPage() {
                           } else {
                             router.push(`/aset/peminjaman/edit/${item.id}`);
                           }
-                        }} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit / Pengembalian"><Pencil className="h-4 w-4" /></button>
+                        }} className="cursor-pointer rounded-lg bg-amber-100 p-2 text-amber-600 transition-all duration-150 hover:bg-amber-600 hover:text-white hover:shadow-md" title="Edit / Pengembalian"><Pencil className="h-4 w-4" /></button>
                       )}
                       {/* Approve */}
                       {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && (
-                        <button onClick={() => setShowApproveConfirm(item)} className="cursor-pointer rounded-lg bg-emerald-100 p-1.5 text-emerald-600 transition-colors hover:bg-emerald-600 hover:text-white" title="Setujui"><Check className="h-4 w-4" /></button>
+                        <button onClick={() => { setShowApproveConfirm(item); setApproveYangMenyerahkan(item.yangMenyerahkan || ""); }} className="cursor-pointer rounded-lg bg-emerald-100 p-2 text-emerald-600 transition-all duration-150 hover:bg-emerald-600 hover:text-white hover:shadow-md" title="Setujui"><Check className="h-4 w-4" /></button>
                       )}
                       {/* Delete */}
                       {canDelete && (
-                        <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-2 text-rose-600 transition-all duration-150 hover:bg-rose-600 hover:text-white hover:shadow-md" title="Hapus"><Trash2 className="h-4 w-4" /></button>
                       )}
                     </div>
                   </td>
                 </tr>
               ))}
-              {dataList.length === 0 && (<tr><td colSpan={8} className="px-5 py-10 text-center text-slate-400">Tidak ada data peminjaman ditemukan.</td></tr>)}
+              {dataList.length === 0 && (<tr><td colSpan={8} className="px-6 py-10 text-center text-slate-400 font-medium">Tidak ada data peminjaman ditemukan.</td></tr>)}
             </tbody>
           </table>
         </div>
-        <div className="border-t border-slate-200"><Pagination /></div>
+        <Pagination />
       </div>
 
       {mounted && typeof document !== 'undefined' && createPortal(
@@ -709,25 +725,39 @@ export default function PeminjamanAsetPage() {
           {showApproveConfirm && (
             <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowApproveConfirm(null)}>
               <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6 text-center">
+                <div className="p-6">
                   <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
                     <Check className="h-6 w-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-800 mb-1">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1 text-center">
                     {showApproveConfirm.status === 'Menunggu Persetujuan' ? 'Setujui Peminjaman?' : 'Setujui Pengembalian?'}
                   </h3>
-                  <p className="text-sm text-slate-500 mb-1">
+                  <p className="text-sm text-slate-500 mb-1 text-center">
                     {showApproveConfirm.status === 'Menunggu Persetujuan' ? 'Setujui peminjaman' : 'Setujui pengembalian'} #{showApproveConfirm.kodePinjam}?
                   </p>
-                  <p className="text-sm font-semibold text-slate-700">{showApproveConfirm.namaPeminjam}</p>
-                  <p className="text-xs text-emerald-600 mt-3">
-                    {showApproveConfirm.status === 'Menunggu Persetujuan' 
-                      ? 'Status akan berubah menjadi Sedang Dipinjam.' 
+                  <p className="text-sm font-semibold text-slate-700 text-center">{showApproveConfirm.namaPeminjam}</p>
+                  <p className="text-xs text-emerald-600 mt-3 text-center">
+                    {showApproveConfirm.status === 'Menunggu Persetujuan'
+                      ? 'Status akan berubah menjadi Sedang Dipinjam.'
                       : 'Stok aset akan dikembalikan ke inventaris.'}
                   </p>
+
+                  {/* Input Yang Menyerahkan - Hanya untuk Menunggu Persetujuan */}
+                  {showApproveConfirm.status === 'Menunggu Persetujuan' && (
+                    <div className="mt-4 space-y-2">
+                      <label className="block text-sm font-medium text-slate-700">Yang Menyerahkan <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        value={approveYangMenyerahkan}
+                        onChange={(e) => setApproveYangMenyerahkan(e.target.value)}
+                        placeholder="Nama orang yang menyerahkan aset"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
-                  <button onClick={() => setShowApproveConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={() => { setShowApproveConfirm(null); setApproveYangMenyerahkan(""); }} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
                   <button onClick={handleApprove} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
                 </div>
               </div>

@@ -189,7 +189,7 @@ const Peminjaman = {
   },
 
   // APPROVE peminjaman (Menunggu Persetujuan → Sedang Dipinjam, ATAU Menunggu Verifikasi → Peminjaman Selesai)
-  approve: async (id, approvedBy) => {
+  approve: async (id, approvedBy, yangMenyerahkan = null) => {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
@@ -197,14 +197,14 @@ const Peminjaman = {
       // Cek status saat ini
       const [headers] = await connection.query("SELECT status FROM peminjaman WHERE id = ?", [id]);
       if (!headers[0]) throw new Error("Data tidak ditemukan");
-      
+
       const currentStatus = headers[0].status;
 
       if (currentStatus === 'Menunggu Persetujuan') {
-        // Approval 1: Izinkan pinjam → simpan di approved_by
+        // Approval 1: Izinkan pinjam → simpan di approved_by dan yang_menyerahkan
         await connection.query(
-          "UPDATE peminjaman SET status = 'Sedang Dipinjam', approved_by = ? WHERE id = ?",
-          [approvedBy, id]
+          "UPDATE peminjaman SET status = 'Sedang Dipinjam', approved_by = ?, yang_menyerahkan = ? WHERE id = ?",
+          [approvedBy, yangMenyerahkan || null, id]
         );
         // Tidak mengembalikan stok karena memang sedang dipinjam
       } else if (currentStatus === 'Menunggu Verifikasi') {
