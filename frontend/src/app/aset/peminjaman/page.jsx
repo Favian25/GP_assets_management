@@ -369,12 +369,12 @@ export default function PeminjamanAsetPage() {
 
     try {
       setSubmitting(true);
-      const params = {
-        approvedBy: userName,
-        yangMenyerahkan: showApproveConfirm.status === 'Menunggu Persetujuan' ? approveYangMenyerahkan : null,
-        penerimaAset: showApproveConfirm.status === 'Menunggu Verifikasi' ? approvePenerimaAset : null
-      };
-      await approvePeminjaman(showApproveConfirm.id, params);
+      await approvePeminjaman(
+        showApproveConfirm.id,
+        userName,
+        showApproveConfirm.status === 'Menunggu Persetujuan' ? approveYangMenyerahkan : null,
+        showApproveConfirm.status === 'Menunggu Verifikasi' ? approvePenerimaAset : null
+      );
 
       const message = showApproveConfirm.status === 'Menunggu Persetujuan'
         ? "Peminjaman berhasil disetujui!"
