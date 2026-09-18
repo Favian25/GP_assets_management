@@ -202,9 +202,8 @@ export default function PeminjamanAsetPage() {
 
     if (value.trim().length > 0) {
       const filtered = userList.filter(u =>
-        (u.role === 'admin' || u.role === 'supervisor') &&
-        (u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
-        u.email?.toLowerCase().includes(value.toLowerCase()))
+        u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
+        u.email?.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredUsers(filtered);
       setShowYangMenyerahkanDropdown(true);
@@ -229,9 +228,8 @@ export default function PeminjamanAsetPage() {
 
     if (value.trim().length > 0) {
       const filtered = userList.filter(u =>
-        (u.role === 'admin' || u.role === 'supervisor') &&
-        (u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
-        u.email?.toLowerCase().includes(value.toLowerCase()))
+        u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
+        u.email?.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredUsers2(filtered);
       setShowPenerimaAsetDropdown(true);
