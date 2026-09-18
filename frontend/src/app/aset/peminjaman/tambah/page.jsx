@@ -301,19 +301,23 @@ export default function TambahPeminjamanPage() {
     try {
       setSubmitting(true);
 
-      // Gunakan tanggalPeminjaman
-      const dateStr = tanggalPeminjaman;
+      // Otomatis capture current time saat simpan
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
+      const dateTimeStr = `${tanggalPeminjaman} ${hours}:${minutes}:${seconds}`;
 
       await createPeminjaman(
         {
-          nama_peminjam: namaPeminjam,
-          yang_menyerahkan: yangMenyerahkan || null,
-          tanggal_peminjaman: dateStr,
-          alasan_peminjaman: keperluanList[0].keperluan,
-          keperluan_list: keperluanList.filter((k) => k.keperluan?.trim()),
+          namaPeminjam: namaPeminjam,
+          yangMenyerahkan: yangMenyerahkan || null,
+          tanggalPeminjaman: dateTimeStr,
+          alasanPeminjaman: keperluanList[0]?.keperluan?.trim() || "",
+          keperluanList: keperluanList.filter((k) => k.keperluan?.trim()),
           items: items.map((item) => ({
-            [item.tipe === "asset" ? "asset_id" : "aksesoris_id"]: item.id,
-            jumlah: item.jumlah,
+            [item.tipe === "asset" ? "assetId" : "aksesorisId"]: item.id,
+            jumlah: parseInt(item.jumlah) || 0,
           })),
         },
         buktiFiles
@@ -626,7 +630,7 @@ export default function TambahPeminjamanPage() {
                     <div className="mt-2 pt-2 border-t border-slate-200 text-xs">
                       <p className="text-slate-600">Stok: <span className="font-semibold">{item.stok}</span></p>
                       {item.harga > 0 && (
-                        <p className="text-slate-600">Harga: <span className="font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString()}</span></p>
+                        <p className="text-slate-600">Harga: <span className="font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span></p>
                       )}
                     </div>
 
@@ -670,7 +674,7 @@ export default function TambahPeminjamanPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-slate-600">Stok: {item.stok}</span>
                       {item.harga > 0 && (
-                        <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString()}</span>
+                        <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span>
                       )}
                       <span className={`text-center inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
                         {item.kondisi}
@@ -719,7 +723,7 @@ export default function TambahPeminjamanPage() {
                       {item.harga > 0 && (
                         <div className="text-right hidden sm:block">
                           <p className="text-xs font-semibold text-emerald-600">
-                            Rp {(item.harga * item.jumlah).toLocaleString()}
+                            Rp {(item.harga * item.jumlah).toLocaleString('id-ID')}
                           </p>
                         </div>
                       )}
@@ -754,7 +758,7 @@ export default function TambahPeminjamanPage() {
                 <div className="mt-4 pt-4 border-t border-slate-200 text-right">
                   <p className="text-sm text-slate-600">Total Nilai Aset:</p>
                   <p className="text-2xl font-bold text-emerald-600">
-                    Rp {calculateTotal().toLocaleString()}
+                    Rp {calculateTotal().toLocaleString('id-ID')}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
                     Anda bertanggung jawab atas aset di atas
