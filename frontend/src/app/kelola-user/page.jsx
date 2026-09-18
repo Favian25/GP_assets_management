@@ -772,8 +772,14 @@ export default function KelolaUserPage() {
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-rose-500">*</span></label>
                       <input type="email" value={editForm.email} onChange={(e) => setEditForm(p => ({...p, email: e.target.value}))} placeholder="email@example.com"
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
+                        readOnly={!editForm.isGuest}
+                        className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors ${
+                          !editForm.isGuest
+                            ? "border-slate-300 bg-slate-100 text-slate-600 cursor-not-allowed"
+                            : "border-slate-200 text-slate-700 placeholder:text-slate-400 focus:border-primary focus:ring-primary"
+                        }`} required
                         onInvalid={(e) => e.target.setCustomValidity(e.target.validity.typeMismatch ? "Format email tidak valid" : "Email wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                      {!editForm.isGuest && <p className="mt-1 text-xs text-slate-500">👨 Regular user - Email tidak bisa diubah (linked ke pegawai)</p>}
                     </div>
                   </div>
                   <div>

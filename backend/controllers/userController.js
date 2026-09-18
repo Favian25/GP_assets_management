@@ -83,8 +83,14 @@ const userController = {
       const updateData = {};
       if (namaLengkap) updateData.nama_lengkap = namaLengkap;
 
-      // Handle email update - check if already exists (but exclude current user)
+      // Handle email update - only for guest users (pegawai_id = null)
       if (email && email !== targetUser.email) {
+        // Regular users (pegawai_id !== null) cannot change email
+        if (targetUser.pegawai_id !== null) {
+          return res.status(403).json({ success: false, message: 'Regular user tidak bisa mengubah email (linked ke pegawai)' });
+        }
+
+        // Check if email already exists (but exclude current user)
         const existingEmail = await User.findByEmail(email);
         if (existingEmail && existingEmail.id !== parseInt(id)) {
           return res.status(400).json({ success: false, message: 'Email sudah digunakan oleh user lain' });
