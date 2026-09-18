@@ -353,17 +353,28 @@ function generateLoanPDF(data) {
       </div>
       <div class="info-row">
         <span class="info-label">Status</span>
-        <span class="info-value">: <span class="status-badge" style="background:${statusStyle.bg}; color:${statusStyle.color}; border-color:${statusStyle.border};">${(data.status || '-').toUpperCase()}</span></span>
+        <span class="info-value">: ${(data.status || '-')}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Keperluan</span>
-        <span class="info-value">: ${
-          data.keperluan_list && typeof data.keperluan_list === 'string'
-            ? data.keperluan_list
-            : Array.isArray(data.keperluan_list)
-            ? data.keperluan_list.join(', ')
-            : data.alasan_peminjaman || '-'
-        }</span>
+        <span class="info-value">: ${(() => {
+          try {
+            if (!data.keperluan_list) return data.alasan_peminjaman || '-';
+            if (typeof data.keperluan_list === 'string') {
+              const parsed = JSON.parse(data.keperluan_list);
+              if (Array.isArray(parsed)) {
+                return parsed.map(k => k.keperluan || k).join(', ');
+              }
+              return data.keperluan_list;
+            }
+            if (Array.isArray(data.keperluan_list)) {
+              return data.keperluan_list.map(k => k.keperluan || k).join(', ');
+            }
+            return data.alasan_peminjaman || '-';
+          } catch (e) {
+            return data.alasan_peminjaman || '-';
+          }
+        })()}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Disetujui Oleh</span>
