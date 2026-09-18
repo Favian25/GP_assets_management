@@ -157,6 +157,13 @@ export default function EditPeminjamanPage() {
         parseBuktiImages(peminjamanData.buktiPeminjaman)
       );
 
+      // Pre-fill tanggal pengembalian if already set
+      if (peminjamanData.tanggalPengembalian) {
+        // Extract date part (YYYY-MM-DD) from datetime string
+        const dateOnly = peminjamanData.tanggalPengembalian.split(' ')[0];
+        setTanggalPengembalian(dateOnly);
+      }
+
       // Penerima Aset will be filled in the approval popup, not here
 
       // Combine all items for swap/add modal
@@ -318,12 +325,18 @@ export default function EditPeminjamanPage() {
 
     try {
       setSubmitting(true);
-      const dateStr = tanggalPengembalian;
+
+      // Auto-capture current time when submitting
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const dateTimeStr = `${tanggalPengembalian} ${hours}:${minutes}:${seconds}`;
 
       await updatePeminjaman(
         peminjamanId,
         {
-          tanggal_pengembalian: dateStr,
+          tanggal_pengembalian: dateTimeStr,
           status: "Menunggu Verifikasi",
         },
         buktiFiles
