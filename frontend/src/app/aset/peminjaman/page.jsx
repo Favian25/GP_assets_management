@@ -865,19 +865,34 @@ export default function PeminjamanAsetPage() {
 
                         {/* Dropdown Autocomplete */}
                         {showYangMenyerahkanDropdown && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto">
                             {filteredUsers.length > 0 ? (
                               filteredUsers.map((user) => (
                                 <button
                                   key={user.id}
                                   type="button"
                                   onClick={() => handleSelectYangMenyerahkan(user)}
-                                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
+                                  className="w-full px-3 py-3 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center gap-3"
                                 >
-                                  <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
-                                  <div className="text-xs text-slate-500">{user.email}</div>
-                                  <div className="text-xs text-slate-400 mt-0.5">
-                                    <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium">
+                                  <div className="flex-shrink-0">
+                                    {user.foto_profil ? (
+                                      <Image
+                                        src={`${BACKEND_URL}${user.foto_profil}`}
+                                        alt={user.nama_lengkap}
+                                        width={40}
+                                        height={40}
+                                        className="rounded-full object-cover border border-slate-200"
+                                        unoptimized
+                                      />
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center text-white font-semibold text-sm">
+                                        {user.nama_lengkap?.charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-slate-900 truncate">{user.nama_lengkap}</div>
+                                    <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium text-xs mt-1">
                                       {user.role === 'super admin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Supervisor'}
                                     </span>
                                   </div>
@@ -909,19 +924,34 @@ export default function PeminjamanAsetPage() {
 
                         {/* Dropdown Autocomplete */}
                         {showPenerimaAsetDropdown && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto">
                             {filteredUsers2.length > 0 ? (
                               filteredUsers2.map((user) => (
                                 <button
                                   key={user.id}
                                   type="button"
                                   onClick={() => handleSelectPenerimaAset(user)}
-                                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
+                                  className="w-full px-3 py-3 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center gap-3"
                                 >
-                                  <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
-                                  <div className="text-xs text-slate-500">{user.email}</div>
-                                  <div className="text-xs text-slate-400 mt-0.5">
-                                    <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium">
+                                  <div className="flex-shrink-0">
+                                    {user.foto_profil ? (
+                                      <Image
+                                        src={`${BACKEND_URL}${user.foto_profil}`}
+                                        alt={user.nama_lengkap}
+                                        width={40}
+                                        height={40}
+                                        className="rounded-full object-cover border border-slate-200"
+                                        unoptimized
+                                      />
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center text-white font-semibold text-sm">
+                                        {user.nama_lengkap?.charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-slate-900 truncate">{user.nama_lengkap}</div>
+                                    <span className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium text-xs mt-1">
                                       {user.role === 'super admin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Supervisor'}
                                     </span>
                                   </div>
