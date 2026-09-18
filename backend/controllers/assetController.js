@@ -54,22 +54,22 @@ const assetController = {
   // POST /api/assets
   create: async (req, res) => {
     try {
-      const { nama_aset, kategori } = req.body;
+      const { nama_aset, kategori, jenis_aset } = req.body;
 
       // Validasi field wajib
-      if (!nama_aset || !kategori) {
+      if (!nama_aset || !kategori || !jenis_aset) {
         return res.status(400).json({
           success: false,
-          message: "Nama Aset dan Kategori wajib diisi",
+          message: "Nama Aset, Kategori, dan Jenis Aset wajib diisi",
         });
       }
 
       // Ambil kode_singkat dari kategori
       const categoryData = await Category.findByNama(kategori);
-      const kodeSingkat = categoryData ? categoryData.kode_singkat : "UMUM";
+      const kodeSingkat = categoryData ? categoryData.kode_singkat : "GEN";
 
-      // Auto-generate kode_aset
-      const generatedKode = await Asset.getNextKodeAset(kodeSingkat);
+      // Auto-generate kode_aset berdasarkan jenis_aset dan kategori
+      const generatedKode = await Asset.getNextKodeAset(jenis_aset, kodeSingkat);
 
       // Jika ada file upload, simpan path-nya & Optimize
       const data = { 

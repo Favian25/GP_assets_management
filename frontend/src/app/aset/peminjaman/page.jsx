@@ -138,9 +138,13 @@ export default function PeminjamanAsetPage() {
   const [showApproveConfirm, setShowApproveConfirm] = useState(null);
   const [approveYangMenyerahkan, setApproveYangMenyerahkan] = useState("");
   const [yangMenyerahkanSearch, setYangMenyerahkanSearch] = useState("");
+  const [approvePenerimaAset, setApprovePenerimaAset] = useState("");
+  const [penerimaAsetSearch, setPenerimaAsetSearch] = useState("");
   const [userList, setUserList] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [filteredUsers2, setFilteredUsers2] = useState([]);
   const [showYangMenyerahkanDropdown, setShowYangMenyerahkanDropdown] = useState(false);
+  const [showPenerimaAsetDropdown, setShowPenerimaAsetDropdown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [userRole, setUserRole] = useState("user");
   const [userName, setUserName] = useState("");
@@ -215,6 +219,32 @@ export default function PeminjamanAsetPage() {
     setYangMenyerahkanSearch(user.nama_lengkap);
     setShowYangMenyerahkanDropdown(false);
     setFilteredUsers([]);
+  };
+
+  // Handle Penerima Aset search
+  const handlePenerimaAsetSearch = (value) => {
+    setPenerimaAsetSearch(value);
+    setApprovePenerimaAset(value);
+
+    if (value.trim().length > 0) {
+      const filtered = userList.filter(u =>
+        u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
+        u.email?.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredUsers2(filtered);
+      setShowPenerimaAsetDropdown(true);
+    } else {
+      setFilteredUsers2([]);
+      setShowPenerimaAsetDropdown(false);
+    }
+  };
+
+  // Handle select Penerima Aset
+  const handleSelectPenerimaAset = (user) => {
+    setApprovePenerimaAset(user.nama_lengkap);
+    setPenerimaAsetSearch(user.nama_lengkap);
+    setShowPenerimaAsetDropdown(false);
+    setFilteredUsers2([]);
   };
 
   const handleDownloadPDF = async (peminjamanId) => {
@@ -322,16 +352,38 @@ export default function PeminjamanAsetPage() {
 
   const handleApprove = async () => {
     if (!showApproveConfirm) return;
+
+    // Validation for Menunggu Persetujuan
     if (showApproveConfirm.status === 'Menunggu Persetujuan' && !approveYangMenyerahkan.trim()) {
       showToast("Yang Menyerahkan harus diisi", "error");
       return;
     }
+
+    // Validation for Menunggu Verifikasi
+    if (showApproveConfirm.status === 'Menunggu Verifikasi' && !approvePenerimaAset.trim()) {
+      showToast("Penerima Aset harus diisi", "error");
+      return;
+    }
+
     try {
       setSubmitting(true);
-      await approvePeminjaman(showApproveConfirm.id, userName, approveYangMenyerahkan);
-      showToast("Peminjaman berhasil disetujui!");
+      const params = {
+        approvedBy: userName,
+        yangMenyerahkan: showApproveConfirm.status === 'Menunggu Persetujuan' ? approveYangMenyerahkan : null,
+        penerimaAset: showApproveConfirm.status === 'Menunggu Verifikasi' ? approvePenerimaAset : null
+      };
+      await approvePeminjaman(showApproveConfirm.id, params);
+
+      const message = showApproveConfirm.status === 'Menunggu Persetujuan'
+        ? "Peminjaman berhasil disetujui!"
+        : "Pengembalian berhasil disetujui!";
+      showToast(message);
+
       setShowApproveConfirm(null);
       setApproveYangMenyerahkan("");
+      setYangMenyerahkanSearch("");
+      setApprovePenerimaAset("");
+      setPenerimaAsetSearch("");
       fetchData();
     }
     catch (err) { showToast(err.response?.data?.message || "Gagal menyetujui data", "error"); }
@@ -575,7 +627,14 @@ export default function PeminjamanAsetPage() {
                       )}
                       {/* Approve */}
                       {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && (
-                        <button onClick={() => { setShowApproveConfirm(item); setApproveYangMenyerahkan(item.yangMenyerahkan || ""); setYangMenyerahkanSearch(item.yangMenyerahkan || ""); fetchUserList(); }} className="cursor-pointer rounded-lg bg-emerald-100 p-2 text-emerald-600 transition-all duration-150 hover:bg-emerald-600 hover:text-white hover:shadow-md" title="Setujui"><Check className="h-4 w-4" /></button>
+                        <button onClick={() => {
+                          setShowApproveConfirm(item);
+                          setApproveYangMenyerahkan(item.yangMenyerahkan || "");
+                          setYangMenyerahkanSearch(item.yangMenyerahkan || "");
+                          setApprovePenerimaAset(item.penerimaAset || "");
+                          setPenerimaAsetSearch(item.penerimaAset || "");
+                          fetchUserList();
+                        }} className="cursor-pointer rounded-lg bg-emerald-100 p-2 text-emerald-600 transition-all duration-150 hover:bg-emerald-600 hover:text-white hover:shadow-md" title="Setujui"><Check className="h-4 w-4" /></button>
                       )}
                       {/* Delete */}
                       {canDelete && (
@@ -811,6 +870,45 @@ export default function PeminjamanAsetPage() {
                                   key={user.id}
                                   type="button"
                                   onClick={() => handleSelectYangMenyerahkan(user)}
+                                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
+                                >
+                                  <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
+                                  <div className="text-xs text-slate-500">{user.email}</div>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-3 py-2 text-sm text-slate-500 text-center">Tidak ada user yang sesuai</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Input Penerima Aset - Hanya untuk Menunggu Verifikasi */}
+                  {showApproveConfirm.status === 'Menunggu Verifikasi' && (
+                    <div className="mt-4 space-y-2">
+                      <label className="block text-sm font-medium text-slate-700">Penerima Aset <span className="text-rose-500">*</span></label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={penerimaAsetSearch}
+                          onChange={(e) => handlePenerimaAsetSearch(e.target.value)}
+                          onFocus={() => { if (penerimaAsetSearch.trim().length > 0) setShowPenerimaAsetDropdown(true); }}
+                          onBlur={() => setTimeout(() => setShowPenerimaAsetDropdown(false), 200)}
+                          placeholder="Cari atau ketik nama..."
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+
+                        {/* Dropdown Autocomplete */}
+                        {showPenerimaAsetDropdown && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                            {filteredUsers2.length > 0 ? (
+                              filteredUsers2.map((user) => (
+                                <button
+                                  key={user.id}
+                                  type="button"
+                                  onClick={() => handleSelectPenerimaAset(user)}
                                   className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
                                 >
                                   <div className="font-medium text-slate-900">{user.nama_lengkap}</div>

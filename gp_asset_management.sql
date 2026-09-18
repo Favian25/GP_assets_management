@@ -1673,7 +1673,7 @@ VALUES (
 --
 
 CREATE TABLE `categories` (
-    `id` int(11) NOT NULL,
+    `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `nama` varchar(100) NOT NULL,
     `kode_singkat` varchar(10) NOT NULL,
     `tipe` enum('aset', 'aksesoris') NOT NULL DEFAULT 'aset',

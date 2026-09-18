@@ -8,6 +8,7 @@ import { getAllAssets, createAsset, updateAsset, deleteAsset, searchAssets, upda
 import { getAllCategories, createCategory } from "../../lib/categoryService";
 import { getAllBrands, createBrand } from "../../lib/brandService";
 import { getUserContext } from "../../lib/authService";
+import { getAllUsers } from "../../lib/userService";
 import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Package, Camera } from "lucide-react";
 
 const getBackendURL = () => {
@@ -35,9 +36,9 @@ const jenisAsetOptions = ["Galeria Studio", "Galeria Production"];
 // Helper components (outside to prevent re-mount)
 // =====================================================
 
-function InputField({ label, required, value, onChange, placeholder, type = "text", className = "" }) {
+function InputField({ label, required, value, onChange, placeholder, type = "text", className = "", maxLength }) {
   const isDate = type === 'date' || type === 'datetime-local';
-  
+
   return (
     <div className={className}>
       <label className="mb-1.5 block text-sm font-medium text-slate-700">
@@ -49,16 +50,17 @@ function InputField({ label, required, value, onChange, placeholder, type = "tex
             {placeholder || (type === 'date' ? "dd/mm/yyyy" : "dd/mm/yyyy, --:--")}
           </span>
         )}
-        <input 
-          type={type} 
+        <input
+          type={type}
           placeholder={placeholder}
-          value={value} 
-          onChange={onChange} 
+          value={value}
+          onChange={onChange}
+          maxLength={maxLength}
           onClick={(e) => { if (isDate) { try { e.target.showPicker(); } catch(err) {} } }}
-          required={required} 
-          onInvalid={(e) => required && e.target.setCustomValidity(`${label} wajib diisi`)} 
+          required={required}
+          onInvalid={(e) => required && e.target.setCustomValidity(`${label} wajib diisi`)}
           onInput={(e) => required && e.target.setCustomValidity("")}
-          className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${isDate ? 'cursor-pointer' : ''} ${isDate && !value ? 'text-transparent' : 'text-slate-700 placeholder:text-slate-400'}`} 
+          className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${isDate ? 'cursor-pointer' : ''} ${isDate && !value ? 'text-transparent' : 'text-slate-700 placeholder:text-slate-400'}`}
         />
       </div>
     </div>
@@ -165,6 +167,112 @@ function SortIcon({ columnKey, sortConfig }) {
   );
 }
 
+function PengelolaAutocomplete({ value, onChange, allUsers, className = "" }) {
+  const [search, setSearch] = useState(value);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    setSearch(value);
+  }, [value]);
+
+  const filterUsers = (query) => {
+    if (!query.trim()) {
+      setFilteredUsers([]);
+      return;
+    }
+    const lowerQuery = query.toLowerCase();
+    const filtered = allUsers.filter(user =>
+      user.namaLengkap.toLowerCase().includes(lowerQuery)
+    ).sort((a, b) => a.namaLengkap.localeCompare(b.namaLengkap));
+    setFilteredUsers(filtered);
+  };
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    filterUsers(val);
+    setShowDropdown(true);
+  };
+
+  const handleSelectUser = (user) => {
+    setSearch(user.namaLengkap);
+    onChange({ target: { value: user.namaLengkap } });
+    setShowDropdown(false);
+    setFilteredUsers([]);
+  };
+
+  const handleClear = () => {
+    setSearch("");
+    onChange({ target: { value: "" } });
+    setShowDropdown(false);
+    setFilteredUsers([]);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
+      setShowDropdown(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={containerRef} className={className}>
+      <label className="mb-1.5 block text-sm font-medium text-slate-700">Pengelola</label>
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Cari nama pengelola..."
+          value={search}
+          onChange={handleInputChange}
+          onFocus={() => search && setShowDropdown(true)}
+          onKeyDown={handleKeyDown}
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-slate-700 placeholder:text-slate-400"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+            title="Hapus pilihan"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+        {showDropdown && filteredUsers.length > 0 && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+            {filteredUsers.map((user) => (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => handleSelectUser(user)}
+                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-primary/10 focus:bg-primary/10 focus:outline-none transition-colors first:rounded-t-lg last:rounded-b-lg border-b border-slate-100 last:border-b-0"
+              >
+                {user.namaLengkap}
+              </button>
+            ))}
+          </div>
+        )}
+        {showDropdown && search && filteredUsers.length === 0 && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-slate-200 bg-white shadow-lg px-3 py-2">
+            <p className="text-xs text-slate-500 text-center">Tidak ada pengelola yang sesuai</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // =====================================================
 // Main Page Component
 // =====================================================
@@ -177,6 +285,7 @@ export default function DaftarAsetPage() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [kondisiFilter, setKondisiFilter] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showDetail, setShowDetail] = useState(null);
   const [showEdit, setShowEdit] = useState(null);
@@ -196,6 +305,7 @@ export default function DaftarAsetPage() {
   const [userRole, setUserRole] = useState("user");
   const [kategoriList, setKategoriList] = useState([]);
   const [merekList, setMerekList] = useState([]);
+  const [usersList, setUsersList] = useState([]);
 
   const [showKatModal, setShowKatModal] = useState(false);
   const [showMerekModal, setShowMerekModal] = useState(false);
@@ -233,8 +343,10 @@ export default function DaftarAsetPage() {
     try {
       const cats = await getAllCategories();
       const brds = await getAllBrands();
+      const users = await getAllUsers();
       setKategoriList(cats.map(c => c.nama));
       setMerekList(brds.map(b => b.nama));
+      setUsersList(users);
     } catch (err) {
       console.error("Failed to load dependencies", err);
     }
@@ -281,8 +393,12 @@ export default function DaftarAsetPage() {
 
   // Filtering, Sorting & Pagination
   const filteredData = assets.filter(item => {
-    if (!kondisiFilter) return true;
-    return item.kondisi === kondisiFilter;
+    // Kondisi filter
+    if (kondisiFilter && item.kondisi !== kondisiFilter) return false;
+    // Brand/Jenis Aset filter
+    if (brandFilter === "Galeria studio" && item.jenisAset !== "Galeria Studio") return false;
+    if (brandFilter === "Galeria production" && item.jenisAset !== "Galeria Production") return false;
+    return true;
   });
 
   const sorted = [...filteredData].sort((a, b) => {
@@ -367,12 +483,12 @@ export default function DaftarAsetPage() {
   };
 
   const getKondisiBadge = (kondisi) => {
-    const s = { 
-      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600", 
-      "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600", 
+    const s = {
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600",
+      "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600",
       "Rusak Berat": "bg-rose-900 text-white border-rose-950 hover:bg-black hover:border-black",
-      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600", 
-      "Dijual": "bg-slate-100 text-slate-600 border-slate-500 hover:bg-slate-600 hover:text-white hover:border-slate-600" 
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600",
+      "Dijual": "bg-slate-100 text-slate-600 border-slate-500 hover:bg-slate-600 hover:text-white hover:border-slate-600"
     };
     return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600";
   };
@@ -424,7 +540,7 @@ export default function DaftarAsetPage() {
             </div>
           )}
           <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: e.target.value}))} />
-          <InputField label="Pengguna" placeholder="Nama pengguna" value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} className={isEdit ? "sm:col-span-2" : ""} />
+          <PengelolaAutocomplete value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} allUsers={usersList} className={isEdit ? "sm:col-span-2" : ""} />
           
           <div className="flex gap-1.5 items-end">
              <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriList} placeholder="Pilih Kategori" className="flex-1" />
@@ -437,7 +553,7 @@ export default function DaftarAsetPage() {
           </div>
 
           <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} />
-          <SelectField label="Jenis Aset" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Aset" />
+          <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" />
           <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} />
           <InputField 
             label="Harga Aset (Rp)" 
@@ -547,6 +663,19 @@ export default function DaftarAsetPage() {
           </div>
         )}
         
+        {/* Total Harga Stats */}
+        <div className="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-primary/5 to-primary/10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-xs text-slate-600 font-medium">Total Harga Aset</p>
+              <p className="text-2xl font-bold text-slate-800">{formatRupiah(filteredData.reduce((sum, item) => sum + (parseInt(item.hargaAset) || 0), 0))}</p>
+            </div>
+            <div className="text-xs text-slate-500">
+              {brandFilter ? `Filter: ${brandFilter === "Galeria studio" ? "Galeria Studio" : "Galeria Production"}` : "Semua Brand"} • {filteredData.length} aset
+            </div>
+          </div>
+        </div>
+
         {/* Toolbar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
@@ -555,8 +684,8 @@ export default function DaftarAsetPage() {
               <input type="text" placeholder="Cari nama aset..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                 className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" />
             </div>
-            <select 
-              value={kondisiFilter} 
+            <select
+              value={kondisiFilter}
               onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
               className="w-full sm:w-48 rounded-lg border-2 border-slate-200 py-2 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
             >
@@ -564,6 +693,15 @@ export default function DaftarAsetPage() {
               {kondisiOptions.map(opt => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
+            </select>
+            <select
+              value={brandFilter}
+              onChange={(e) => { setBrandFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full sm:w-48 rounded-lg border-2 border-slate-200 py-2 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
+            >
+              <option value="">Semua Brand</option>
+              <option value="Galeria studio">Galeria Studio</option>
+              <option value="Galeria production">Galeria Production</option>
             </select>
           </div>
           {["super admin", "admin"].includes(userRole) && (
@@ -581,43 +719,47 @@ export default function DaftarAsetPage() {
           <table className="w-full text-left text-sm table-fixed">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="w-[140px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center uppercase tracking-wider">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
-                <th className="w-[80px] px-3 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Gambar</th>
-                <th className="w-[190px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center uppercase tracking-wider">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
-                <th className="w-[120px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("jumlah")} className="cursor-pointer flex items-center uppercase tracking-wider">Jumlah <SortIcon columnKey="jumlah" sortConfig={sortConfig} /></button></th>
-                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center uppercase tracking-wider">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
-                <th className="w-[130px] px-5 py-3 font-bold text-slate-700"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center uppercase tracking-wider">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
-                <th className="w-[180px] px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Kondisi</th>
+                <th className="w-[140px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[100px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">Gambar</th>
+                <th className="w-[150px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[140px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("noSN")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Serial Number <SortIcon columnKey="noSN" sortConfig={sortConfig} /></button></th>
+                <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("jumlah")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Jumlah <SortIcon columnKey="jumlah" sortConfig={sortConfig} /></button></th>
+                <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
+                <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
+                <th className="w-[130px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("hargaAset")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Harga <SortIcon columnKey="hargaAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[140px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">Kondisi</th>
                 {!["user", "guest"].includes(userRole) && (
-                  <th className="w-[110px] px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
+                  <th className="w-[100px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider">Aksi</th>
                 )}
               </tr>
             </thead>
             <tbody>
               {paginatedData.map((item, index) => (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="w-[140px] px-5 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.kodeAset}</td>
-                  <td className="w-[80px] px-3 py-2 text-center">
+                  <td className="w-[140px] px-4 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => setShowDetail(item)}>{item.kodeAset}</td>
+                  <td className="w-[100px] px-3 py-3 text-center border-r border-slate-200" style={{verticalAlign: 'middle'}}>
                     {item.gambar ? (
-                      <div className="mx-auto h-9 w-9 relative cursor-pointer hover:ring-2 hover:ring-primary transition-all rounded-md overflow-hidden" onClick={() => setLightboxImg(getImageUrl(item.gambar))}>
+                      <div className="inline-block h-12 w-12 relative cursor-pointer hover:ring-2 hover:ring-primary transition-all rounded-md overflow-hidden" onClick={() => setLightboxImg(getImageUrl(item.gambar))}>
                         <Image src={getImageUrl(item.gambar)} alt="" fill unoptimized className="object-cover border border-slate-200" />
                       </div>
                     ) : (
-                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-300">
-                        <ImageIcon className="h-4 w-4" />
+                      <div className="inline-flex h-12 w-12 items-center justify-center rounded-md bg-slate-100 text-slate-300">
+                        <ImageIcon className="h-5 w-5" />
                       </div>
                     )}
                   </td>
-                  <td className="w-[190px] px-5 py-3 text-slate-600 hover:text-primary cursor-pointer truncate" onClick={() => setShowDetail(item)}>{item.namaAset}</td>
-                  <td className="w-[120px] px-5 py-3">
-                    <div className="flex flex-col">
-                      <span className="text-[13.5px] font-semibold text-emerald-600">{item.jumlah ?? "-"} Tersisa</span>
-                      <span className="text-slate-600">dari Total {item.jumlahTotal ?? item.jumlah ?? "-"}</span>
+                  <td className="w-[150px] px-4 py-3 text-xs text-slate-600 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle" onClick={() => setShowDetail(item)}>{item.namaAset}</td>
+                  <td className="w-[140px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.noSN || "-"}</td>
+                  <td className="w-[110px] px-3 py-3 text-xs border-r border-slate-200 align-middle">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold text-emerald-600">{item.jumlah ?? "-"} Tersisa</span>
+                      <span className="text-slate-500 text-[11px]">dari {item.jumlahTotal ?? item.jumlah ?? "-"}</span>
                     </div>
                   </td>
-                  <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.kategori}</td>
-                  <td className="w-[130px] px-5 py-3 text-slate-600 truncate">{item.model}</td>
-                  <td className="w-[180px] px-5 py-3 text-center">
+                  <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.kategori}</td>
+                  <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.model}</td>
+                  <td className="w-[130px] px-3 py-3 text-right text-xs font-semibold text-slate-700 border-r border-slate-200 align-middle">{formatRupiah(item.hargaAset)}</td>
+                  <td className="w-[140px] px-3 py-3 text-center border-r border-slate-200 align-middle">
                     <span
                       onClick={() => {
                         if (["super admin", "admin"].includes(userRole)) {
@@ -625,19 +767,19 @@ export default function DaftarAsetPage() {
                           setNewKondisi(item.kondisi);
                         }
                       }}
-                      className={`block w-full rounded-full border py-1 text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${["super admin", "admin"].includes(userRole) ? "cursor-pointer" : "cursor-not-allowed opacity-75"} ${getKondisiBadge(item.kondisi)}`}
+                      className={`block w-full rounded-full border py-0.5 text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${["super admin", "admin"].includes(userRole) ? "cursor-pointer" : "cursor-not-allowed opacity-75"} ${getKondisiBadge(item.kondisi)}`}
                     >
                       {item.kondisi}
                     </span>
                   </td>
                   {!["user", "guest"].includes(userRole) && (
-                    <td className="w-[110px] px-5 py-3">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-4 w-4" /></button>
+                    <td className="w-[100px] px-3 py-3 align-middle">
+                      <div className="flex items-center justify-center gap-1">
+                        <button onClick={() => setShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-3.5 w-3.5" /></button>
                         {["super admin", "admin"].includes(userRole) && (
                           <>
-                            <button onClick={() => openEdit(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-4 w-4" /></button>
-                            <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-4 w-4" /></button>
+                            <button onClick={() => openEdit(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                           </>
                         )}
                       </div>
@@ -645,7 +787,7 @@ export default function DaftarAsetPage() {
                   )}
                 </tr>
               ))}
-              {assets.length === 0 && (<tr><td colSpan={["user", "guest"].includes(userRole) ? 7 : 8} className="px-5 py-10 text-center text-slate-400">Tidak ada data aset ditemukan.</td></tr>)}
+              {assets.length === 0 && (<tr><td colSpan={["user", "guest"].includes(userRole) ? 9 : 10} className="px-5 py-10 text-center text-slate-400">Tidak ada data aset ditemukan.</td></tr>)}
             </tbody>
           </table>
         </div>
@@ -690,32 +832,38 @@ export default function DaftarAsetPage() {
                     </div>
                   )}
                   <div>
-                    <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Inventori</h4>
-                    <div className="space-y-2.5">
+                    <h4 className="mb-4 text-sm font-bold text-slate-800">Daftar Inventori</h4>
+                    <div className="grid grid-cols-2 gap-4 md:gap-6">
                       {[
                         ["Kode Aset", showDetail.kodeAset],
                         ["Nama Aset", showDetail.namaAset],
-                        ["Pengguna", showDetail.pengguna],
+                        ["Pengelola", showDetail.pengguna],
                         ["Kategori", showDetail.kategori],
                         ["Merek", showDetail.merek],
                         ["Model", showDetail.model],
-                        ["Jenis Aset", showDetail.jenisAset],
+                        ["Jenis Brand", showDetail.jenisAset],
                         ["Jumlah", `${showDetail.jumlah ?? "-"} Tersisa dari Total ${showDetail.jumlahTotal ?? showDetail.jumlah ?? "-"}`],
                         ["Harga Aset", formatRupiah(showDetail.hargaAset)],
                         ["Tanggal Pembelian", showDetail.tanggalPembelian ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(showDetail.tanggalPembelian)) : "-"],
                         ["Serial Number", showDetail.noSN],
                         ["Spesifikasi", showDetail.spesifikasi]
                       ].map(([l, v]) => (
-                        <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
+                        <div key={l} className="flex flex-col gap-1.5">
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{l}</span>
+                          <span className="text-sm font-medium text-slate-800">{v || "-"}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
                   <hr className="border-slate-300" />
                   <div>
-                    <h4 className="mb-3 text-sm font-bold text-slate-800">Lokasi Aset</h4>
-                    <div className="space-y-2.5">
+                    <h4 className="mb-4 text-sm font-bold text-slate-800">Lokasi Aset</h4>
+                    <div className="grid grid-cols-1 gap-4 md:gap-6">
                       {[["Lokasi", showDetail.lokasiAset], ["Kondisi", showDetail.kondisi], ["Keterangan", showDetail.keterangan]].map(([l, v]) => (
-                        <div key={l} className="flex items-start gap-3"><span className="w-28 shrink-0 text-sm font-semibold text-slate-600">{l}</span><span className="text-sm text-slate-800">{v || "-"}</span></div>
+                        <div key={l} className="flex flex-col gap-1.5">
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{l}</span>
+                          <span className="text-sm font-medium text-slate-800 break-words">{v || "-"}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -776,7 +924,10 @@ export default function DaftarAsetPage() {
                   <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
                   <div className="space-y-4">
                     <InputField label="Nama Kategori" required placeholder="Contoh: Kamera" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({...d, nama: e.target.value}))} />
-                    <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => setNewKatData(d => ({...d, kode_singkat: e.target.value.toUpperCase()}))} />
+                    <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => {
+                      const val = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                      setNewKatData(d => ({...d, kode_singkat: val}));
+                    }} />
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">

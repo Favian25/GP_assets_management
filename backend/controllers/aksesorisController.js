@@ -54,22 +54,22 @@ const aksesorisController = {
   // POST /api/aksesoris
   create: async (req, res) => {
     try {
-      const { nama_aksesoris, kategori } = req.body;
+      const { nama_aksesoris, kategori, jenis_aset } = req.body;
 
       // Validasi field wajib
-      if (!nama_aksesoris || !kategori) {
+      if (!nama_aksesoris || !kategori || !jenis_aset) {
         return res.status(400).json({
           success: false,
-          message: "Nama Aksesoris dan Kategori wajib diisi",
+          message: "Nama Aksesoris, Kategori, dan Jenis Aset wajib diisi",
         });
       }
 
-      // Ambil kode_singkat dari kategori (tipe aksesoris)
+      // Ambil kode_singkat dari kategori
       const categoryData = await Category.findByNama(kategori, "aksesoris");
-      const kodeSingkat = categoryData ? categoryData.kode_singkat : "UMUM";
+      const kodeSingkat = categoryData ? categoryData.kode_singkat : "GEN";
 
-      // Auto-generate kode_aksesoris
-      const generatedKode = await Aksesoris.getNextKode(kodeSingkat);
+      // Auto-generate kode_aksesoris berdasarkan jenis_aset dan kategori
+      const generatedKode = await Aksesoris.getNextKode(jenis_aset, kodeSingkat);
 
       const data = {
         ...req.body,

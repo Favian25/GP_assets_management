@@ -19,15 +19,18 @@ const Asset = {
   },
 
   // Generate kode aset berikutnya
-  getNextKodeAset: async (kodeSingkat) => {
-    const prefix = `GKM-${kodeSingkat}-`;
+  getNextKodeAset: async (jenisAset, kodeSingkatKategori) => {
+    // Determine prefix based on jenis_aset
+    const jenisKode = jenisAset === "Galeria Production" ? "PRO" : "STD";
+    const kategoriKode = kodeSingkatKategori ? kodeSingkatKategori.toUpperCase().slice(0, 4) : "GEN";
+    const prefix = `AST-${jenisKode}-${kategoriKode}-`;
     const [rows] = await db.query(
       "SELECT kode_aset FROM assets WHERE kode_aset LIKE ? ORDER BY id DESC LIMIT 1",
       [`${prefix}%`]
     );
     let nextNum = 1;
     if (rows[0] && rows[0].kode_aset) {
-      const match = rows[0].kode_aset.match(new RegExp(`GKM-${kodeSingkat}-(\\d+)`));
+      const match = rows[0].kode_aset.match(new RegExp(`AST-${jenisKode}-${kategoriKode}-(\\d+)`));
       if (match) nextNum = parseInt(match[1]) + 1;
     }
     return `${prefix}${String(nextNum).padStart(3, "0")}`;
