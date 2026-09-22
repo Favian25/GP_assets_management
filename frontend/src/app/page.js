@@ -279,50 +279,71 @@ export default function DashboardPage() {
             {/* Shine effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              {/* Compact Top Info */}
-              <div className="flex items-center justify-between text-xs mb-4">
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+            <div className="relative z-10 flex flex-col h-full">
+              {/* Top Info Bar */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
                   <span className="font-semibold text-emerald-300">Online</span>
                 </div>
-                <span className="text-slate-400">{formatLastUpdated()}</span>
+                <div className="text-right">
+                  <p className="text-xs text-slate-400">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
               </div>
 
-              {/* Main Content */}
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs text-slate-500 font-medium mb-1">Selamat {getGreeting()},</p>
-                  <h1 className="text-3xl font-bold text-white leading-tight">
-                    {userName}
-                  </h1>
-                </div>
-
-                <p className="text-slate-400 text-xs leading-relaxed font-light">
-                  Kelola aset dengan dashboard real-time terintegrasi
-                </p>
-
-                {/* Compact Status */}
-                <div className="flex gap-4 text-xs py-3 border-y border-slate-700/20">
-                  <div>
-                    <p className="text-slate-500 font-medium mb-0.5">Status</p>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                      <span className="font-semibold text-slate-200">Optimal</span>
+              {/* Main Greeting Section */}
+              <div className="mb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-white mb-0.5">
+                      Selamat {getGreeting()}
+                    </p>
+                    <h1 className="text-2xl font-bold text-white leading-snug">
+                      {userName}
+                    </h1>
+                  </div>
+                  {/* Visual Indicator */}
+                  <div className="flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-blue-500/20 border border-primary/40 flex items-center justify-center">
+                      <span className="text-3xl">
+                        {(() => {
+                          const hour = new Date().getHours();
+                          if (hour < 12) return '🌅';
+                          if (hour < 15) return '☀️';
+                          if (hour < 18) return '🌤️';
+                          return '🌙';
+                        })()}
+                      </span>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-slate-500 font-medium mb-0.5">Role</p>
-                    <span className="font-semibold text-blue-300 capitalize">{userRole || "User"}</span>
-                  </div>
                 </div>
               </div>
+
+              {/* Status Cards Row */}
+              <div className="flex gap-3 mb-4 text-xs">
+                <div className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-slate-500 font-medium mb-1">Sistem</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                    <span className="font-semibold text-slate-200">Optimal</span>
+                  </div>
+                </div>
+                <div className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-slate-500 font-medium mb-1">Role</p>
+                  <span className="font-semibold text-blue-300 capitalize">{userRole || "User"}</span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <p className="text-slate-400 text-xs mb-auto py-2">
+                Sistem manajemen aset terintegrasi siap digunakan
+              </p>
 
               {/* Button */}
               <button
                 onClick={() => fetchStats()}
                 disabled={isRefreshing}
-                className="w-full group/btn mt-4 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
+                className="w-full group/btn flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
                 {isRefreshing ? "Sync..." : "Perbarui"}
