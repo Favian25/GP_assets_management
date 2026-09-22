@@ -349,7 +349,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-        {/* Total Asset Value Card */}
+        {/* Total Asset Value Card - With Integrated Metrics */}
         <div className="lg:col-span-1 lg:order-2 rounded-3xl bg-gradient-to-br from-primary via-blue-600 to-blue-800 shadow-2xl border border-blue-500/40 p-6 text-white relative overflow-hidden group h-full hover:shadow-2xl hover:shadow-primary/30 transition-all duration-500">
           {/* Decorative background circles */}
           <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-white/15 blur-3xl group-hover:scale-125 transition-transform duration-700" />
@@ -359,25 +359,25 @@ export default function DashboardPage() {
           {/* Shine effect on hover */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
 
-          <div className="relative z-10 flex flex-col h-full justify-center">
+          <div className="relative z-10 flex flex-col h-full overflow-y-auto custom-scrollbar">
             {/* Icon & Title */}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300 shadow-lg">
-                <BarChart3 className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300 shadow-lg flex-shrink-0">
+                <BarChart3 className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">Total Nilai Aset</h2>
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold tracking-tight">Total Nilai Aset</h2>
                 <p className="text-blue-100 text-xs mt-0.5 font-medium">Keseluruhan inventori</p>
               </div>
             </div>
 
             {/* Main Value Display */}
-            <div className="space-y-4">
+            <div className="space-y-3 mb-4 pb-4 border-b border-white/20">
               <div>
-                <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-80">Nominal Keseluruhan</p>
+                <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Nominal</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold opacity-95">Rp</span>
-                  <span className="text-4xl font-black leading-none drop-shadow-lg">
+                  <span className="text-3xl font-black leading-none drop-shadow-lg">
                     {stats && stats.total
                       ? (stats.total * 5000000).toLocaleString('id-ID')
                       : '0'}
@@ -385,67 +385,43 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Divider with gradient */}
-              <div className="h-px bg-gradient-to-r from-white/10 via-white/30 to-white/10"></div>
-
               {/* Summary Info */}
-              <div className="flex items-end justify-between">
-                <div className="flex-1">
-                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Total Unit</p>
-                  <p className="text-3xl font-black">{stats?.total || 0}</p>
+              <div className="flex items-end justify-between text-sm">
+                <div>
+                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-0.5 opacity-80">Unit</p>
+                  <p className="text-2xl font-black">{stats?.total || 0}</p>
                 </div>
-                <div className="flex-1 text-right">
-                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Per Unit</p>
-                  <p className="text-xl font-black">Rp 5 Juta</p>
+                <div className="text-right">
+                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-0.5 opacity-80">Per Unit</p>
+                  <p className="text-lg font-black">Rp 5M</p>
                 </div>
+              </div>
+            </div>
+
+            {/* Integrated Metrics Grid */}
+            <div className="space-y-2">
+              <p className="text-xs text-blue-100 font-bold uppercase tracking-widest opacity-80 mb-3">Distribusi Status</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2 },
+                  { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package },
+                  { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle },
+                  { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle }
+                ].map((item) => (
+                  <div key={item.label} className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      {item.icon && <item.icon className="h-3.5 w-3.5 text-blue-200" />}
+                      <span className="text-xs text-blue-100 font-medium">{item.label}</span>
+                    </div>
+                    <p className="text-lg font-bold text-white">{item.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Key Metrics Grid - Compact */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-10">
-        {statCards.map((stat, index) => {
-          const isRestricted = ["/aset/daftar", "/aksesoris", "/reports"].some(path => stat.link.startsWith(path)) && !["super admin", "admin"].includes(userRole);
-
-          return (
-            <Link
-              key={index}
-              href={stat.link}
-              onClick={(e) => {
-                if (isRestricted) {
-                  e.preventDefault();
-                  showToast("Akses Dibatasi: Anda tidak memiliki izin untuk mengakses halaman ini.", "error");
-                }
-              }}
-              className={`group relative rounded-xl overflow-hidden bg-gradient-to-br ${stat.color} p-4 text-white shadow-md hover:shadow-lg hover:shadow-current/20 hover:-translate-y-0.5 transition-all duration-300 ${isRestricted ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-            >
-              {/* Shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-              <div className="relative z-10 flex items-start justify-between mb-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
-                  {cloneElement(stat.icon, { className: "h-5 w-5 text-white" })}
-                </div>
-                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs bg-white/10 backdrop-blur-sm">
-                  {stat.trend === 'up' && <ArrowUpRight className="h-3 w-3 text-emerald-200" />}
-                  {stat.trend === 'down' && <ArrowDownRight className="h-3 w-3 text-rose-200" />}
-                </div>
-              </div>
-
-              <div className="relative z-10">
-                <span className="text-2xl font-black text-white block leading-none mb-0.5">
-                  {stats ? stat.value : "—"}
-                </span>
-                <span className="text-xs font-medium text-white/80 block">
-                  {stat.title}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
 
 
       {/* Asset Distribution */}
