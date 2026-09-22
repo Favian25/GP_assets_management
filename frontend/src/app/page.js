@@ -282,142 +282,187 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* Premium Header - Merged Greeting + Asset Card */}
-      <div className="mb-10">
-        <div className="group relative overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
-          {/* Gradient base */}
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950" />
+      {/* Premium Header — Ucapan (kiri) + Nilai Aset (kanan) */}
+      <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* === Card Ucapan === */}
+        <div className="lg:col-span-2">
+          <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+            {/* Gradient base */}
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950" />
 
-          {/* Ambient glow — mengikuti waktu */}
-          <div className={`absolute -right-32 -top-40 h-96 w-96 rounded-full blur-3xl transition-colors duration-700 ${accentGlow}`} />
-          <div className="absolute -left-32 bottom-0 h-96 w-96 rounded-full bg-blue-600/15 blur-3xl" />
+            {/* Ambient glow — mengikuti waktu */}
+            <div className={`absolute -right-24 -top-28 h-72 w-72 rounded-full blur-3xl transition-colors duration-700 ${accentGlow}`} />
+            <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-blue-600/15 blur-3xl" />
 
-          {/* Dot pattern halus */}
-          <div
-            className="absolute inset-0 opacity-[0.05]"
-            style={{
-              backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-              backgroundSize: "22px 22px",
-            }}
-          />
+            {/* Dot pattern halus */}
+            <div
+              className="absolute inset-0 opacity-[0.05]"
+              style={{
+                backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                backgroundSize: "22px 22px",
+              }}
+            />
 
-          {/* Garis highlight atas */}
-          <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            {/* Garis highlight atas */}
+            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-          <div className="relative z-10">
-            {/* Section 1: Greeting + Time */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8 pb-8 border-b border-white/10">
-              <div className="flex items-center gap-4">
-                <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25`}>
-                  <GreetingIcon className="h-7 w-7 text-white" strokeWidth={1.75} />
+            <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
+              {/* Baris 1 — identitas + jam live */}
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25`}>
+                    <GreetingIcon className="h-7 w-7 text-white" strokeWidth={1.75} />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">
+                      {greetingLabel}
+                    </p>
+                    <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-white lg:text-4xl">
+                      {userName}
+                    </h1>
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                      Asset Management System
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">
-                    {greetingLabel}
-                  </p>
-                  <h1 className="text-3xl font-bold tracking-tight text-white">
-                    {userName}
-                  </h1>
-                </div>
-              </div>
 
-              <div className="flex gap-4">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">Waktu</p>
-                  <p className="font-mono text-base font-bold text-white">
+                {/* Jam & tanggal live */}
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-right backdrop-blur-md">
+                  <p className="font-mono text-lg font-bold leading-none tabular-nums text-white">
                     {now
                       ? now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false })
                       : "--:--"}
+                    <span className="ml-1.5 align-middle text-[10px] font-semibold tracking-wider text-slate-400">WIB</span>
                   </p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">Tanggal</p>
-                  <p className="text-sm font-semibold text-white capitalize">
+                  <p className="mt-1.5 text-[11px] font-medium capitalize text-slate-400">
                     {now
-                      ? now.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
-                      : "---"}
+                      ? now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+                      : "Memuat..."}
                   </p>
                 </div>
               </div>
-            </div>
 
-            {/* Section 2: Grid Metrics (4 columns) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-6 lg:p-8">
-              {/* Card 1: Role */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300">
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30">
-                    <User className="h-4 w-4 text-blue-300" />
-                  </div>
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest opacity-80">Role</p>
-                </div>
-                <p className="text-lg font-black text-white capitalize">{userRole || "User"}</p>
-              </div>
-
-              {/* Card 2: Total Aset */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300">
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30">
-                    <Package className="h-4 w-4 text-emerald-300" />
-                  </div>
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest opacity-80">Total Aset</p>
-                </div>
-                <p className="text-lg font-black text-white">{stats?.total || 0} Unit</p>
-              </div>
-
-              {/* Card 3: Nilai Aset */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300">
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-2 opacity-80">Nilai Aset</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-sm font-bold text-slate-300">Rp</span>
-                  <span className="text-base font-black text-white">
-                    {stats && stats.total
-                      ? (stats.total * 5000000 / 1000000000).toFixed(1)
-                      : '0'}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-400">M</span>
-                </div>
-              </div>
-
-              {/* Card 4: Per Unit */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300">
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-2 opacity-80">Per Unit</p>
-                <p className="text-lg font-black text-white">Rp 5M</p>
-              </div>
-            </div>
-
-            {/* Section 3: Distribusi Status */}
-            <div className="px-6 lg:px-8 pb-6 lg:pb-8">
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-4 opacity-80">Distribusi Status</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2, color: "emerald" },
-                  { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package, color: "blue" },
-                  { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle, color: "amber" },
-                  { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle, color: "rose" }
-                ].map((item) => {
-                  const colorBg = {
-                    emerald: "bg-emerald-500/20 ring-emerald-400/30",
-                    blue: "bg-blue-500/20 ring-blue-400/30",
-                    amber: "bg-amber-500/20 ring-amber-400/30",
-                    rose: "bg-rose-500/20 ring-rose-400/30"
-                  };
-                  const colorText = {
-                    emerald: "text-emerald-300",
-                    blue: "text-blue-300",
-                    amber: "text-amber-300",
-                    rose: "text-rose-300"
-                  };
-                  return (
-                    <div key={item.label} className="rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${colorBg[item.color]} ring-1 mb-2`}>
-                        <item.icon className={`h-4 w-4 ${colorText[item.color]}`} />
-                      </div>
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">{item.label}</p>
-                      <p className="text-xl font-black text-white">{item.value}</p>
+              {/* Baris 2 — chip info ringkasan */}
+              <div className="mt-6 flex flex-1 flex-col justify-end">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/20 ring-1 ring-blue-400/30">
+                      <User className="h-4 w-4 text-blue-300" />
                     </div>
-                  );
-                })}
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Role</p>
+                      <p className="text-sm font-semibold capitalize text-white">{userRole || "User"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/30">
+                      <Package className="h-4 w-4 text-emerald-300" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Total Aset Terdaftar</p>
+                      <p className="text-sm font-semibold text-white">{stats?.total || 0} Unit</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/20 ring-1 ring-sky-400/30">
+                      <BarChart3 className="h-4 w-4 text-sky-300" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Nilai Aset</p>
+                      <p className="text-sm font-semibold text-white">
+                        Rp {stats && stats.total ? ((stats.total * 5000000) / 1000000000).toFixed(1) : "0"} M
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status strip */}
+                <div className="mt-5 flex flex-wrap gap-2 border-t border-white/10 pt-4">
+                  {[
+                    { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2, chip: "bg-emerald-500/10 text-emerald-300 ring-emerald-400/20" },
+                    { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package, chip: "bg-blue-500/10 text-blue-300 ring-blue-400/20" },
+                    { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle, chip: "bg-amber-500/10 text-amber-300 ring-amber-400/20" },
+                    { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle, chip: "bg-rose-500/10 text-rose-300 ring-rose-400/20" }
+                  ].map((item) => (
+                    <span key={item.label} className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${item.chip}`}>
+                      <item.icon className="h-3.5 w-3.5" />
+                      {item.label}
+                      <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.value}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* === Card Total Nilai Aset === */}
+        <div className="lg:col-span-1">
+          <div className="group relative h-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-blue-600 to-blue-800 p-6 text-white shadow-xl shadow-blue-600/20 ring-1 ring-blue-400/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/30">
+            {/* Decorative background circles */}
+            <div className="absolute -right-24 -top-24 h-56 w-56 rounded-full bg-white/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+            <div className="absolute -left-20 bottom-0 h-48 w-48 rounded-full bg-blue-400/10 blur-3xl" />
+
+            {/* Shine effect on hover */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+
+            <div className="relative z-10 flex h-full flex-col">
+              {/* Icon & Title */}
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 rounded-2xl bg-white/20 p-3 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:scale-110 group-hover:bg-white/30">
+                  <BarChart3 className="h-5 w-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold tracking-tight">Total Nilai Aset</h2>
+                  <p className="mt-0.5 text-xs font-medium text-blue-100">Keseluruhan inventori</p>
+                </div>
+              </div>
+
+              {/* Nilai utama */}
+              <div className="mt-6">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 opacity-80">Nominal</p>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="text-2xl font-bold opacity-90">Rp</span>
+                  <span className="text-3xl font-black leading-none drop-shadow-lg lg:text-4xl">
+                    {stats && stats.total
+                      ? (stats.total * 5000000).toLocaleString("id-ID")
+                      : "0"}
+                  </span>
+                </div>
+                <div className="mt-4 flex items-end justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 opacity-80">Unit</p>
+                    <p className="text-xl font-black">{stats?.total || 0}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 opacity-80">Per Unit</p>
+                    <p className="text-base font-black">Rp 5M</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Distribusi */}
+              <div className="mt-auto border-t border-white/20 pt-4">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-blue-100 opacity-80">Distribusi Status</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2 },
+                    { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package },
+                    { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle },
+                    { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle }
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-xl bg-white/10 p-2.5 backdrop-blur-sm">
+                      <div className="flex items-center gap-1.5">
+                        <item.icon className="h-3.5 w-3.5 text-blue-100" />
+                        <span className="truncate text-[11px] font-medium text-blue-100">{item.label}</span>
+                      </div>
+                      <p className="mt-1 text-lg font-bold leading-none">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
