@@ -200,20 +200,22 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
                   <span className="text-[13px] whitespace-nowrap">Peminjaman Aset</span>
                 </Link>
 
-                {/* Riwayat - Visible for all roles */}
-                <Link
-                  href="/riwayat"
-                  className={`flex items-center h-10 rounded-lg transition-all duration-300 ${
-                    isActive("/riwayat")
-                      ? "bg-primary text-white"
-                      : "text-slate-400 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <div className="flex w-12 h-full items-center justify-center shrink-0">
-                    <History className="h-4 w-4" />
-                  </div>
-                  <span className="text-[13px] whitespace-nowrap">Riwayat Saya</span>
-                </Link>
+                {/* Riwayat - Hidden for super admin, admin, supervisor */}
+                {!["super admin", "admin", "supervisor"].includes(userRole) && (
+                  <Link
+                    href="/riwayat"
+                    className={`flex items-center h-10 rounded-lg transition-all duration-300 ${
+                      isActive("/riwayat")
+                        ? "bg-primary text-white"
+                        : "text-slate-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex w-12 h-full items-center justify-center shrink-0">
+                      <History className="h-4 w-4" />
+                    </div>
+                    <span className="text-[13px] whitespace-nowrap">Riwayat Saya</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

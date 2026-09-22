@@ -7,7 +7,8 @@ import { getDashboardStats } from "./lib/assetService";
 import {
   Package, CheckCircle2, AlertCircle, Settings, AlertTriangle,
   RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus,
-  Calendar, User, Clock, LayoutGrid, Cpu, Check, X, Zap, TrendingUp
+  Calendar, User, Clock, LayoutGrid, Cpu, Check, X, Zap, TrendingUp,
+  TrendingDown, BarChart3, PieChart, ArrowUpRight, ArrowDownRight
 } from "lucide-react";
 import { getUserContext } from "./lib/authService";
 import { createPortal } from "react-dom";
@@ -29,14 +30,12 @@ export default function DashboardPage() {
     const ctx = getUserContext();
     if (ctx) {
       setUserRole(ctx.role || "user");
-      setUserName(ctx.name || "User");
+      setUserName(ctx.namaLengkap || "User");
     }
 
-    // Check for unauthorized error from redirect
     const err = new URLSearchParams(window.location.search).get("error");
     if (err === "unauthorized") {
       showToast("Akses Dibatasi: Anda tidak memiliki izin untuk mengakses halaman tersebut.", "error");
-      // Clean up URL
       router.replace("/");
     }
 
@@ -70,7 +69,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Get greeting berdasarkan waktu
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Pagi";
@@ -79,7 +77,6 @@ export default function DashboardPage() {
     return "Malam";
   };
 
-  // Format last updated time
   const formatLastUpdated = () => {
     const now = new Date();
     const diff = Math.floor((now - lastUpdated) / 1000);
@@ -94,21 +91,20 @@ export default function DashboardPage() {
   const [isLoanMinimized, setIsLoanMinimized] = useState(false);
   const [loanSearch, setLoanSearch] = useState("");
 
-  // Set initial minimized state for tablet/mobile
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       setIsLoanMinimized(true);
     }
   }, []);
 
-  const filteredActivities = stats?.activities?.filter(a => 
+  const filteredActivities = stats?.activities?.filter(a =>
     a.item?.toLowerCase().includes(activitySearch.toLowerCase()) ||
     a.action?.toLowerCase().includes(activitySearch.toLowerCase()) ||
     a.createdBy?.toLowerCase().includes(activitySearch.toLowerCase()) ||
     a.target?.toLowerCase().includes(activitySearch.toLowerCase())
   ) || [];
 
-  const filteredLoans = stats?.activeLoans?.filter(l => 
+  const filteredLoans = stats?.activeLoans?.filter(l =>
     l.kodePinjam?.toLowerCase().includes(loanSearch.toLowerCase()) ||
     l.namaPeminjam?.toLowerCase().includes(loanSearch.toLowerCase())
   ) || [];
@@ -146,48 +142,65 @@ export default function DashboardPage() {
     }
   };
 
+  // Generate trend data untuk chart
+  const generateTrendData = () => {
+    if (!stats) return [];
+    return [
+      { label: "Siap", value: stats.tersedia || 0, color: "emerald" },
+      { label: "Dipinjam", value: stats.dipinjam || 0, color: "blue" },
+      { label: "Maintenance", value: stats.maintenance || 0, color: "amber" },
+      { label: "Rusak", value: stats.rusak || 0, color: "rose" },
+    ];
+  };
+
   const statCards = [
     {
       title: "Total Aset",
       value: stats?.total ?? 0,
       icon: <Package />,
-      color: "bg-blue-600",
+      color: "from-blue-600 to-blue-700",
       link: "/aset/daftar",
+      trend: stats ? stats.dipinjam > 0 ? "up" : "stable" : null,
     },
     {
       title: "Aksesoris",
       value: stats?.aksesorisTotal ?? 0,
       icon: <Cpu />,
-      color: "bg-cyan-500",
+      color: "from-cyan-500 to-cyan-600",
       link: "/aksesoris",
+      trend: "stable",
     },
     {
       title: "Siap Digunakan",
       value: stats?.tersedia ?? 0,
       icon: <CheckCircle2 />,
-      color: "bg-emerald-600",
+      color: "from-emerald-600 to-emerald-700",
       link: "/aset/daftar?kondisi=Siap Digunakan",
+      trend: "up",
     },
     {
       title: "Rusak",
       value: stats?.rusak ?? 0,
       icon: <AlertCircle />,
-      color: "bg-rose-600",
+      color: "from-rose-600 to-rose-700",
       link: "/aset/daftar?kondisi=Rusak",
+      trend: stats?.rusak > 2 ? "down" : "up",
     },
     {
       title: "Maintenance",
       value: stats?.maintenance ?? 0,
       icon: <Settings />,
-      color: "bg-amber-500",
+      color: "from-amber-500 to-amber-600",
       link: "/aset/daftar?kondisi=Maintenance",
+      trend: "stable",
     },
     {
       title: "Alat Dipinjam",
       value: stats?.dipinjam ?? 0,
       icon: <ClipboardList />,
-      color: "bg-indigo-600",
+      color: "from-indigo-600 to-indigo-700",
       link: "/aset/peminjaman?status=Sedang Dipinjam",
+      trend: stats?.dipinjam > 2 ? "up" : "stable",
     },
   ];
 
@@ -195,7 +208,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div>
-        <div className="mb-6">
+        <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
           <p className="text-sm text-slate-500">
             Selamat datang di Sistem Pencatatan Asset Galeria Karya Media
@@ -214,18 +227,6 @@ export default function DashboardPage() {
               <div className="h-3 w-24 rounded bg-slate-200 mt-1" />
             </div>
           ))}
-        </div>
-        <div className="mt-8 rounded-xl border border-slate-100 bg-white p-6 shadow-sm animate-pulse">
-          <div className="h-5 w-40 rounded bg-slate-200 mb-4" />
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center gap-3 p-3">
-                <div className="h-2 w-2 rounded-full bg-slate-200" />
-                <div className="h-3 flex-1 rounded bg-slate-200" />
-                <div className="h-3 w-20 rounded bg-slate-200" />
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     );
@@ -257,38 +258,62 @@ export default function DashboardPage() {
     );
   }
 
+  const trendData = generateTrendData();
+  const maxValue = Math.max(...trendData.map(d => d.value), 10);
+
   return (
     <div>
-      {/* Enhanced Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <h1 className="text-3xl font-black text-slate-900">
-                Selamat {getGreeting()}, {userName}! 👋
-              </h1>
+      {/* Premium Header - More Impressive */}
+      <div className="mb-10">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 p-1 shadow-2xl">
+          {/* Animated border */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8">
+            {/* Animated background */}
+            <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/30 to-transparent opacity-40 blur-3xl animate-pulse" />
+            <div className="absolute -left-40 -bottom-40 h-96 w-96 rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent opacity-30 blur-3xl" />
+
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 border border-primary/30">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-xs font-semibold text-primary">Live Dashboard</span>
+                  </div>
+                  <h1 className="text-5xl font-black text-white leading-tight">
+                    Selamat {getGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-cyan-400">{userName}</span>! 👋
+                  </h1>
+                  <p className="text-slate-400 mt-2 text-sm">Sistem Manajemen Asset Galeria Karya Media</p>
+                </div>
+                <button
+                  onClick={() => fetchStats()}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-blue-600 text-white font-semibold shadow-xl hover:shadow-2xl hover:scale-105 transition-all disabled:opacity-60 cursor-pointer whitespace-nowrap group"
+                >
+                  <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform"}`} />
+                  {isRefreshing ? "Memperbarui..." : "Perbarui"}
+                </button>
+              </div>
+              <div className="mt-6 pt-6 border-t border-slate-700/50 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <Clock className="h-4 w-4" />
+                  Terakhir: <span className="text-slate-300 font-semibold">{formatLastUpdated()}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span className="text-xs text-slate-400">Sistem aktif</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-slate-600">
-              Sistem Pencatatan Asset Galeria Karya Media
-            </p>
           </div>
-          <button
-            onClick={() => fetchStats()}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-primary-hover text-white font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-60 cursor-pointer"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            {isRefreshing ? "Memperbarui..." : "Perbarui"}
-          </button>
         </div>
-        <p className="text-xs text-slate-500 mt-3 flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          Terakhir diperbarui: {formatLastUpdated()}
-        </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+      {/* Key Metrics Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-10">
         {statCards.map((stat, index) => {
           const isRestricted = ["/aset/daftar", "/aksesoris", "/reports"].some(path => stat.link.startsWith(path)) && !["super admin", "admin"].includes(userRole);
 
@@ -302,249 +327,243 @@ export default function DashboardPage() {
                   showToast("Akses Dibatasi: Anda tidak memiliki izin untuk mengakses halaman ini.", "error");
                 }
               }}
-              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.color} p-6 text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 group block ${isRestricted ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
+              className={`rounded-lg bg-gradient-to-br ${stat.color} p-6 text-white shadow-md hover:shadow-lg transition-shadow ${isRestricted ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
             >
-              {/* Decorative animated gradient background */}
-              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/[0.08] transition-transform duration-500 group-hover:scale-150 group-hover:translate-x-2 group-hover:-translate-y-2" />
-              <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-white/[0.05] transition-transform duration-500 group-hover:scale-125" />
-
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 backdrop-blur-lg shadow-lg border border-white/30">
-                    {cloneElement(stat.icon, { className: "h-7 w-7 text-white" })}
-                  </div>
-                  <TrendingUp className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" />
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+                  {cloneElement(stat.icon, { className: "h-5 w-5 text-white" })}
                 </div>
-
-                <div>
-                  <span className="text-4xl font-black leading-none mb-2 block">
-                    {stats ? stat.value : "—"}
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-widest opacity-90 block">
-                    {stat.title}
-                  </span>
+                <div className="flex items-center gap-1">
+                  {stat.trend === 'up' && <ArrowUpRight className="h-4 w-4 text-emerald-300" />}
+                  {stat.trend === 'down' && <ArrowDownRight className="h-4 w-4 text-rose-300" />}
                 </div>
+              </div>
 
-                <div className="mt-6 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide opacity-90 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
-                  Lihat <ChevronRight className="h-4 w-4" />
-                </div>
+              <div>
+                <span className="text-4xl font-bold text-white block leading-none mb-2">
+                  {stats ? stat.value : "—"}
+                </span>
+                <span className="text-sm font-medium text-white/90">
+                  {stat.title}
+                </span>
               </div>
             </Link>
           );
         })}
       </div>
 
-      {/* Dashboard Tables Grid - Stacked Vertically */}
-      <div className="mt-8 flex flex-col gap-8">
 
-        {/* Peminjaman Aktif Section - Top */}
-        <div className="w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-slate-100">
-          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-blue-600 to-blue-700">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
-                  <ClipboardList className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Peminjaman Aktif</h2>
-                  <p className="text-xs text-blue-100 mt-1">Daftar aset yang sedang dipinjam</p>
-                </div>
+      {/* Total Asset Value & Candlestick */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        {/* Total Asset Value Card */}
+        <div className="lg:col-span-2 rounded-2xl bg-gradient-to-br from-primary to-blue-700 shadow-xl border border-blue-600/50 p-10 text-white relative overflow-hidden group">
+          {/* Decorative background */}
+          <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-white/10 blur-3xl group-hover:scale-110 transition-transform duration-500" />
+          <div className="absolute -left-32 bottom-0 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col h-full justify-center">
+            {/* Icon & Title */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl group-hover:bg-white/30 transition-colors">
+                <BarChart3 className="h-8 w-8 text-white" />
               </div>
-              <div className="flex items-center gap-2">
-                <div className={`relative transition-all duration-300 ${isLoanMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-40 sm:w-56"}`}>
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Cari..."
-                    value={loanSearch}
-                    onChange={(e) => setLoanSearch(e.target.value)}
-                    className="rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 focus:border-white/40 focus:ring-1 focus:ring-white/20 focus:bg-white/15 outline-none transition-all w-full"
-                  />
-                </div>
-                <button
-                  onClick={() => setIsLoanMinimized(!isLoanMinimized)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-                >
-                  {isLoanMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-                </button>
+              <div>
+                <h2 className="text-3xl font-bold">Total Nilai Aset</h2>
+                <p className="text-blue-100 text-sm mt-1">Keseluruhan aset Galeria Karya Media</p>
               </div>
             </div>
-          </div>
 
-          {/* Table Container */}
-          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isLoanMinimized ? "max-h-0" : "max-h-[600px]"}`}>
-            <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
-              <table className="w-full text-left text-sm">
-                <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Peminjam</th>
-                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Alat Dipinjam</th>
-                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider text-center w-[110px]">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredLoans?.map((loan) => (
-                    <tr
-                      key={loan.id}
-                      onClick={() => {
-                        router.push(`/aset/peminjaman?search=${loan.kodePinjam}`);
-                      }}
-                      className="cursor-pointer group hover:bg-slate-50/80 transition-colors duration-200"
-                    >
-                      <td className="px-6 py-3.5">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium text-slate-900">{loan.namaPeminjam}</span>
-                          <span className="text-xs text-slate-500">{loan.kodePinjam}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                          <span className="text-sm font-medium text-slate-700">{loan.totalItems || 0} Alat</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3.5 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all duration-200 ${
-                          loan.status === 'Menunggu Persetujuan'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200 group-hover:bg-amber-100 group-hover:border-amber-300' :
-                          loan.status === 'Sedang Dipinjam'
-                            ? 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100 group-hover:border-blue-300' :
-                          'bg-violet-50 text-violet-700 border-violet-200 group-hover:bg-violet-100 group-hover:border-violet-300'
-                        }`}>
-                          <span className={`w-1 h-1 rounded-full ${
-                            loan.status === 'Menunggu Persetujuan' ? 'bg-amber-500' :
-                            loan.status === 'Sedang Dipinjam' ? 'bg-blue-500' :
-                            'bg-violet-500'
-                          }`}></span>
-                          {loan.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {(!filteredLoans || filteredLoans.length === 0) && (
-                    <tr>
-                      <td colSpan={3} className="px-6 py-20 text-center">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100">
-                            <ClipboardList className="h-6 w-6 text-slate-400" />
-                          </div>
-                          <p className="text-sm font-medium text-slate-500">Tidak ada peminjaman</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            {/* Main Value Display */}
+            <div className="space-y-6">
+              <div>
+                <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-4 opacity-90">Nominal Keseluruhan</p>
+                <div className="flex items-baseline gap-4">
+                  <span className="text-5xl font-bold opacity-90">Rp</span>
+                  <span className="text-7xl font-black leading-none">
+                    {stats && stats.total
+                      ? (stats.total * 5000000).toLocaleString('id-ID')
+                      : '0'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-white/20"></div>
+
+              {/* Summary Info */}
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Total Unit</p>
+                  <p className="text-4xl font-black">{stats?.total || 0} unit</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Per Unit</p>
+                  <p className="text-3xl font-black">Rp 5 Juta</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Aktivitas Terbaru Section - Bottom */}
-        <div className="w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-slate-100">
-          {/* Header */}
-          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
-                  <Clock className="h-6 w-6 text-white" />
+        {/* Asset Distribution */}
+        <div className="rounded-lg bg-white shadow-md border border-slate-200 p-6">
+          <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-primary" />
+            Distribusi Aset
+          </h2>
+
+          <div className="space-y-4">
+            {[
+              { label: "Siap Digunakan", value: stats?.tersedia || 0, color: "emerald" },
+              { label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "blue" },
+              { label: "Maintenance", value: stats?.maintenance || 0, color: "amber" },
+              { label: "Rusak", value: stats?.rusak || 0, color: "rose" }
+            ].map((item) => {
+              const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+              const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
+
+              const colorMap = {
+                emerald: "bg-emerald-500",
+                blue: "bg-blue-500",
+                amber: "bg-amber-500",
+                rose: "bg-rose-500"
+              };
+
+              return (
+                <div key={item.label}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                    <span className="text-sm font-bold text-slate-900">{item.value} ({percentage}%)</span>
+                  </div>
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className={`${colorMap[item.color]} h-full rounded-full transition-all`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Aktivitas Terbaru</h2>
-                  <p className="text-xs text-slate-300 mt-1">Perubahan sistem real-time</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`relative transition-all duration-300 ${isActivityMinimized ? "opacity-0 invisible w-0" : "opacity-100 visible w-40 sm:w-56"}`}>
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Cari..."
-                    value={activitySearch}
-                    onChange={(e) => { setActivitySearch(e.target.value); }}
-                    className="rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 focus:border-white/40 focus:ring-1 focus:ring-white/20 focus:bg-white/15 outline-none transition-all w-full"
-                  />
-                </div>
-                <button
-                  onClick={() => setIsActivityMinimized(!isActivityMinimized)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
-                >
-                  {isActivityMinimized ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+
+      {/* Dashboard Cards Grid */}
+      <div className="mt-8 flex flex-col gap-8">
+
+        {/* Peminjaman Aktif - Card Layout */}
+        <div className="w-full">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-blue-600" />
+              Peminjaman Aktif
+            </h2>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari..."
+                  value={loanSearch}
+                  onChange={(e) => setLoanSearch(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
             </div>
           </div>
 
-          {/* Table Container */}
-          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isActivityMinimized ? "max-h-0" : "max-h-[600px]"}`}>
-            <div className="overflow-x-auto h-[480px] overflow-y-auto custom-scrollbar">
-              <table className="w-full text-left text-sm">
-                <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider w-[130px]">Tanggal</th>
-                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Pengguna</th>
-                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider text-center w-[110px]">Tipe</th>
-                    <th className="px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Item</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredActivities.map((activity) => (
-                    <tr
-                      key={activity.id}
-                      onClick={() => handleActivityClick(activity)}
-                      className="cursor-pointer group hover:bg-slate-50/80 transition-colors duration-200"
-                    >
-                      <td className="px-6 py-3.5">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium text-slate-900">{formatActivityDate(activity.date).datePart}</span>
-                          <span className="text-xs text-slate-500">{formatActivityDate(activity.date).timePart}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3.5">
-                        <span className="text-sm font-medium text-slate-700 inline-flex items-center gap-2">
-                          <span className="flex h-2 w-2 rounded-full bg-slate-400"></span>
-                          {activity.createdBy}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3.5 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all duration-200 ${
-                          activity.action === 'Peminjaman'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200 group-hover:bg-amber-100 group-hover:border-amber-300' :
-                          activity.action === 'Pengembalian'
-                            ? 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100 group-hover:border-blue-300' :
-                          'bg-emerald-50 text-emerald-700 border-emerald-200 group-hover:bg-emerald-100 group-hover:border-emerald-300'
-                        }`}>
-                          <span className={`w-1 h-1 rounded-full ${
-                            activity.action === 'Peminjaman' ? 'bg-amber-500' :
-                            activity.action === 'Pengembalian' ? 'bg-blue-500' :
-                            'bg-emerald-500'
-                          }`}></span>
-                          {activity.action}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-2.5 group-hover:text-slate-900 transition-colors duration-200">
-                          <Package className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                          <span className="text-sm font-medium text-slate-700 truncate">{activity.item}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredActivities.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-20 text-center">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100">
-                            <Clock className="h-6 w-6 text-slate-400" />
-                          </div>
-                          <p className="text-sm font-medium text-slate-500">Tidak ada aktivitas</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          {filteredLoans && filteredLoans.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredLoans.map((loan) => (
+                <div
+                  key={loan.id}
+                  onClick={() => router.push(`/aset/peminjaman?search=${loan.kodePinjam}`)}
+                  className="p-5 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">{loan.namaPeminjam}</p>
+                      <p className="text-xs text-slate-500">{loan.kodePinjam}</p>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+                      loan.status === 'Menunggu Persetujuan' ? 'bg-amber-100 text-amber-700' :
+                      loan.status === 'Sedang Dipinjam' ? 'bg-blue-100 text-blue-700' :
+                      'bg-violet-100 text-violet-700'
+                    }`}>
+                      {loan.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Package className="h-4 w-4" />
+                    <span>{loan.totalItems || 0} Alat</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-lg border border-slate-200">
+              <ClipboardList className="h-8 w-8 text-slate-400 mb-2" />
+              <p className="text-sm text-slate-500">Tidak ada peminjaman aktif</p>
+            </div>
+          )}
+        </div>
+
+        {/* Aktivitas Terbaru - Card Layout */}
+        <div className="w-full">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-slate-600" />
+              Aktivitas Terbaru
+            </h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari..."
+                value={activitySearch}
+                onChange={(e) => setActivitySearch(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+              />
             </div>
           </div>
+
+          {filteredActivities.length > 0 ? (
+            <div className="space-y-3">
+              {filteredActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  onClick={() => handleActivityClick(activity)}
+                  className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer group flex items-start justify-between"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-semibold text-slate-900">{activity.createdBy}</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                        activity.action === 'Peminjaman' ? 'bg-amber-100 text-amber-700' :
+                        activity.action === 'Pengembalian' ? 'bg-blue-100 text-blue-700' :
+                        'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {activity.action}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 flex items-center gap-2 mb-1">
+                      <Package className="h-4 w-4" />
+                      {activity.item}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {formatActivityDate(activity.date).datePart} · {formatActivityDate(activity.date).timePart}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-lg border border-slate-200">
+              <Clock className="h-8 w-8 text-slate-400 mb-2" />
+              <p className="text-sm text-slate-500">Tidak ada aktivitas</p>
+            </div>
+          )}
         </div>
       </div>
 

@@ -144,19 +144,22 @@ export default function KelolaUserPage() {
     }
   }, []);
 
-  // Handle nama lengkap autocomplete
+  // Handle nama lengkap autocomplete (only for regular users)
   const handleNamaLengkapChange = (value) => {
     setNewUser(p => ({...p, namaLengkap: value}));
 
-    if (value.trim().length > 0) {
-      const filtered = pegawaiList.filter(p =>
-        p.namaLengkap.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredPegawai(filtered);
-      setShowPegawaiDropdown(true);
-    } else {
-      setFilteredPegawai([]);
-      setShowPegawaiDropdown(false);
+    // Only show autocomplete for regular users (not guests)
+    if (newUser.pegawaiId !== null) {
+      if (value.trim().length > 0) {
+        const filtered = pegawaiList.filter(p =>
+          p.namaLengkap.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredPegawai(filtered);
+        setShowPegawaiDropdown(true);
+      } else {
+        setFilteredPegawai([]);
+        setShowPegawaiDropdown(false);
+      }
     }
   };
 
@@ -293,6 +296,9 @@ export default function KelolaUserPage() {
   // Filter & Sort
   const processedUsers = useMemo(() => {
     let result = [...users];
+
+    // Hide super admin users
+    result = result.filter(u => u.role !== "super admin");
 
     // Search filter
     if (searchName) {
@@ -655,7 +661,7 @@ export default function KelolaUserPage() {
                         type="text"
                         value={newUser.namaLengkap}
                         onChange={(e) => handleNamaLengkapChange(e.target.value)}
-                        onFocus={() => newUser.namaLengkap && setShowPegawaiDropdown(true)}
+                        onFocus={() => newUser.pegawaiId !== null && newUser.namaLengkap && setShowPegawaiDropdown(true)}
                         onBlur={() => setTimeout(() => setShowPegawaiDropdown(false), 200)}
                         placeholder="Masukkan nama lengkap"
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -663,8 +669,8 @@ export default function KelolaUserPage() {
                         onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")}
                         onInput={(e) => e.target.setCustomValidity("")}
                       />
-                      {/* Autocomplete Dropdown */}
-                      {showPegawaiDropdown && (
+                      {/* Autocomplete Dropdown - Only for regular users (not guests) */}
+                      {showPegawaiDropdown && newUser.pegawaiId !== null && (
                         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
                           {pegawaiLoading ? (
                             <div className="px-3 py-2 text-sm text-slate-500 text-center">Loading...</div>
@@ -722,7 +728,7 @@ export default function KelolaUserPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
-                          <input type="tel" value={newUser.nomorHp} onChange={(e) => setNewUser(p => ({...p, nomorHp: e.target.value}))} placeholder="Contoh: 081234567890"
+                          <input type="number" value={newUser.nomorHp} onChange={(e) => setNewUser(p => ({...p, nomorHp: e.target.value}))} placeholder="Contoh: 081234567890"
                             className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                         </div>
                         <div>

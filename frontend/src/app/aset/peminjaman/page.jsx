@@ -227,14 +227,14 @@ export default function PeminjamanAsetPage() {
     }
   };
 
-  // Handle Yang Menyerahkan search (hanya role supervisor, admin, super admin, exclude current user)
+  // Handle Yang Menyerahkan search (hanya role supervisor, admin, exclude current user dan super admin)
+  // Only allow dropdown selection, not freetext
   const handleYangMenyerahkanSearch = (value) => {
     setYangMenyerahkanSearch(value);
-    setApproveYangMenyerahkan(value);
 
     if (value.trim().length > 0) {
       const filtered = userList.filter(u =>
-        APPROVER_ROLES.includes((u.role || '').toLowerCase()) &&
+        ["supervisor", "admin"].includes((u.role || '').toLowerCase()) &&
         u.nama_lengkap?.toLowerCase() !== userName.toLowerCase() &&
         (u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
         u.email?.toLowerCase().includes(value.toLowerCase()))
@@ -255,14 +255,14 @@ export default function PeminjamanAsetPage() {
     setFilteredUsers([]);
   };
 
-  // Handle Penerima Aset search (hanya role supervisor, admin, super admin, exclude current user)
+  // Handle Penerima Aset search (hanya role supervisor, admin, exclude current user dan super admin)
+  // Only allow dropdown selection, not freetext
   const handlePenerimaAsetSearch = (value) => {
     setPenerimaAsetSearch(value);
-    setApprovePenerimaAset(value);
 
     if (value.trim().length > 0) {
       const filtered = userList.filter(u =>
-        APPROVER_ROLES.includes((u.role || '').toLowerCase()) &&
+        ["supervisor", "admin"].includes((u.role || '').toLowerCase()) &&
         u.nama_lengkap?.toLowerCase() !== userName.toLowerCase() &&
         (u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
         u.email?.toLowerCase().includes(value.toLowerCase()))
