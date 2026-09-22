@@ -297,6 +297,7 @@ export default function DashboardPage() {
                 <h1 className="text-4xl font-black text-white">
                   {userName}
                 </h1>
+                <p className="text-xs text-slate-500 font-medium mt-2">Asset Management System</p>
               </div>
             </div>
           </div>
