@@ -279,58 +279,60 @@ export default function DashboardPage() {
             {/* Shine effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
-            <div className="relative z-10 flex flex-col h-full">
+            <div className="relative z-10 flex flex-col h-full justify-between">
               {/* Header with Icon and Title */}
-              <div className="flex items-center gap-3 mb-5">
-                <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300 shadow-lg flex-shrink-0">
-                  <span className="text-xl block">
-                    {(() => {
-                      const hour = new Date().getHours();
-                      if (hour < 12) return '🌅';
-                      if (hour < 15) return '☀️';
-                      if (hour < 18) return '🌤️';
-                      return '🌙';
-                    })()}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-xl font-bold tracking-tight text-white">Selamat {getGreeting()}</h2>
-                  <p className="text-slate-300 text-sm mt-0.5 font-medium">{userName}</p>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="h-px bg-gradient-to-r from-white/10 via-white/30 to-white/10 mb-4"></div>
-
-              {/* Status Section */}
-              <div className="space-y-3 mb-4 pb-4 border-b border-white/20">
-                <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90">Status Sistem</p>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                  <span className="text-sm font-semibold text-white">Berjalan Optimal</span>
-                </div>
-              </div>
-
-              {/* Info Grid */}
-              <div className="space-y-2">
-                <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90 mb-3">Informasi Akun</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                    <p className="text-slate-300 text-xs font-medium mb-1">Role</p>
-                    <p className="text-base font-bold text-white capitalize">{userRole || "User"}</p>
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300 shadow-lg flex-shrink-0">
+                    <span className="text-xl block">
+                      {(() => {
+                        const hour = new Date().getHours();
+                        if (hour < 12) return '🌅';
+                        if (hour < 15) return '☀️';
+                        if (hour < 18) return '🌤️';
+                        return '🌙';
+                      })()}
+                    </span>
                   </div>
-                  <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                    <p className="text-slate-300 text-xs font-medium mb-1">Waktu</p>
-                    <p className="text-base font-bold text-white">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-bold tracking-tight text-white">Selamat {getGreeting()}</h2>
+                    <p className="text-slate-300 text-sm mt-0.5 font-medium">{userName}</p>
                   </div>
                 </div>
+
+                {/* Divider */}
+                <div className="h-px bg-gradient-to-r from-white/10 via-white/30 to-white/10 mb-4"></div>
+
+                {/* Status Section */}
+                <div className="space-y-3 mb-4 pb-4 border-b border-white/20">
+                  <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90">Status Sistem</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span className="text-sm font-semibold text-white">Berjalan Optimal</span>
+                  </div>
+                </div>
+
+                {/* Info Grid */}
+                <div className="space-y-2">
+                  <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90 mb-3">Informasi Akun</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                      <p className="text-slate-300 text-xs font-medium mb-1">Role</p>
+                      <p className="text-base font-bold text-white capitalize">{userRole || "User"}</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                      <p className="text-slate-300 text-xs font-medium mb-1">Waktu</p>
+                      <p className="text-base font-bold text-white">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Button - Push to bottom */}
+              {/* Button */}
               <button
                 onClick={() => fetchStats()}
                 disabled={isRefreshing}
-                className="mt-auto pt-4 w-full group/btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
+                className="w-full group/btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
                 {isRefreshing ? "Memperbarui..." : "Perbarui Data"}
