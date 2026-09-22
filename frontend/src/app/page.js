@@ -275,50 +275,32 @@ export default function DashboardPage() {
             <div className="absolute -left-40 -bottom-40 h-96 w-96 rounded-full bg-gradient-to-tr from-blue-500/15 to-transparent opacity-20 blur-3xl" />
 
             <div className="relative z-10 flex flex-col h-full justify-between">
-              {/* Header with Icon and Title */}
+              {/* Main Greeting Section */}
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl shadow-lg flex-shrink-0">
-                    <span className="text-xl block">
-                      {(() => {
-                        const hour = new Date().getHours();
-                        if (hour < 12) return '🌅';
-                        if (hour < 15) return '☀️';
-                        if (hour < 18) return '🌤️';
-                        return '🌙';
-                      })()}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-xl font-bold tracking-tight text-white">Selamat {getGreeting()}</h2>
-                    <p className="text-slate-300 text-sm mt-0.5 font-medium">{userName}</p>
-                  </div>
+                <div className="mb-6">
+                  <p className="text-sm text-slate-400 font-medium mb-2">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      if (hour < 12) return '🌅 Pagi';
+                      if (hour < 15) return '☀️ Siang';
+                      if (hour < 18) return '🌤️ Sore';
+                      return '🌙 Malam';
+                    })()}
+                  </p>
+                  <h1 className="text-3xl font-black text-white leading-tight mb-2">
+                    {userName}
+                  </h1>
+                  <p className="text-slate-400 text-xs">Sebagai <span className="text-blue-300 font-semibold capitalize">{userRole || "User"}</span></p>
                 </div>
 
-                {/* Divider */}
-                <div className="h-px bg-gradient-to-r from-white/10 via-white/30 to-white/10 mb-4"></div>
-
-                {/* Status Section */}
-                <div className="space-y-3 mb-4 pb-4 border-b border-white/20">
-                  <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90">Status Sistem</p>
+                {/* Status and Time inline */}
+                <div className="flex items-center justify-between py-3 px-3 rounded-lg bg-white/5 border border-white/10">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                    <span className="text-sm font-semibold text-white">Berjalan Optimal</span>
+                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                    <span className="text-xs text-slate-300">Optimal</span>
                   </div>
-                </div>
-
-                {/* Info Grid */}
-                <div className="space-y-2">
-                  <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90 mb-3">Informasi Akun</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                      <p className="text-slate-300 text-xs font-medium mb-1">Role</p>
-                      <p className="text-base font-bold text-white capitalize">{userRole || "User"}</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                      <p className="text-slate-300 text-xs font-medium mb-1">Waktu</p>
-                      <p className="text-base font-bold text-white">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
-                    </div>
+                  <div className="text-xs text-slate-400">
+                    {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
               </div>
@@ -327,9 +309,9 @@ export default function DashboardPage() {
               <button
                 onClick={() => fetchStats()}
                 disabled={isRefreshing}
-                className="w-full group/btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
               >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 {isRefreshing ? "Memperbarui..." : "Perbarui Data"}
               </button>
             </div>
