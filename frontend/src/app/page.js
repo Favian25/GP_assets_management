@@ -304,10 +304,10 @@ export default function DashboardPage() {
           {/* Garis highlight atas */}
           <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-          <div className="relative z-10 flex flex-col p-6 lg:p-8">
-            {/* Baris atas: identitas + jam live */}
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8 pb-8 border-b border-white/10">
-              <div className="flex items-start gap-4 flex-1">
+          <div className="relative z-10">
+            {/* Section 1: Greeting + Time */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8 pb-8 border-b border-white/10">
+              <div className="flex items-center gap-4">
                 <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25`}>
                   <GreetingIcon className="h-7 w-7 text-white" strokeWidth={1.75} />
                 </div>
@@ -315,104 +315,109 @@ export default function DashboardPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">
                     {greetingLabel}
                   </p>
-                  <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-white lg:text-4xl">
+                  <h1 className="text-3xl font-bold tracking-tight text-white">
                     {userName}
                   </h1>
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                    Asset Management System
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">Waktu</p>
+                  <p className="font-mono text-base font-bold text-white">
+                    {now
+                      ? now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false })
+                      : "--:--"}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">Tanggal</p>
+                  <p className="text-sm font-semibold text-white capitalize">
+                    {now
+                      ? now.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+                      : "---"}
                   </p>
                 </div>
               </div>
+            </div>
 
-              {/* Jam & tanggal live */}
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-right backdrop-blur-md shrink-0">
-                <p className="font-mono text-lg font-bold leading-none tabular-nums text-white">
-                  {now
-                    ? now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false })
-                    : "--:--"}
-                  <span className="ml-1.5 align-middle text-[10px] font-semibold tracking-wider text-slate-400">WIB</span>
-                </p>
-                <p className="mt-1.5 text-[11px] font-medium capitalize text-slate-400">
-                  {now
-                    ? now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-                    : "Memuat..."}
-                </p>
+            {/* Section 2: Grid Metrics (4 columns) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-6 lg:p-8">
+              {/* Card 1: Role */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30">
+                    <User className="h-4 w-4 text-blue-300" />
+                  </div>
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest opacity-80">Role</p>
+                </div>
+                <p className="text-lg font-black text-white capitalize">{userRole || "User"}</p>
+              </div>
+
+              {/* Card 2: Total Aset */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30">
+                    <Package className="h-4 w-4 text-emerald-300" />
+                  </div>
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest opacity-80">Total Aset</p>
+                </div>
+                <p className="text-lg font-black text-white">{stats?.total || 0} Unit</p>
+              </div>
+
+              {/* Card 3: Nilai Aset */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300">
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-2 opacity-80">Nilai Aset</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-bold text-slate-300">Rp</span>
+                  <span className="text-base font-black text-white">
+                    {stats && stats.total
+                      ? (stats.total * 5000000 / 1000000000).toFixed(1)
+                      : '0'}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-400">M</span>
+                </div>
+              </div>
+
+              {/* Card 4: Per Unit */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300">
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-2 opacity-80">Per Unit</p>
+                <p className="text-lg font-black text-white">Rp 5M</p>
               </div>
             </div>
 
-            {/* Baris bawah: dua kolom - info chips (kiri) + asset metrics (kanan) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Kolom Kiri: Info Chips */}
-              <div className="flex flex-wrap items-start gap-3">
-                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/20 ring-1 ring-blue-400/30">
-                    <User className="h-4 w-4 text-blue-300" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Role</p>
-                    <p className="text-sm font-semibold capitalize text-white">{userRole || "User"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/30">
-                    <Package className="h-4 w-4 text-emerald-300" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Total Aset Terdaftar</p>
-                    <p className="text-sm font-semibold text-white">{stats?.total || 0} Unit</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Kolom Kanan: Asset Value Metrics */}
-              <div className="space-y-4">
-                {/* Nominal Display */}
-                <div>
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-2 opacity-80">Total Nilai Aset</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-slate-300">Rp</span>
-                    <span className="text-3xl font-black text-white drop-shadow-lg">
-                      {stats && stats.total
-                        ? (stats.total * 5000000).toLocaleString('id-ID')
-                        : '0'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Unit & Per Unit Info */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">Unit</p>
-                    <p className="text-xl font-black text-white">{stats?.total || 0}</p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">Per Unit</p>
-                    <p className="text-xl font-black text-white">Rp 5M</p>
-                  </div>
-                </div>
-
-                {/* Distribusi Status */}
-                <div>
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-2 opacity-80">Distribusi Status</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2 },
-                      { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package },
-                      { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle },
-                      { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle }
-                    ].map((item) => (
-                      <div key={item.label} className="p-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/5">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          {item.icon && <item.icon className="h-3.5 w-3.5 text-slate-300" />}
-                          <span className="text-xs text-slate-300 font-medium">{item.label}</span>
-                        </div>
-                        <p className="text-sm font-bold text-white">{item.value}</p>
+            {/* Section 3: Distribusi Status */}
+            <div className="px-6 lg:px-8 pb-6 lg:pb-8">
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-4 opacity-80">Distribusi Status</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2, color: "emerald" },
+                  { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package, color: "blue" },
+                  { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle, color: "amber" },
+                  { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle, color: "rose" }
+                ].map((item) => {
+                  const colorBg = {
+                    emerald: "bg-emerald-500/20 ring-emerald-400/30",
+                    blue: "bg-blue-500/20 ring-blue-400/30",
+                    amber: "bg-amber-500/20 ring-amber-400/30",
+                    rose: "bg-rose-500/20 ring-rose-400/30"
+                  };
+                  const colorText = {
+                    emerald: "text-emerald-300",
+                    blue: "text-blue-300",
+                    amber: "text-amber-300",
+                    rose: "text-rose-300"
+                  };
+                  return (
+                    <div key={item.label} className="rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-3">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${colorBg[item.color]} ring-1 mb-2`}>
+                        <item.icon className={`h-4 w-4 ${colorText[item.color]}`} />
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">{item.label}</p>
+                      <p className="text-xl font-black text-white">{item.value}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
