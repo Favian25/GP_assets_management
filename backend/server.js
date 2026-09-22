@@ -36,12 +36,8 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      `http://${localIp}:3000`,
-      process.env.FRONTEND_URL,
-    ].filter(Boolean),
-    credentials: true,
+    origin: "*", // Allow all origins for development
+    credentials: false,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -91,6 +87,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
 });

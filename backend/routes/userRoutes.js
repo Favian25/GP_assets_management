@@ -50,7 +50,7 @@ router.get('/role/:role', verifyToken, userController.getUsersByRole);
 router.get('/active', verifyToken, userController.getActiveUsers);
 
 // GET users with pagination
-router.get('/paginated', verifyToken, requireRole('super admin', 'admin'), userController.getAllWithPagination);
+router.get('/paginated', verifyToken, requireRole('super admin', 'admin', 'supervisor'), userController.getAllWithPagination);
 
 // ===== SELF PROFILE ROUTES =====
 
@@ -60,7 +60,7 @@ router.put('/profile/me', verifyToken, upload.single('fotoProfil'), userControll
 // ===== ADMIN ROUTES =====
 
 // GET all users
-router.get('/', verifyToken, requireRole('super admin', 'admin'), userController.getAllUsers);
+router.get('/', verifyToken, requireRole('super admin', 'admin', 'supervisor'), userController.getAllUsers);
 
 // CREATE new user
 router.post('/', verifyToken, requireRole('super admin', 'admin'), userController.createUser);

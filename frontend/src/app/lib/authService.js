@@ -1,22 +1,19 @@
 import axios from "axios";
 
 const getAuthURL = () => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return `${process.env.NEXT_PUBLIC_API_URL}/auth`;
-  }
   if (typeof window !== "undefined") {
     return `http://${window.location.hostname}:5000/api/auth`;
   }
   return "http://localhost:5000/api/auth";
 };
 
-const API_URL = getAuthURL();
+const getAPI = () => getAuthURL();
 
 const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 jam dalam milidetik
 
 export const registerUser = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/register`, userData);
+    const response = await axios.post(`${getAPI()}/register`, userData);
     return response.data;
   } catch (error) {
     throw error;
@@ -25,12 +22,15 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (credentials) => {
   try {
-    const response = await axios.post(`${API_URL}/login`, credentials);
+    const url = `${getAPI()}/login`;
+    console.log("Login URL:", url);
+    const response = await axios.post(url, credentials);
     if (response.data.token) {
       setAuthToken(response.data.token, response.data.user, response.data.loginAt);
     }
     return response.data;
   } catch (error) {
+    console.error("Login request failed:", error.message, "URL:", `${getAPI()}/login`);
     throw error;
   }
 };

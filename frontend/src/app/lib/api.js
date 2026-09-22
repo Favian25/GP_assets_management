@@ -1,31 +1,30 @@
 import axios from "axios";
 
-// Axios instance dengan base URL backend
-const getBaseURL = () => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-  if (typeof window !== "undefined") {
-    return `http://${window.location.hostname}:5000/api`;
-  }
-  return "http://localhost:5000/api";
-};
-
+// Axios instance tanpa base URL - URL akan di-construct di interceptor
 const api = axios.create({
-  baseURL: getBaseURL(),
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
 });
 
-// Interceptor: inject JWT token ke setiap request
+// Interceptor: construct full URL & inject JWT token
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
+    // Construct full URL dynamically
+    const baseHost = window.location.hostname;
+    const basePort = "5000";
+    config.url = `http://${baseHost}:${basePort}/api${config.url}`;
+
+    // Inject token
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+  } else {
+    // Server side fallback
+    if (!config.url.startsWith("http")) {
+      config.url = `http://localhost:5000/api${config.url}`;
     }
   }
   return config;

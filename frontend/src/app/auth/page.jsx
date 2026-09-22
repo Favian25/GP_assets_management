@@ -27,7 +27,9 @@ export default function AuthPage() {
         router.push("/");
       }
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || "Terjadi kesalahan pada server");
+      console.error("Login error:", err);
+      const errorMessage = err.response?.data?.message || err.message || "Terjadi kesalahan pada server";
+      setErrorMsg(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -186,6 +186,8 @@ export default function PeminjamanAsetPage() {
   const [swapNewItem, setSwapNewItem] = useState(null);
   const [addNewItem, setAddNewItem] = useState(null);
   const [addNewJumlah, setAddNewJumlah] = useState(1);
+  const [yangMenyerahkanChoice, setYangMenyerahkanChoice] = useState(null); // "saya" or "orang-lain"
+  const [penerimaAsetChoice, setPenerimaAsetChoice] = useState(null); // "saya" or "orang-lain"
 
   useEffect(() => {
     setMounted(true);
@@ -210,7 +212,10 @@ export default function PeminjamanAsetPage() {
   // Fetch user list untuk Yang Menyerahkan autocomplete
   const fetchUserList = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/users`, {
+      const baseURL = typeof window !== "undefined"
+        ? `http://${window.location.hostname}:5000/api`
+        : "http://localhost:5000/api";
+      const response = await fetch(`${baseURL}/users`, {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
       if (response.ok) {
@@ -222,7 +227,7 @@ export default function PeminjamanAsetPage() {
     }
   };
 
-  // Handle Yang Menyerahkan search (hanya role supervisor, admin, super admin)
+  // Handle Yang Menyerahkan search (hanya role supervisor, admin, super admin, exclude current user)
   const handleYangMenyerahkanSearch = (value) => {
     setYangMenyerahkanSearch(value);
     setApproveYangMenyerahkan(value);
@@ -230,6 +235,7 @@ export default function PeminjamanAsetPage() {
     if (value.trim().length > 0) {
       const filtered = userList.filter(u =>
         APPROVER_ROLES.includes((u.role || '').toLowerCase()) &&
+        u.nama_lengkap?.toLowerCase() !== userName.toLowerCase() &&
         (u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
         u.email?.toLowerCase().includes(value.toLowerCase()))
       );
@@ -249,7 +255,7 @@ export default function PeminjamanAsetPage() {
     setFilteredUsers([]);
   };
 
-  // Handle Penerima Aset search (hanya role supervisor, admin, super admin)
+  // Handle Penerima Aset search (hanya role supervisor, admin, super admin, exclude current user)
   const handlePenerimaAsetSearch = (value) => {
     setPenerimaAsetSearch(value);
     setApprovePenerimaAset(value);
@@ -257,6 +263,7 @@ export default function PeminjamanAsetPage() {
     if (value.trim().length > 0) {
       const filtered = userList.filter(u =>
         APPROVER_ROLES.includes((u.role || '').toLowerCase()) &&
+        u.nama_lengkap?.toLowerCase() !== userName.toLowerCase() &&
         (u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
         u.email?.toLowerCase().includes(value.toLowerCase()))
       );
@@ -383,21 +390,37 @@ export default function PeminjamanAsetPage() {
     if (!showApproveConfirm) return;
 
     // Validation for Menunggu Persetujuan
-    if (showApproveConfirm.status === 'Menunggu Persetujuan' && !approveYangMenyerahkan.trim()) {
-      showToast("Yang Menyerahkan harus diisi", "error");
-      return;
+    if (showApproveConfirm.status === 'Menunggu Persetujuan') {
+      if (!yangMenyerahkanChoice) {
+        showToast("Pilih siapa yang menyerahkan", "error");
+        return;
+      }
+      if (yangMenyerahkanChoice === 'orang-lain' && !approveYangMenyerahkan.trim()) {
+        showToast("Yang Menyerahkan harus diisi", "error");
+        return;
+      }
     }
 
     // Validation for Menunggu Verifikasi
-    if (showApproveConfirm.status === 'Menunggu Verifikasi' && !approvePenerimaAset.trim()) {
-      showToast("Penerima Aset harus diisi", "error");
-      return;
+    if (showApproveConfirm.status === 'Menunggu Verifikasi') {
+      if (!penerimaAsetChoice) {
+        showToast("Pilih siapa yang menerima", "error");
+        return;
+      }
+      if (penerimaAsetChoice === 'orang-lain' && !approvePenerimaAset.trim()) {
+        showToast("Penerima Aset harus diisi", "error");
+        return;
+      }
     }
 
     try {
       setSubmitting(true);
-      const approveYang = showApproveConfirm.status === 'Menunggu Persetujuan' ? approveYangMenyerahkan : null;
-      const approvePenerima = showApproveConfirm.status === 'Menunggu Verifikasi' ? approvePenerimaAset : null;
+      const approveYang = showApproveConfirm.status === 'Menunggu Persetujuan'
+        ? (yangMenyerahkanChoice === 'saya' ? userName : approveYangMenyerahkan)
+        : null;
+      const approvePenerima = showApproveConfirm.status === 'Menunggu Verifikasi'
+        ? (penerimaAsetChoice === 'saya' ? userName : approvePenerimaAset)
+        : null;
       await approvePeminjaman(showApproveConfirm.id, userName, approveYang, approvePenerima);
 
       const message = showApproveConfirm.status === 'Menunggu Persetujuan'
@@ -410,6 +433,8 @@ export default function PeminjamanAsetPage() {
       setYangMenyerahkanSearch("");
       setApprovePenerimaAset("");
       setPenerimaAsetSearch("");
+      setYangMenyerahkanChoice(null);
+      setPenerimaAsetChoice(null);
       fetchData();
     }
     catch (err) { showToast(err.response?.data?.message || "Gagal menyetujui data", "error"); }
@@ -669,10 +694,12 @@ export default function PeminjamanAsetPage() {
                       {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && (
                         <button onClick={() => {
                           setShowApproveConfirm(item);
-                          setApproveYangMenyerahkan(item.yangMenyerahkan || "");
-                          setYangMenyerahkanSearch(item.yangMenyerahkan || "");
-                          setApprovePenerimaAset(item.penerimaAset || "");
-                          setPenerimaAsetSearch(item.penerimaAset || "");
+                          setApproveYangMenyerahkan("");
+                          setYangMenyerahkanSearch("");
+                          setApprovePenerimaAset("");
+                          setPenerimaAsetSearch("");
+                          setYangMenyerahkanChoice(null);
+                          setPenerimaAsetChoice(null);
                           fetchUserList();
                         }} className="cursor-pointer rounded-lg bg-emerald-100 p-1 text-emerald-600 transition-colors hover:bg-emerald-600 hover:text-white" title="Setujui"><Check className="h-3.5 w-3.5" /></button>
                       )}
@@ -922,100 +949,242 @@ export default function PeminjamanAsetPage() {
                       : 'Stok aset akan dikembalikan ke inventaris.'}
                   </p>
 
-                  {/* Input Yang Menyerahkan - Hanya untuk Menunggu Persetujuan */}
+                  {/* Radio: Siapa yang menyerahkan? - Hanya untuk Menunggu Persetujuan */}
                   {showApproveConfirm.status === 'Menunggu Persetujuan' && (
-                    <div className="mt-4 space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">Yang Menyerahkan <span className="text-rose-500">*</span></label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={yangMenyerahkanSearch}
-                          onChange={(e) => handleYangMenyerahkanSearch(e.target.value)}
-                          onFocus={() => { if (yangMenyerahkanSearch.trim().length > 0) setShowYangMenyerahkanDropdown(true); }}
-                          onBlur={() => setTimeout(() => setShowYangMenyerahkanDropdown(false), 200)}
-                          placeholder="Cari atau ketik nama..."
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        />
+                    <div className="mt-6 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-800">Siapa yang menyerahkan?</span>
+                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold uppercase tracking-wider rounded">Wajib</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setYangMenyerahkanChoice('saya')}
+                          className={`relative p-4 rounded-lg border-2 transition-all cursor-pointer text-center ${
+                            yangMenyerahkanChoice === 'saya'
+                              ? 'border-emerald-500 bg-emerald-50 shadow-md'
+                              : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            id="menyerahkan-saya"
+                            name="menyerahkan"
+                            value="saya"
+                            checked={yangMenyerahkanChoice === 'saya'}
+                            onChange={() => {}}
+                            className="sr-only"
+                          />
+                          <label htmlFor="menyerahkan-saya" className="cursor-pointer block">
+                            <span className="block text-sm font-semibold text-slate-900 mb-1">Saya Sendiri</span>
+                            <span className="block text-xs text-slate-500">{userName}</span>
+                          </label>
+                          {yangMenyerahkanChoice === 'saya' && (
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setYangMenyerahkanChoice('orang-lain')}
+                          className={`relative p-4 rounded-lg border-2 transition-all cursor-pointer text-center ${
+                            yangMenyerahkanChoice === 'orang-lain'
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            id="menyerahkan-lain"
+                            name="menyerahkan"
+                            value="orang-lain"
+                            checked={yangMenyerahkanChoice === 'orang-lain'}
+                            onChange={() => {}}
+                            className="sr-only"
+                          />
+                          <label htmlFor="menyerahkan-lain" className="cursor-pointer block">
+                            <span className="block text-sm font-semibold text-slate-900">Orang Lain</span>
+                            <span className="block text-xs text-slate-500">Cari dari daftar</span>
+                          </label>
+                          {yangMenyerahkanChoice === 'orang-lain' && (
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      </div>
 
-                        {/* Dropdown Autocomplete */}
-                        {showYangMenyerahkanDropdown && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto">
-                            {filteredUsers.length > 0 ? (
-                              filteredUsers.map((user) => (
-                                <button
-                                  key={user.id}
-                                  type="button"
-                                  onClick={() => handleSelectYangMenyerahkan(user)}
-                                  className="w-full px-3 py-3 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center gap-3"
-                                >
-                                  <div className="flex items-center justify-between mb-1">
-                                    <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
-                                    {user.role && (
-                                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getRoleBadge(user.role)}`}>
-                                        {user.role}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-slate-500">{user.email}</div>
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-3 py-2 text-sm text-slate-500 text-center">Hanya Admin & Supervisor yang tersedia</div>
+                      {/* Input Yang Menyerahkan - Tampil hanya jika pilih "Orang lain" */}
+                      {yangMenyerahkanChoice === 'orang-lain' && (
+                        <div className="space-y-3 mt-4 pt-4 border-t border-slate-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-800 mb-2">Cari Orang yang Menyerahkan</label>
+                            <p className="text-xs text-slate-500 mb-3">Masukkan nama atau email untuk mencari user</p>
+                          </div>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={yangMenyerahkanSearch}
+                              onChange={(e) => handleYangMenyerahkanSearch(e.target.value)}
+                              onFocus={() => { if (yangMenyerahkanSearch.trim().length > 0) setShowYangMenyerahkanDropdown(true); }}
+                              onBlur={() => setTimeout(() => setShowYangMenyerahkanDropdown(false), 200)}
+                              placeholder="Ketik nama atau email..."
+                              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:bg-blue-50/30 transition-all"
+                            />
+
+                            {/* Dropdown Autocomplete */}
+                            {showYangMenyerahkanDropdown && (
+                              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-56 overflow-y-auto divide-y divide-slate-100">
+                                {filteredUsers.length > 0 ? (
+                                  filteredUsers.map((user) => (
+                                    <button
+                                      key={user.id}
+                                      type="button"
+                                      onClick={() => handleSelectYangMenyerahkan(user)}
+                                      className="w-full px-4 py-3 text-left text-sm hover:bg-blue-50/50 transition-colors flex items-start justify-between gap-3 group"
+                                    >
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-slate-900 group-hover:text-blue-700">{user.nama_lengkap}</div>
+                                        <div className="text-xs text-slate-500 truncate">{user.email}</div>
+                                      </div>
+                                      {user.role && (
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border whitespace-nowrap ${getRoleBadge(user.role)}`}>
+                                          {user.role}
+                                        </span>
+                                      )}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-6 text-sm text-slate-500 text-center">Tidak ada user ditemukan</div>
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Input Penerima Aset - Hanya untuk Menunggu Verifikasi */}
+                  {/* Radio: Siapa yang menerima? - Hanya untuk Menunggu Verifikasi */}
                   {showApproveConfirm.status === 'Menunggu Verifikasi' && (
-                    <div className="mt-4 space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">Penerima Aset <span className="text-rose-500">*</span></label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={penerimaAsetSearch}
-                          onChange={(e) => handlePenerimaAsetSearch(e.target.value)}
-                          onFocus={() => { if (penerimaAsetSearch.trim().length > 0) setShowPenerimaAsetDropdown(true); }}
-                          onBlur={() => setTimeout(() => setShowPenerimaAsetDropdown(false), 200)}
-                          placeholder="Cari atau ketik nama..."
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        />
+                    <div className="mt-6 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-800">Siapa yang menerima?</span>
+                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold uppercase tracking-wider rounded">Wajib</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPenerimaAsetChoice('saya')}
+                          className={`relative p-4 rounded-lg border-2 transition-all cursor-pointer text-center ${
+                            penerimaAsetChoice === 'saya'
+                              ? 'border-emerald-500 bg-emerald-50 shadow-md'
+                              : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            id="menerima-saya"
+                            name="menerima"
+                            value="saya"
+                            checked={penerimaAsetChoice === 'saya'}
+                            onChange={() => {}}
+                            className="sr-only"
+                          />
+                          <label htmlFor="menerima-saya" className="cursor-pointer block">
+                            <span className="block text-sm font-semibold text-slate-900 mb-1">Saya Sendiri</span>
+                            <span className="block text-xs text-slate-500">{userName}</span>
+                          </label>
+                          {penerimaAsetChoice === 'saya' && (
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPenerimaAsetChoice('orang-lain')}
+                          className={`relative p-4 rounded-lg border-2 transition-all cursor-pointer text-center ${
+                            penerimaAsetChoice === 'orang-lain'
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            id="menerima-lain"
+                            name="menerima"
+                            value="orang-lain"
+                            checked={penerimaAsetChoice === 'orang-lain'}
+                            onChange={() => {}}
+                            className="sr-only"
+                          />
+                          <label htmlFor="menerima-lain" className="cursor-pointer block">
+                            <span className="block text-sm font-semibold text-slate-900">Orang Lain</span>
+                            <span className="block text-xs text-slate-500">Cari dari daftar</span>
+                          </label>
+                          {penerimaAsetChoice === 'orang-lain' && (
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      </div>
 
-                        {/* Dropdown Autocomplete */}
-                        {showPenerimaAsetDropdown && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto">
-                            {filteredUsers2.length > 0 ? (
-                              filteredUsers2.map((user) => (
-                                <button
-                                  key={user.id}
-                                  type="button"
-                                  onClick={() => handleSelectPenerimaAset(user)}
-                                  className="w-full px-3 py-3 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center gap-3"
-                                >
-                                  <div className="flex items-center justify-between mb-1">
-                                    <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
-                                    {user.role && (
-                                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getRoleBadge(user.role)}`}>
-                                        {user.role}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-slate-500">{user.email}</div>
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-3 py-2 text-sm text-slate-500 text-center">Hanya Admin & Supervisor yang tersedia</div>
+                      {/* Input Penerima Aset - Tampil hanya jika pilih "Orang lain" */}
+                      {penerimaAsetChoice === 'orang-lain' && (
+                        <div className="space-y-3 mt-4 pt-4 border-t border-slate-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-800 mb-2">Cari Orang yang Menerima</label>
+                            <p className="text-xs text-slate-500 mb-3">Masukkan nama atau email untuk mencari user</p>
+                          </div>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={penerimaAsetSearch}
+                              onChange={(e) => handlePenerimaAsetSearch(e.target.value)}
+                              onFocus={() => { if (penerimaAsetSearch.trim().length > 0) setShowPenerimaAsetDropdown(true); }}
+                              onBlur={() => setTimeout(() => setShowPenerimaAsetDropdown(false), 200)}
+                              placeholder="Ketik nama atau email..."
+                              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:bg-blue-50/30 transition-all"
+                            />
+
+                            {/* Dropdown Autocomplete */}
+                            {showPenerimaAsetDropdown && (
+                              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-56 overflow-y-auto divide-y divide-slate-100">
+                                {filteredUsers2.length > 0 ? (
+                                  filteredUsers2.map((user) => (
+                                    <button
+                                      key={user.id}
+                                      type="button"
+                                      onClick={() => handleSelectPenerimaAset(user)}
+                                      className="w-full px-4 py-3 text-left text-sm hover:bg-blue-50/50 transition-colors flex items-start justify-between gap-3 group"
+                                    >
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-slate-900 group-hover:text-blue-700">{user.nama_lengkap}</div>
+                                        <div className="text-xs text-slate-500 truncate">{user.email}</div>
+                                      </div>
+                                      {user.role && (
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border whitespace-nowrap ${getRoleBadge(user.role)}`}>
+                                          {user.role}
+                                        </span>
+                                      )}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-6 text-sm text-slate-500 text-center">Tidak ada user ditemukan</div>
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
                 <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
-                  <button onClick={() => { setShowApproveConfirm(null); setApproveYangMenyerahkan(""); setYangMenyerahkanSearch(""); setShowYangMenyerahkanDropdown(false); }} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                  <button onClick={() => { setShowApproveConfirm(null); setApproveYangMenyerahkan(""); setYangMenyerahkanSearch(""); setShowYangMenyerahkanDropdown(false); setApprovePenerimaAset(""); setPenerimaAsetSearch(""); setShowPenerimaAsetDropdown(false); setYangMenyerahkanChoice(null); setPenerimaAsetChoice(null); }} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
                   <button onClick={handleApprove} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
                 </div>
               </div>
