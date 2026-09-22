@@ -279,54 +279,53 @@ export default function DashboardPage() {
             {/* Shine effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
-            <div className="relative z-10 flex flex-col h-full">
-              {/* Header with Badge and Status */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/10 border border-primary/50 backdrop-blur-sm">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">Live</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                  <span className="text-xs font-semibold text-emerald-300">Aktif</span>
-                </div>
+            <div className="relative z-10 flex flex-col h-full justify-between">
+              {/* Minimal Top Indicator */}
+              <div className="flex items-center gap-2 mb-8">
+                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-primary to-cyan-400 animate-pulse"></div>
+                <span className="text-xs font-medium text-slate-400 tracking-wide">LIVE SYSTEM</span>
               </div>
 
-              {/* Main Greeting Section */}
-              <div className="flex-1 flex flex-col">
-                <div className="mb-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <span className="text-5xl">👋</span>
-                    <div>
-                      <p className="text-sm text-slate-400 uppercase tracking-wider font-medium mb-1">Selamat datang kembali</p>
-                      <h1 className="text-3xl font-black text-white leading-tight">
-                        {getGreeting()} <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-cyan-400">{userName}</span>
-                      </h1>
+              {/* Main Content - Centered */}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-slate-500 font-medium mb-2 tracking-tight">Selamat datang,</p>
+                  <h1 className="text-5xl font-bold text-white leading-tight">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-blue-400">{userName}</span>
+                  </h1>
+                </div>
+
+                <p className="text-slate-400 text-sm font-light leading-relaxed max-w-md">
+                  Akses sistem manajemen aset terpadu dengan dashboard real-time dan analitik mendalam
+                </p>
+              </div>
+
+              {/* Bottom Section - Status and Action */}
+              <div className="space-y-4">
+                {/* Inline Status */}
+                <div className="flex items-center gap-6 py-4 border-t border-slate-700/20">
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-1.5">Sistem</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                      <span className="text-sm font-medium text-slate-200">Optimal</span>
                     </div>
                   </div>
-                  <p className="text-slate-400 text-sm leading-relaxed">Kelola aset perusahaan dengan sistem yang terpercaya dan efisien</p>
-                </div>
-
-                {/* Stats Row */}
-                <div className="grid grid-cols-2 gap-3 py-4 mb-6 border-y border-slate-700/30">
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Status Sistem</p>
-                    <p className="text-sm font-semibold text-emerald-300">Berjalan Optimal</p>
-                  </div>
+                  <div className="flex-1 h-px bg-slate-700/30"></div>
                   <div className="text-right">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Pembaruan</p>
-                    <p className="text-sm font-semibold text-blue-300">{formatLastUpdated()}</p>
+                    <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-1.5">Sync</p>
+                    <p className="text-sm font-medium text-slate-300">{formatLastUpdated()}</p>
                   </div>
                 </div>
 
-                {/* Button */}
+                {/* Modern Button */}
                 <button
                   onClick={() => fetchStats()}
                   disabled={isRefreshing}
-                  className="mt-auto w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-gradient-to-r from-primary via-blue-600 to-cyan-600 hover:from-primary hover:via-blue-500 hover:to-cyan-500 text-white font-bold text-sm shadow-xl hover:shadow-2xl hover:shadow-primary/50 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 cursor-pointer backdrop-blur-sm group/btn"
+                  className="w-full group/btn flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-semibold text-sm backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
-                  <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
-                  {isRefreshing ? "Memproses..." : "Sinkronisasi Data"}
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
+                  {isRefreshing ? "Sync..." : "Perbarui"}
                 </button>
               </div>
             </div>
