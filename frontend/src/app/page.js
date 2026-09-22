@@ -271,33 +271,33 @@ export default function DashboardPage() {
           {/* Animated border */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary via-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8">
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-5">
             {/* Animated background */}
             <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/30 to-transparent opacity-40 blur-3xl animate-pulse" />
             <div className="absolute -left-40 -bottom-40 h-96 w-96 rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent opacity-30 blur-3xl" />
 
             <div className="relative z-10">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                  <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 border border-primary/30">
+                  <div className="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 border border-primary/30">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     <span className="text-xs font-semibold text-primary">Live Dashboard</span>
                   </div>
-                  <h1 className="text-5xl font-black text-white leading-tight">
+                  <h1 className="text-3xl font-black text-white leading-tight">
                     Selamat {getGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-cyan-400">{userName}</span>! 👋
                   </h1>
-                  <p className="text-slate-400 mt-2 text-sm">Sistem Manajemen Asset Galeria Karya Media</p>
+                  <p className="text-slate-400 mt-1 text-xs">Sistem Manajemen Asset</p>
                 </div>
                 <button
                   onClick={() => fetchStats()}
                   disabled={isRefreshing}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-blue-600 text-white font-semibold shadow-xl hover:shadow-2xl hover:scale-105 transition-all disabled:opacity-60 cursor-pointer whitespace-nowrap group"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-blue-600 text-white text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-60 cursor-pointer whitespace-nowrap group"
                 >
-                  <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform"}`} />
-                  {isRefreshing ? "Memperbarui..." : "Perbarui"}
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform"}`} />
+                  {isRefreshing ? "Perbarui..." : "Perbarui"}
                 </button>
               </div>
-              <div className="mt-6 pt-6 border-t border-slate-700/50 flex items-center justify-between">
+              <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                   <Clock className="h-4 w-4" />
                   Terakhir: <span className="text-slate-300 font-semibold">{formatLastUpdated()}</span>
@@ -315,30 +315,30 @@ export default function DashboardPage() {
       </div>
 
         {/* Total Asset Value Card */}
-        <div className="rounded-2xl bg-gradient-to-br from-primary to-blue-700 shadow-xl border border-blue-600/50 p-10 text-white relative overflow-hidden group h-full">
+        <div className="rounded-2xl bg-gradient-to-br from-primary to-blue-700 shadow-xl border border-blue-600/50 p-6 text-white relative overflow-hidden group h-full">
           {/* Decorative background */}
           <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-white/10 blur-3xl group-hover:scale-110 transition-transform duration-500" />
           <div className="absolute -left-32 bottom-0 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
 
           <div className="relative z-10 flex flex-col h-full justify-center">
             {/* Icon & Title */}
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl group-hover:bg-white/30 transition-colors">
-                <BarChart3 className="h-8 w-8 text-white" />
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl group-hover:bg-white/30 transition-colors">
+                <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold">Total Nilai Aset</h2>
-                <p className="text-blue-100 text-sm mt-1">Keseluruhan aset</p>
+                <h2 className="text-2xl font-bold">Total Nilai Aset</h2>
+                <p className="text-blue-100 text-xs mt-0.5">Keseluruhan aset</p>
               </div>
             </div>
 
             {/* Main Value Display */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
-                <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-4 opacity-90">Nominal Keseluruhan</p>
-                <div className="flex items-baseline gap-4">
-                  <span className="text-5xl font-bold opacity-90">Rp</span>
-                  <span className="text-6xl font-black leading-none">
+                <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Nominal</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold opacity-90">Rp</span>
+                  <span className="text-4xl font-black leading-none">
                     {stats && stats.total
                       ? (stats.total * 5000000).toLocaleString('id-ID')
                       : '0'}
@@ -352,12 +352,12 @@ export default function DashboardPage() {
               {/* Summary Info */}
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Total Unit</p>
-                  <p className="text-4xl font-black">{stats?.total || 0} unit</p>
+                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1 opacity-90">Unit</p>
+                  <p className="text-2xl font-black">{stats?.total || 0}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Per Unit</p>
-                  <p className="text-2xl font-black">Rp 5 Juta</p>
+                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1 opacity-90">Per Unit</p>
+                  <p className="text-lg font-black">Rp 5M</p>
                 </div>
               </div>
             </div>
