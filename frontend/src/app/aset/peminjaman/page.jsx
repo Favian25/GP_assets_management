@@ -369,7 +369,7 @@ export default function PeminjamanAsetPage() {
   const canAdd = ["super admin", "admin", "supervisor", "user"].includes(userRole);
   const canEdit = ["super admin", "admin", "supervisor", "user"].includes(userRole);
   const canDelete = userRole === "super admin";
-  const canApprove = ["admin", "supervisor"].includes(userRole);
+  const canApprove = ["super admin", "admin", "supervisor"].includes(userRole);
 
   // Actions
   const handleDelete = async () => {
@@ -939,14 +939,14 @@ export default function PeminjamanAsetPage() {
 
                         {/* Dropdown Autocomplete */}
                         {showYangMenyerahkanDropdown && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto">
                             {filteredUsers.length > 0 ? (
                               filteredUsers.map((user) => (
                                 <button
                                   key={user.id}
                                   type="button"
                                   onClick={() => handleSelectYangMenyerahkan(user)}
-                                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
+                                  className="w-full px-3 py-3 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center gap-3"
                                 >
                                   <div className="flex items-center justify-between mb-1">
                                     <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
@@ -960,7 +960,7 @@ export default function PeminjamanAsetPage() {
                                 </button>
                               ))
                             ) : (
-                              <div className="px-3 py-2 text-sm text-slate-500 text-center">Tidak ada user yang sesuai</div>
+                              <div className="px-3 py-2 text-sm text-slate-500 text-center">Hanya Admin & Supervisor yang tersedia</div>
                             )}
                           </div>
                         )}
@@ -985,14 +985,14 @@ export default function PeminjamanAsetPage() {
 
                         {/* Dropdown Autocomplete */}
                         {showPenerimaAsetDropdown && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto">
                             {filteredUsers2.length > 0 ? (
                               filteredUsers2.map((user) => (
                                 <button
                                   key={user.id}
                                   type="button"
                                   onClick={() => handleSelectPenerimaAset(user)}
-                                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
+                                  className="w-full px-3 py-3 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center gap-3"
                                 >
                                   <div className="flex items-center justify-between mb-1">
                                     <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
@@ -1006,7 +1006,7 @@ export default function PeminjamanAsetPage() {
                                 </button>
                               ))
                             ) : (
-                              <div className="px-3 py-2 text-sm text-slate-500 text-center">Tidak ada user yang sesuai</div>
+                              <div className="px-3 py-2 text-sm text-slate-500 text-center">Hanya Admin & Supervisor yang tersedia</div>
                             )}
                           </div>
                         )}
