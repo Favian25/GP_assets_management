@@ -280,48 +280,55 @@ export default function DashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
             <div className="relative z-10 flex flex-col h-full">
-              {/* Top Section - Status Badge */}
-              <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-gradient-to-r from-primary/25 to-blue-500/15 border border-primary/40 backdrop-blur-sm w-fit">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-xs font-semibold text-primary">Live Dashboard</span>
+              {/* Header with Badge and Status */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/10 border border-primary/50 backdrop-blur-sm">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">Live</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <span className="text-xs font-semibold text-emerald-300">Aktif</span>
+                </div>
               </div>
 
-              {/* Middle Section - Main Content */}
-              <div className="flex-1 flex flex-col justify-between">
-                <div>
-                  <h1 className="text-4xl font-black text-white leading-tight mb-2">
-                    Selamat {getGreeting()}! 👋
-                  </h1>
-                  <p className="text-lg text-white/90 font-semibold mb-1">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-cyan-400">{userName}</span>
-                  </p>
-                  <p className="text-slate-400 text-sm">Sistem Manajemen Asset Galeria Karya Media</p>
-                </div>
-
-                {/* Bottom Status Info */}
-                <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-700/30">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                      <span className="text-xs text-slate-400">Sistem aktif</span>
+              {/* Main Greeting Section */}
+              <div className="flex-1 flex flex-col">
+                <div className="mb-6">
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className="text-5xl">👋</span>
+                    <div>
+                      <p className="text-sm text-slate-400 uppercase tracking-wider font-medium mb-1">Selamat datang kembali</p>
+                      <h1 className="text-3xl font-black text-white leading-tight">
+                        {getGreeting()} <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-cyan-400">{userName}</span>
+                      </h1>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-slate-300 font-semibold">{formatLastUpdated()}</span>
+                  <p className="text-slate-400 text-sm leading-relaxed">Kelola aset perusahaan dengan sistem yang terpercaya dan efisien</p>
+                </div>
+
+                {/* Stats Row */}
+                <div className="grid grid-cols-2 gap-3 py-4 mb-6 border-y border-slate-700/30">
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Status Sistem</p>
+                    <p className="text-sm font-semibold text-emerald-300">Berjalan Optimal</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Pembaruan</p>
+                    <p className="text-sm font-semibold text-blue-300">{formatLastUpdated()}</p>
                   </div>
                 </div>
-              </div>
 
-              {/* Button - Bottom Right */}
-              <button
-                onClick={() => fetchStats()}
-                disabled={isRefreshing}
-                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary/80 to-blue-600/80 hover:from-primary hover:to-blue-600 text-white text-sm font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/50 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 cursor-pointer backdrop-blur-sm group/btn"
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
-                {isRefreshing ? "Perbarui..." : "Perbarui Data"}
-              </button>
+                {/* Button */}
+                <button
+                  onClick={() => fetchStats()}
+                  disabled={isRefreshing}
+                  className="mt-auto w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-gradient-to-r from-primary via-blue-600 to-cyan-600 hover:from-primary hover:via-blue-500 hover:to-cyan-500 text-white font-bold text-sm shadow-xl hover:shadow-2xl hover:shadow-primary/50 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 cursor-pointer backdrop-blur-sm group/btn"
+                >
+                  <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
+                  {isRefreshing ? "Memproses..." : "Sinkronisasi Data"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
