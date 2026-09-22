@@ -474,7 +474,7 @@ export default function DashboardPage() {
           </div>
 
           {filteredLoans && filteredLoans.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto custom-scrollbar">
               {filteredLoans.map((loan) => (
                 <div
                   key={loan.id}
@@ -529,7 +529,7 @@ export default function DashboardPage() {
           </div>
 
           {filteredActivities.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
               {filteredActivities.map((activity) => (
                 <div
                   key={activity.id}
