@@ -275,47 +275,38 @@ export default function DashboardPage() {
             <div className="absolute -left-40 -bottom-40 h-96 w-96 rounded-full bg-gradient-to-tr from-blue-500/15 to-transparent opacity-20 blur-3xl" />
 
             <div className="relative z-10 flex flex-col h-full justify-between">
-              {/* Main Greeting Section */}
-              <div>
-                <div className="mb-6">
-                  <p className="text-sm text-slate-400 font-medium mb-2">
-                    {(() => {
-                      const hour = new Date().getHours();
-                      if (hour < 12) return '🌅 Pagi';
-                      if (hour < 15) return '☀️ Siang';
-                      if (hour < 18) return '🌤️ Sore';
-                      return '🌙 Malam';
-                    })()}
-                  </p>
-                  <h1 className="text-4xl font-black text-white leading-tight mb-3">
-                    {userName}
-                  </h1>
-                  <p className="text-slate-400 text-xs">Sebagai <span className="text-blue-300 font-semibold capitalize">{userRole || "User"}</span></p>
+              {/* Main Greeting - Large & Prominent */}
+              <div className="mb-8">
+                <p className="text-sm text-slate-400 font-medium mb-3">
+                  {(() => {
+                    const hour = new Date().getHours();
+                    if (hour < 12) return '🌅 Selamat Pagi';
+                    if (hour < 15) return '☀️ Selamat Siang';
+                    if (hour < 18) return '🌤️ Selamat Sore';
+                    return '🌙 Selamat Malam';
+                  })()}
+                </p>
+                <h1 className="text-5xl font-black text-white leading-tight mb-4">
+                  {userName}
+                </h1>
+                <p className="text-slate-300 text-sm">
+                  Sebagai <span className="text-blue-300 font-semibold capitalize">{userRole || "User"}</span>
+                </p>
+              </div>
+
+              {/* Status Info - Simple */}
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                    <span className="text-sm text-slate-300">Sistem Aktif</span>
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-300">Optimal</span>
                 </div>
 
-                {/* Quick Stats Grid */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-slate-500 font-medium mb-2">Status</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                      <span className="text-sm font-semibold text-white">Optimal</span>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-slate-500 font-medium mb-2">Waktu</p>
-                    <p className="text-sm font-semibold text-white">
-                      {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-slate-500 font-medium mb-2">Total Aset</p>
-                    <p className="text-sm font-semibold text-white">{stats?.total || 0} unit</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                    <p className="text-xs text-slate-500 font-medium mb-2">Tersedia</p>
-                    <p className="text-sm font-semibold text-emerald-300">{stats?.tersedia || 0}</p>
-                  </div>
+                <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-white/5 border border-white/10">
+                  <span className="text-sm text-slate-300">Total Aset</span>
+                  <span className="text-sm font-semibold text-white">{stats?.total || 0} unit</span>
                 </div>
               </div>
 
