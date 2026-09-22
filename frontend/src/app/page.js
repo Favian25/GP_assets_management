@@ -279,53 +279,68 @@ export default function DashboardPage() {
             {/* Shine effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              {/* Minimal Top Indicator */}
-              <div className="flex items-center gap-2 mb-8">
-                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-primary to-cyan-400 animate-pulse"></div>
-                <span className="text-xs font-medium text-slate-400 tracking-wide">LIVE SYSTEM</span>
+            <div className="relative z-10 flex flex-col h-full">
+              {/* Top Status Bar */}
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 backdrop-blur">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span className="text-xs font-semibold text-emerald-300">Online</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-500 font-medium">Sinkronisasi terakhir</p>
+                  <p className="text-xs font-semibold text-slate-300">{formatLastUpdated()}</p>
+                </div>
               </div>
 
-              {/* Main Content - Centered */}
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-slate-500 font-medium mb-2 tracking-tight">Selamat datang,</p>
-                  <h1 className="text-5xl font-bold text-white leading-tight">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-blue-400">{userName}</span>
+              {/* Main Greeting - Left Aligned */}
+              <div className="flex-1 flex flex-col justify-center space-y-6">
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/10 border border-primary/30 w-fit">
+                    <span className="text-xs font-semibold text-primary uppercase tracking-widest">Selamat {getGreeting()}</span>
+                  </div>
+                  <h1 className="text-6xl font-black text-white leading-tight">
+                    {userName}
                   </h1>
+                  <div className="h-1 w-24 bg-gradient-to-r from-primary via-blue-400 to-cyan-400 rounded-full"></div>
                 </div>
 
-                <p className="text-slate-400 text-sm font-light leading-relaxed max-w-md">
-                  Akses sistem manajemen aset terpadu dengan dashboard real-time dan analitik mendalam
+                <p className="text-slate-400 text-sm leading-relaxed max-w-xl font-light">
+                  Kelola seluruh inventaris aset perusahaan secara real-time. Dashboard terpadu yang dirancang untuk efisiensi maksimal dan kontrol penuh.
                 </p>
+
+                {/* Stats Pills */}
+                <div className="flex items-center gap-4 pt-4">
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-xs text-slate-500 uppercase font-semibold tracking-wider">Status Sistem</span>
+                    <span className="text-lg font-bold text-white">Optimal</span>
+                  </div>
+                  <div className="h-12 w-px bg-slate-700/40"></div>
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-xs text-slate-500 uppercase font-semibold tracking-wider">User Role</span>
+                    <span className="text-lg font-bold text-blue-300 capitalize">{userRole || "User"}</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Bottom Section - Status and Action */}
-              <div className="space-y-4">
-                {/* Inline Status */}
-                <div className="flex items-center gap-6 py-4 border-t border-slate-700/20">
-                  <div>
-                    <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-1.5">Sistem</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                      <span className="text-sm font-medium text-slate-200">Optimal</span>
-                    </div>
-                  </div>
-                  <div className="flex-1 h-px bg-slate-700/30"></div>
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-1.5">Sync</p>
-                    <p className="text-sm font-medium text-slate-300">{formatLastUpdated()}</p>
-                  </div>
-                </div>
-
-                {/* Modern Button */}
+              {/* Action Button */}
+              <div className="pt-8 mt-auto">
                 <button
                   onClick={() => fetchStats()}
                   disabled={isRefreshing}
-                  className="w-full group/btn flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-semibold text-sm backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="w-full group/btn relative flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-sm text-white overflow-hidden transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    backdropFilter: 'blur(10px)'
+                  }}
                 >
-                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
-                  {isRefreshing ? "Sync..." : "Perbarui"}
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-emerald-500/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                  <RefreshCw className={`h-5 w-5 relative z-10 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
+                  <span className="relative z-10">
+                    {isRefreshing ? "Memperbarui Data..." : "Sinkronisasi Sekarang"}
+                  </span>
                 </button>
               </div>
             </div>
