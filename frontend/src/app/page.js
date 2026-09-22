@@ -280,30 +280,10 @@ export default function DashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
             <div className="relative z-10 flex flex-col h-full">
-              {/* Top Info Bar */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                  <span className="font-semibold text-emerald-300">Online</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-400">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              </div>
-
-              {/* Main Greeting Section */}
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-white leading-tight mb-1">
-                    Selamat {getGreeting()}
-                  </h1>
-                  <h2 className="text-lg font-bold text-white/90">
-                    {userName}
-                  </h2>
-                </div>
-                {/* Visual Indicator */}
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/30 to-blue-500/20 border border-primary/40 flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">
+              {/* Header with Icon and Title */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300 shadow-lg flex-shrink-0">
+                  <span className="text-xl block">
                     {(() => {
                       const hour = new Date().getHours();
                       if (hour < 12) return '🌅';
@@ -313,36 +293,47 @@ export default function DashboardPage() {
                     })()}
                   </span>
                 </div>
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold tracking-tight text-white">Selamat {getGreeting()}</h2>
+                  <p className="text-slate-300 text-sm mt-0.5 font-medium">{userName}</p>
+                </div>
               </div>
 
-              {/* Status Cards Row */}
-              <div className="flex gap-3 mb-4 text-xs">
-                <div className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10">
-                  <p className="text-slate-500 font-medium mb-1">Sistem</p>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                    <span className="font-semibold text-slate-200">Optimal</span>
+              {/* Divider */}
+              <div className="h-px bg-gradient-to-r from-white/10 via-white/30 to-white/10 mb-4"></div>
+
+              {/* Status Section */}
+              <div className="space-y-3 mb-4 pb-4 border-b border-white/20">
+                <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90">Status Sistem</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <span className="text-sm font-semibold text-white">Berjalan Optimal</span>
+                </div>
+              </div>
+
+              {/* Info Grid */}
+              <div className="space-y-2 mb-auto">
+                <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90 mb-3">Informasi Akun</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                    <p className="text-slate-300 text-xs font-medium mb-1">Role</p>
+                    <p className="text-base font-bold text-white capitalize">{userRole || "User"}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                    <p className="text-slate-300 text-xs font-medium mb-1">Waktu</p>
+                    <p className="text-base font-bold text-white">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
-                <div className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10">
-                  <p className="text-slate-500 font-medium mb-1">Role</p>
-                  <span className="font-semibold text-blue-300 capitalize">{userRole || "User"}</span>
-                </div>
               </div>
-
-              {/* Description */}
-              <p className="text-slate-400 text-xs mb-auto py-2">
-                Sistem manajemen aset terintegrasi siap digunakan
-              </p>
 
               {/* Button */}
               <button
                 onClick={() => fetchStats()}
                 disabled={isRefreshing}
-                className="w-full group/btn flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
+                className="mt-4 w-full group/btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
-                {isRefreshing ? "Sync..." : "Perbarui"}
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
+                {isRefreshing ? "Memperbarui..." : "Perbarui Data"}
               </button>
             </div>
           </div>
