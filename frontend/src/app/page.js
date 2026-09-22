@@ -292,33 +292,26 @@ export default function DashboardPage() {
               </div>
 
               {/* Main Greeting Section */}
-              <div className="mb-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-baseline gap-1 mb-1">
-                      <p className="text-xs text-slate-400 font-medium">Selamat</p>
-                      <h1 className="text-2xl font-bold text-white">
-                        {getGreeting()}
-                      </h1>
-                    </div>
-                    <h2 className="text-xl font-bold text-white leading-snug">
-                      {userName}
-                    </h2>
-                  </div>
-                  {/* Visual Indicator */}
-                  <div className="flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-blue-500/20 border border-primary/40 flex items-center justify-center">
-                      <span className="text-3xl">
-                        {(() => {
-                          const hour = new Date().getHours();
-                          if (hour < 12) return '🌅';
-                          if (hour < 15) return '☀️';
-                          if (hour < 18) return '🌤️';
-                          return '🌙';
-                        })()}
-                      </span>
-                    </div>
-                  </div>
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-white leading-tight mb-1">
+                    Selamat {getGreeting()}
+                  </h1>
+                  <h2 className="text-lg font-bold text-white/90">
+                    {userName}
+                  </h2>
+                </div>
+                {/* Visual Indicator */}
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/30 to-blue-500/20 border border-primary/40 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      if (hour < 12) return '🌅';
+                      if (hour < 15) return '☀️';
+                      if (hour < 18) return '🌤️';
+                      return '🌙';
+                    })()}
+                  </span>
                 </div>
               </div>
 
