@@ -22,6 +22,7 @@ const getBackendURL = () => {
 };
 const BACKEND_URL = getBackendURL();
 const statusOptions = ["Menunggu Persetujuan", "Sedang Dipinjam", "Menunggu Verifikasi", "Peminjaman Selesai"];
+const APPROVER_ROLES = ["supervisor", "admin", "super admin"];
 
 // Helper: parse bukti data yang bisa berupa string JSON atau array (jika kolom MySQL bertipe JSON)
 const parseBuktiImages = (data) => {
@@ -31,6 +32,32 @@ const parseBuktiImages = (data) => {
     try { return JSON.parse(data); } catch { return []; }
   }
   return [];
+};
+
+// Helper: parse keperluan list dari backend (bisa string JSON atau array)
+const parseKeperluanList = (keperluanList, fallbackAlasan) => {
+  if (keperluanList && Array.isArray(keperluanList) && keperluanList.length > 0) {
+    return keperluanList.map(k => k.keperluan || k).filter(Boolean);
+  }
+  if (keperluanList && typeof keperluanList === 'string') {
+    try {
+      const parsed = JSON.parse(keperluanList);
+      if (Array.isArray(parsed)) return parsed.map(k => k.keperluan || k).filter(Boolean);
+    } catch { /* fallback */ }
+  }
+  if (fallbackAlasan) return [fallbackAlasan];
+  return [];
+};
+
+// Helper: role badge untuk dropdown autocomplete
+const getRoleBadge = (role) => {
+  const r = (role || '').toLowerCase();
+  const map = {
+    'super admin': 'bg-rose-100 text-rose-700 border-rose-200',
+    'admin': 'bg-blue-100 text-blue-700 border-blue-200',
+    'supervisor': 'bg-amber-100 text-amber-700 border-amber-200',
+  };
+  return map[r] || 'bg-slate-100 text-slate-600 border-slate-200';
 };
 
 function ImageCarouselInner({ images, title, backendUrl, onImageClick }) {
@@ -195,15 +222,16 @@ export default function PeminjamanAsetPage() {
     }
   };
 
-  // Handle Yang Menyerahkan search
+  // Handle Yang Menyerahkan search (hanya role supervisor, admin, super admin)
   const handleYangMenyerahkanSearch = (value) => {
     setYangMenyerahkanSearch(value);
     setApproveYangMenyerahkan(value);
 
     if (value.trim().length > 0) {
       const filtered = userList.filter(u =>
-        u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
-        u.email?.toLowerCase().includes(value.toLowerCase())
+        APPROVER_ROLES.includes((u.role || '').toLowerCase()) &&
+        (u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
+        u.email?.toLowerCase().includes(value.toLowerCase()))
       );
       setFilteredUsers(filtered);
       setShowYangMenyerahkanDropdown(true);
@@ -221,15 +249,16 @@ export default function PeminjamanAsetPage() {
     setFilteredUsers([]);
   };
 
-  // Handle Penerima Aset search
+  // Handle Penerima Aset search (hanya role supervisor, admin, super admin)
   const handlePenerimaAsetSearch = (value) => {
     setPenerimaAsetSearch(value);
     setApprovePenerimaAset(value);
 
     if (value.trim().length > 0) {
       const filtered = userList.filter(u =>
-        u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
-        u.email?.toLowerCase().includes(value.toLowerCase())
+        APPROVER_ROLES.includes((u.role || '').toLowerCase()) &&
+        (u.nama_lengkap?.toLowerCase().includes(value.toLowerCase()) ||
+        u.email?.toLowerCase().includes(value.toLowerCase()))
       );
       setFilteredUsers2(filtered);
       setShowPenerimaAsetDropdown(true);
@@ -367,12 +396,9 @@ export default function PeminjamanAsetPage() {
 
     try {
       setSubmitting(true);
-      const params = {
-        approvedBy: userName,
-        yangMenyerahkan: showApproveConfirm.status === 'Menunggu Persetujuan' ? approveYangMenyerahkan : null,
-        penerimaAset: showApproveConfirm.status === 'Menunggu Verifikasi' ? approvePenerimaAset : null
-      };
-      await approvePeminjaman(showApproveConfirm.id, params);
+      const approveYang = showApproveConfirm.status === 'Menunggu Persetujuan' ? approveYangMenyerahkan : null;
+      const approvePenerima = showApproveConfirm.status === 'Menunggu Verifikasi' ? approvePenerimaAset : null;
+      await approvePeminjaman(showApproveConfirm.id, userName, approveYang, approvePenerima);
 
       const message = showApproveConfirm.status === 'Menunggu Persetujuan'
         ? "Peminjaman berhasil disetujui!"
@@ -467,24 +493,23 @@ export default function PeminjamanAsetPage() {
   };
 
   const Pagination = () => (
-    <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 gap-4 bg-gradient-to-r from-slate-50/50 to-white border-t border-slate-200">
-      <div className="hidden sm:flex items-center gap-4">
-        <p className="text-sm text-slate-600 text-nowrap font-medium">Menampilkan {paginatedData.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-bold text-slate-800">{sorted.length}</span> data</p>
-        <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
-          <label className="text-sm text-slate-600">Tampilkan</label>
+    <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 gap-3">
+      <div className="hidden sm:flex items-center gap-3">
+        <p className="text-sm text-slate-500 text-nowrap">Menampilkan {paginatedData.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-semibold text-slate-700">{sorted.length}</span> data</p>
+        <div className="flex items-center gap-2">
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-            className="cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary-hover shadow-sm transition-all hover:bg-primary-hover">
+            className="cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-primary-hover shadow-sm transition-colors hover:bg-primary-hover">
             {ROWS_OPTIONS.map(opt => <option key={opt} value={opt} className="bg-white text-slate-700">{opt}</option>)}
           </select>
-          <label className="text-sm text-slate-600">per halaman</label>
+          <p className="text-sm text-slate-500 text-nowrap">baris per halaman</p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5">
-        <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="cursor-pointer rounded-lg p-1.5 text-sm text-slate-500 transition-all hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:text-slate-700" title="Halaman Pertama"><ChevronsLeft className="h-4 w-4" /></button>
-        <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="cursor-pointer rounded-lg p-1.5 text-sm text-slate-500 transition-all hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:text-slate-700" title="Sebelumnya"><ChevronLeft className="h-4 w-4" /></button>
-        {getPageNumbers().map((page, idx) => page === "..." ? (<span key={`e-${idx}`} className="min-w-[32px] px-1 py-1.5 text-center text-sm text-slate-400">...</span>) : (<button key={page} onClick={() => setCurrentPage(page)} className={`cursor-pointer min-w-[36px] rounded-lg px-2 py-1.5 text-sm font-semibold transition-all ${currentPage === page ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>{page}</button>))}
-        <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg p-1.5 text-sm text-slate-500 transition-all hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:text-slate-700" title="Berikutnya"><ChevronRight className="h-4 w-4" /></button>
-        <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg p-1.5 text-sm text-slate-500 transition-all hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:text-slate-700" title="Halaman Terakhir"><ChevronsRight className="h-4 w-4" /></button>
+      <div className="flex items-center gap-1">
+        <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Pertama"><ChevronsLeft className="h-4 w-4" /></button>
+        <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Sebelumnya"><ChevronLeft className="h-4 w-4" /></button>
+        {getPageNumbers().map((page, idx) => page === "..." ? (<span key={`e-${idx}`} className="min-w-[32px] px-1 py-1.5 text-center text-sm text-slate-400">...</span>) : (<button key={page} onClick={() => setCurrentPage(page)} className={`cursor-pointer min-w-[32px] rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${currentPage === page ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-100"}`}>{page}</button>))}
+        <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Berikutnya"><ChevronRight className="h-4 w-4" /></button>
+        <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Terakhir"><ChevronsRight className="h-4 w-4" /></button>
       </div>
     </div>
   );
@@ -495,7 +520,7 @@ export default function PeminjamanAsetPage() {
   if (loading) {
     return (
       <div>
-        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Peminjaman Aset</h1><p className="text-sm text-slate-500">Kelola data peminjaman aset Galeria Karya Media</p></div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Peminjaman Alat</h1><p className="text-sm text-slate-500">Kelola data peminjaman alat Galeria Karya Media</p></div>
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="p-8 space-y-3 animate-pulse">{[1,2,3,4,5].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/><div className="h-4 w-20 rounded bg-slate-200"/></div>))}</div>
         </div>
@@ -506,7 +531,7 @@ export default function PeminjamanAsetPage() {
   if (error) {
     return (
       <div>
-        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Peminjaman Aset</h1><p className="text-sm text-slate-500">Kelola data peminjaman aset Galeria Karya Media</p></div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Peminjaman Alat</h1><p className="text-sm text-slate-500">Kelola data peminjaman alat Galeria Karya Media</p></div>
         <div className="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-10">
           <AlertTriangle className="h-12 w-12 text-rose-400 mb-3" />
           <p className="text-sm font-medium text-rose-700 mb-1">Koneksi Gagal</p>
@@ -529,12 +554,12 @@ export default function PeminjamanAsetPage() {
       )}
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Peminjaman Aset</h1>
-        <p className="text-sm text-slate-500">Rekapitulasi data transaksi peminjaman dan pengembalian</p>
+        <h1 className="text-2xl font-bold text-slate-800">Peminjaman Alat</h1>
+        <p className="text-sm text-slate-500">Rekapitulasi data peminjaman dan pengembalian</p>
       </div>
 
       {/* Toolbar & Table Section */}
-      <div className="relative overflow-hidden rounded-xl border border-slate-300 bg-white shadow-md border-t-4 border-t-primary">
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
         
         {/* Table Loading Overlay */}
         {tableLoading && (
@@ -550,12 +575,12 @@ export default function PeminjamanAsetPage() {
         )}
 
         {/* Toolbar */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-6 border-b border-slate-300 bg-gradient-to-r from-slate-50/50 to-white">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
               <input type="text" placeholder="Cari peminjaman..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                className="w-full rounded-lg border-2 border-slate-200 py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all hover:border-slate-300" />
+                className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" />
             </div>
             <select
               value={statusFilter}
@@ -579,42 +604,57 @@ export default function PeminjamanAsetPage() {
 
         {/* Table Controls (Pagination Top) & Table */}
         <Pagination />
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto border-t border-slate-100">
+          <table className="w-full text-left text-sm table-fixed">
             <thead>
-              <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-b-slate-300">
-                <th className="px-6 py-4 font-bold text-slate-700 w-[130px] text-center"><button onClick={() => handleSort("kodePinjam")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider text-xs">No <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} /></button></th>
-                <th className="px-6 py-4 font-bold text-slate-700 text-center"><button onClick={() => handleSort("namaPeminjam")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider text-xs">Nama Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} /></button></th>
-                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs w-[110px]">Jumlah</th>
-                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs">Alasan</th>
-                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs w-[160px]"><button onClick={() => handleSort("tanggalPeminjaman")} className="cursor-pointer flex items-center justify-center w-full">Tgl Pinjam <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} /></button></th>
-                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs w-[160px]">Tgl Kembali</th>
-                <th className="px-6 py-4 font-bold text-slate-700 text-center uppercase tracking-wider text-xs w-[140px]"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center justify-center w-full">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
-                <th className="px-6 py-4 font-bold text-slate-700 text-center w-[130px] uppercase tracking-wider text-xs">Aksi</th>
+              <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
+                <th className="w-[140px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kodePinjam")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kode Pinjam <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} /></button></th>
+                <th className="w-[150px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("namaPeminjam")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Nama Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} /></button></th>
+                <th className="w-[80px] px-3 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">Jumlah Alat</th>
+                <th className="px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">Keperluan</th>
+                <th className="w-[145px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("tanggalPeminjaman")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">TGL PINJAM <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} /></button></th>
+                <th className="w-[145px] px-3 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">TGL KEMBALI</th>
+                <th className="w-[140px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
+                <th className="w-[145px] px-3 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedData.map((item, index) => (
-                <tr key={item.id} className={`border-b border-slate-200 transition-all duration-200 hover:bg-blue-50/50 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
-                  <td className="px-6 py-4 font-mono text-xs font-bold text-slate-800 hover:text-primary cursor-pointer whitespace-nowrap text-center" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
-                  <td className="px-6 py-4 text-slate-800 font-semibold hover:text-primary cursor-pointer text-center" onClick={() => handleShowDetail(item)}>{item.namaPeminjam}</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center justify-center bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-sm font-bold border border-blue-200 shadow-sm">
+              {paginatedData.map((item, index) => {
+                const keperluanArr = parseKeperluanList(item.keperluanList, item.alasanPeminjaman);
+                const keperluanText = keperluanArr.length > 1
+                  ? keperluanArr.join(', ')
+                  : keperluanArr[0] || '-';
+                return (
+                <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
+                  <td className="w-[140px] px-4 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
+                  <td className="w-[150px] px-4 py-3 text-xs text-slate-600 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle" onClick={() => handleShowDetail(item)}>{item.namaPeminjam}</td>
+                  <td className="w-[80px] px-3 py-3 text-center border-r border-slate-200 align-middle">
+                    <span className="inline-flex items-center justify-center bg-blue-50 text-blue-700 rounded-full px-2.5 py-0.5 text-xs font-bold border border-blue-200">
                       {item.totalItems || 0}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600 text-sm max-w-[180px] truncate" title={item.alasanPeminjaman}>{item.alasanPeminjaman || "-"}</td>
-                  <td className="px-6 py-4 text-slate-600 text-xs text-center whitespace-nowrap">{formatDateTime(item.tanggalPeminjaman)}</td>
-                  <td className="px-6 py-4 text-slate-600 text-xs text-center whitespace-nowrap">{formatDateTime(item.tanggalPengembalian)}</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`inline-block rounded-full border px-3 py-1.5 text-xs font-bold tracking-wide uppercase shadow-sm transition-all ${getStatusBadge(item.status)}`}>
+                  <td className="px-4 py-3 text-xs text-slate-600 border-r border-slate-200 align-top">
+                    {keperluanArr.length > 1 ? (
+                      <ol className="list-decimal list-inside space-y-0.5">
+                        {keperluanArr.map((k, i) => (
+                          <li key={i} className="line-clamp-2" title={k}>{k}</li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <span className="line-clamp-2" title={keperluanArr[0] || '-'}>{keperluanArr[0] || '-'}</span>
+                    )}
+                  </td>
+                  <td className="w-[145px] px-3 py-3 text-xs text-slate-600 text-center whitespace-nowrap border-r border-slate-200 align-middle">{formatDateTime(item.tanggalPeminjaman)}</td>
+                  <td className="w-[145px] px-3 py-3 text-xs text-slate-600 text-center whitespace-nowrap border-r border-slate-200 align-middle">{formatDateTime(item.tanggalPengembalian)}</td>
+                  <td className="w-[140px] px-3 py-3 text-center border-r border-slate-200 align-middle">
+                    <span className={`inline-flex items-center justify-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border whitespace-normal leading-tight max-w-[120px] min-h-[24px] ${getStatusBadge(item.status)}`}>
                       {getStatusLabel(item.status)}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="w-[145px] px-3 py-3 align-middle">
                     <div className="flex items-center justify-center gap-1">
                       {/* Detail */}
-                      <button onClick={() => handleShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-2 text-blue-600 transition-all duration-150 hover:bg-blue-600 hover:text-white hover:shadow-md" title="Detail"><Info className="h-4 w-4" /></button>
+                      <button onClick={() => handleShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-3.5 w-3.5" /></button>
                       {/* Edit */}
                       {canEdit && (item.status === "Menunggu Persetujuan" || item.status === "Sedang Dipinjam") && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
                         <button onClick={() => {
@@ -623,7 +663,7 @@ export default function PeminjamanAsetPage() {
                           } else {
                             router.push(`/aset/peminjaman/edit/${item.id}`);
                           }
-                        }} className="cursor-pointer rounded-lg bg-amber-100 p-2 text-amber-600 transition-all duration-150 hover:bg-amber-600 hover:text-white hover:shadow-md" title="Edit / Pengembalian"><Pencil className="h-4 w-4" /></button>
+                        }} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit / Pengembalian"><Pencil className="h-3.5 w-3.5" /></button>
                       )}
                       {/* Approve */}
                       {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && (
@@ -634,21 +674,22 @@ export default function PeminjamanAsetPage() {
                           setApprovePenerimaAset(item.penerimaAset || "");
                           setPenerimaAsetSearch(item.penerimaAset || "");
                           fetchUserList();
-                        }} className="cursor-pointer rounded-lg bg-emerald-100 p-2 text-emerald-600 transition-all duration-150 hover:bg-emerald-600 hover:text-white hover:shadow-md" title="Setujui"><Check className="h-4 w-4" /></button>
+                        }} className="cursor-pointer rounded-lg bg-emerald-100 p-1 text-emerald-600 transition-colors hover:bg-emerald-600 hover:text-white" title="Setujui"><Check className="h-3.5 w-3.5" /></button>
                       )}
                       {/* Delete */}
                       {canDelete && (
-                        <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-2 text-rose-600 transition-all duration-150 hover:bg-rose-600 hover:text-white hover:shadow-md" title="Hapus"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))}
-              {dataList.length === 0 && (<tr><td colSpan={8} className="px-6 py-10 text-center text-slate-400 font-medium">Tidak ada data peminjaman ditemukan.</td></tr>)}
+                );
+              })}
+              {paginatedData.length === 0 && (<tr><td colSpan={8} className="px-5 py-10 text-center text-slate-400 font-medium">Tidak ada data peminjaman ditemukan.</td></tr>)}
             </tbody>
           </table>
         </div>
-        <Pagination />
+        <div className="border-t border-slate-200"><Pagination /></div>
       </div>
 
       {mounted && typeof document !== 'undefined' && createPortal(
@@ -663,105 +704,140 @@ export default function PeminjamanAsetPage() {
                 </div>
                 <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
                   <div>
-                    <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Peminjaman</h4>
-                    <div className="space-y-2.5">
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">No. Peminjaman</span><span className="text-sm font-mono text-slate-700 font-semibold">{showDetail.kodePinjam}</span></div>
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Nama Peminjam</span><span className="text-sm text-slate-800">{showDetail.namaPeminjam}</span></div>
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Peminjaman</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPeminjaman)}</span></div>
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Yang Menyerahkan</span><span className="text-sm text-slate-800">{showDetail.yangMenyerahkan || "-"}</span></div>
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Alasan</span><span className="text-sm text-slate-800">{showDetail.alasanPeminjaman || "-"}</span></div>
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Status</span><span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusBadge(showDetail.status)}`}>{getStatusLabel(showDetail.status)}</span></div>
-                      <div className="flex items-start gap-3">
-                        <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Disetujui Oleh</span>
-                        <span className="text-sm text-slate-800">{showDetail.approvedBy || "-"}</span>
-                      </div>
-                      
-                      <div className="flex flex-col gap-2 mt-2">
-                        <span className="text-sm font-semibold text-slate-600">Daftar Alat Dipinjam</span>
-                        {showDetail.items && showDetail.items.length > 0 ? (
-                          <div className="rounded-lg border border-slate-200 overflow-hidden">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
-                                  <th className="px-4 py-2 text-left font-semibold text-slate-600 w-10">No</th>
-                                  <th className="px-4 py-2 text-left font-semibold text-slate-600">Nama Alat</th>
-                                  <th className="px-4 py-2 text-center font-semibold text-slate-600 w-20">Jml</th>
+                    <h4 className="mb-4 text-sm font-bold text-slate-800">Informasi Peminjaman</h4>
+                    <div className="grid grid-cols-2 gap-4 md:gap-6">
+                      {[
+                        ["No. Peminjaman", showDetail.kodePinjam],
+                        ["Nama Peminjam", showDetail.namaPeminjam],
+                        ["Tanggal Peminjaman", formatDateTime(showDetail.tanggalPeminjaman)],
+                        ["Yang Menyerahkan", showDetail.yangMenyerahkan],
+                        ["Status", null], // custom render
+                        ["Disetujui Oleh", showDetail.approvedBy],
+                      ].map(([l, v]) => (
+                        <div key={l} className="flex flex-col gap-1.5">
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{l}</span>
+                          {l === "Status" ? (
+                            <span className={`inline-block self-start rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusBadge(showDetail.status)}`}>{getStatusLabel(showDetail.status)}</span>
+                          ) : (
+                            <span className="text-sm font-medium text-slate-800">{v || "-"}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Keperluan — full list */}
+                    <div className="mt-4 flex flex-col gap-1.5">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Keperluan</span>
+                      {(() => {
+                        const keperluanArr = parseKeperluanList(showDetail.keperluanList, showDetail.alasanPeminjaman);
+                        if (keperluanArr.length === 0) return <span className="text-sm font-medium text-slate-800">-</span>;
+                        if (keperluanArr.length === 1) return <span className="text-sm font-medium text-slate-800">{keperluanArr[0]}</span>;
+                        return (
+                          <ol className="list-decimal list-inside space-y-0.5">
+                            {keperluanArr.map((k, i) => (
+                              <li key={i} className="text-sm font-medium text-slate-800">{k}</li>
+                            ))}
+                          </ol>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Daftar Alat Dipinjam */}
+                    <div className="flex flex-col gap-2 mt-4">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Daftar Alat Dipinjam</span>
+                      {showDetail.items && showDetail.items.length > 0 ? (
+                        <div className="rounded-lg border border-slate-200 overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-slate-50 border-b border-slate-200">
+                                <th className="px-3 py-2 text-left font-semibold text-slate-600 w-10">No</th>
+                                <th className="px-3 py-2 text-left font-semibold text-slate-600">Kode</th>
+                                <th className="px-3 py-2 text-left font-semibold text-slate-600">Nama Alat</th>
+                                <th className="px-3 py-2 text-center font-semibold text-slate-600 w-16">Jml</th>
+                                {showDetail.status === 'Sedang Dipinjam' && canApprove && (
+                                  <th className="px-3 py-2 text-center font-semibold text-slate-600 w-20">Aksi</th>
+                                )}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {showDetail.items.map((it, i) => (
+                                <tr key={it.id || i} className="border-b border-slate-100 last:border-0">
+                                  <td className="px-3 py-2 text-slate-500">{i + 1}</td>
+                                  <td className="px-3 py-2 text-slate-600 font-mono text-xs">{it.kodeAset || "-"}</td>
+                                  <td className="px-3 py-2 text-slate-700 font-medium">{it.namaAset || it.namaAksesoris || it.namaItem || "-"}</td>
+                                  <td className="px-3 py-2 text-center font-semibold text-slate-700">{it.jumlah}</td>
                                   {showDetail.status === 'Sedang Dipinjam' && canApprove && (
-                                    <th className="px-4 py-2 text-center font-semibold text-slate-600 w-20">Aksi</th>
+                                    <td className="px-3 py-2 text-center">
+                                      <button
+                                        onClick={() => handleOpenSwapModal(showDetail, it)}
+                                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors cursor-pointer"
+                                        title="Tukar Barang"
+                                      >
+                                        <ArrowLeftRight className="h-3 w-3" />
+                                        Tukar
+                                      </button>
+                                    </td>
                                   )}
                                 </tr>
-                              </thead>
-                              <tbody>
-                                {showDetail.items.map((it, i) => (
-                                  <tr key={it.id || i} className="border-b border-slate-100 last:border-0">
-                                    <td className="px-4 py-2 text-slate-500">{i + 1}</td>
-                                    <td className="px-4 py-2 text-slate-700 font-medium">{it.namaAset}</td>
-                                    <td className="px-4 py-2 text-center font-semibold text-slate-700">{it.jumlah}</td>
-                                    {showDetail.status === 'Sedang Dipinjam' && canApprove && (
-                                      <td className="px-4 py-2 text-center">
-                                        <button
-                                          onClick={() => handleOpenSwapModal(showDetail, it)}
-                                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors cursor-pointer"
-                                          title="Tukar Barang"
-                                        >
-                                          <ArrowLeftRight className="h-3 w-3" />
-                                          Tukar
-                                        </button>
-                                      </td>
-                                    )}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-slate-500">-</span>
-                        )}
-                        {/* Tambah Barang button when Sedang Dipinjam */}
-                        {showDetail.status === 'Sedang Dipinjam' && canApprove && (
-                          <button
-                            onClick={() => { setAddNewItem(null); setAddNewJumlah(1); setShowAddItemModal(showDetail); fetchBorrowableItems(); }}
-                            className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors cursor-pointer w-full justify-center"
-                          >
-                            <PackagePlus className="h-4 w-4" />
-                            Tambah Barang Kurang
-                          </button>
-                        )}
-                      </div>
-                      
-                      {/* Bukti Peminjaman Images with Carousel */}
-                      {(() => {
-                        const paths = parseBuktiImages(showDetail.buktiPeminjaman);
-                        if (paths.length > 0) {
-                          return <ImageCarouselInner images={paths} title="Bukti Peminjaman" backendUrl={BACKEND_URL} onImageClick={(imgs, idx) => setLightboxData({ images: imgs, index: idx })} />;
-                        }
-                        return null;
-                      })()}
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-500">-</span>
+                      )}
+                      {/* Tambah Barang button when Sedang Dipinjam */}
+                      {showDetail.status === 'Sedang Dipinjam' && canApprove && (
+                        <button
+                          onClick={() => { setAddNewItem(null); setAddNewJumlah(1); setShowAddItemModal(showDetail); fetchBorrowableItems(); }}
+                          className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors cursor-pointer w-full justify-center"
+                        >
+                          <PackagePlus className="h-4 w-4" />
+                          Tambah Barang Kurang
+                        </button>
+                      )}
                     </div>
+                    
+                    {/* Bukti Peminjaman Images with Carousel */}
+                    {(() => {
+                      const paths = parseBuktiImages(showDetail.buktiPeminjaman);
+                      if (paths.length > 0) {
+                        return <ImageCarouselInner images={paths} title="Bukti Peminjaman" backendUrl={BACKEND_URL} onImageClick={(imgs, idx) => setLightboxData({ images: imgs, index: idx })} />;
+                      }
+                      return null;
+                    })()}
                   </div>
 
-                  <hr className="border-slate-300" />
-                  
-                  <div>
-                    <h4 className="mb-3 text-sm font-bold text-slate-800">Daftar Pengembalian</h4>
-                    <div className="space-y-2.5">
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Tanggal Pengembalian</span><span className="text-sm text-slate-800">{formatDateTime(showDetail.tanggalPengembalian)}</span></div>
-                      <div className="flex items-start gap-3"><span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Penerima Aset</span><span className="text-sm text-slate-800">{showDetail.penerimaAset || "-"}</span></div>
-                      <div className="flex items-start gap-3">
-                        <span className="w-40 shrink-0 text-sm font-semibold text-slate-600">Diverifikasi Oleh</span>
-                        <span className="text-sm text-slate-800">{showDetail.returnApprovedBy || "-"}</span>
-                      </div>
+                  {/* Section Pengembalian — hanya tampil jika status relevan */}
+                  {(showDetail.status === 'Menunggu Verifikasi' || showDetail.status === 'Peminjaman Selesai') && (
+                    <>
+                      <hr className="border-slate-300" />
+                      <div>
+                        <h4 className="mb-4 text-sm font-bold text-slate-800">Informasi Pengembalian</h4>
+                        <div className="grid grid-cols-2 gap-4 md:gap-6">
+                          {[
+                            ["Tanggal Pengembalian", formatDateTime(showDetail.tanggalPengembalian)],
+                            ["Penerima Aset", showDetail.penerimaAset],
+                            ["Diverifikasi Oleh", showDetail.returnApprovedBy],
+                          ].map(([l, v]) => (
+                            <div key={l} className="flex flex-col gap-1.5">
+                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{l}</span>
+                              <span className="text-sm font-medium text-slate-800">{v || "-"}</span>
+                            </div>
+                          ))}
+                        </div>
 
-                      {/* Bukti Pengembalian Images with Carousel */}
-                      {(() => {
-                        const paths = parseBuktiImages(showDetail.buktiPengembalian);
-                        if (paths.length > 0) {
-                          return <ImageCarouselInner images={paths} title="Bukti Pengembalian" backendUrl={BACKEND_URL} onImageClick={(imgs, idx) => setLightboxData({ images: imgs, index: idx })} />;
-                        }
-                        return null;
-                      })()}
-                    </div>
-                  </div>
+                        {/* Bukti Pengembalian Images with Carousel */}
+                        {(() => {
+                          const paths = parseBuktiImages(showDetail.buktiPengembalian);
+                          if (paths.length > 0) {
+                            return <ImageCarouselInner images={paths} title="Bukti Pengembalian" backendUrl={BACKEND_URL} onImageClick={(imgs, idx) => setLightboxData({ images: imgs, index: idx })} />;
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
                   <button onClick={() => handleDownloadPDF(showDetail.id)} className="flex items-center cursor-pointer gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 shadow-sm">
@@ -872,7 +948,14 @@ export default function PeminjamanAsetPage() {
                                   onClick={() => handleSelectYangMenyerahkan(user)}
                                   className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
                                 >
-                                  <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
+                                    {user.role && (
+                                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getRoleBadge(user.role)}`}>
+                                        {user.role}
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="text-xs text-slate-500">{user.email}</div>
                                 </button>
                               ))
@@ -911,7 +994,14 @@ export default function PeminjamanAsetPage() {
                                   onClick={() => handleSelectPenerimaAset(user)}
                                   className="w-full px-3 py-2.5 text-left text-sm hover:bg-emerald-50 border-b border-slate-100 last:border-b-0 transition-colors"
                                 >
-                                  <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="font-medium text-slate-900">{user.nama_lengkap}</div>
+                                    {user.role && (
+                                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${getRoleBadge(user.role)}`}>
+                                        {user.role}
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="text-xs text-slate-500">{user.email}</div>
                                 </button>
                               ))

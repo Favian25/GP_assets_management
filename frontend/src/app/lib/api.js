@@ -139,6 +139,16 @@ export function mapPeminjamanToFrontend(backendData) {
     userId: backendData.user_id,
     createdByName: backendData.created_by_name,
     createdAt: backendData.created_at,
+    // Keperluan list (bisa berupa string JSON atau array)
+    keperluanList: (() => {
+      const raw = backendData.keperluan_list;
+      if (!raw) return null;
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === 'string') {
+        try { return JSON.parse(raw); } catch { return null; }
+      }
+      return null;
+    })(),
     // Items (jika ada dari getById)
     items: backendData.items
       ? backendData.items.map((item) => ({
