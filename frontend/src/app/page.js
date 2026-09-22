@@ -264,9 +264,9 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Premium Header with Total Asset Value */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
         {/* Greeting Card */}
-        <div className="group">
+        <div className="group lg:col-span-1">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-1 shadow-2xl h-full hover:shadow-2xl hover:shadow-primary/20 transition-all duration-500">
           {/* Animated border glow */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/50 via-blue-500/30 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-all duration-500 rounded-3xl" />
@@ -318,7 +318,7 @@ export default function DashboardPage() {
       </div>
 
         {/* Total Asset Value Card */}
-        <div className="rounded-3xl bg-gradient-to-br from-primary via-blue-600 to-blue-800 shadow-2xl border border-blue-500/40 p-6 text-white relative overflow-hidden group h-full hover:shadow-2xl hover:shadow-primary/30 transition-all duration-500">
+        <div className="lg:col-span-2 rounded-3xl bg-gradient-to-br from-primary via-blue-600 to-blue-800 shadow-2xl border border-blue-500/40 p-6 text-white relative overflow-hidden group h-full hover:shadow-2xl hover:shadow-primary/30 transition-all duration-500">
           {/* Decorative background circles */}
           <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-white/15 blur-3xl group-hover:scale-125 transition-transform duration-700" />
           <div className="absolute -left-32 bottom-0 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl" />
