@@ -295,12 +295,15 @@ export default function DashboardPage() {
               <div className="mb-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-white mb-0.5">
-                      Selamat {getGreeting()}
-                    </p>
-                    <h1 className="text-2xl font-bold text-white leading-snug">
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <p className="text-xs text-slate-400 font-medium">Selamat</p>
+                      <h1 className="text-2xl font-bold text-white">
+                        {getGreeting()}
+                      </h1>
+                    </div>
+                    <h2 className="text-xl font-bold text-white leading-snug">
                       {userName}
-                    </h1>
+                    </h2>
                   </div>
                   {/* Visual Indicator */}
                   <div className="flex items-center justify-center">
