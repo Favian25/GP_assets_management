@@ -287,21 +287,41 @@ export default function DashboardPage() {
                       return '🌙 Malam';
                     })()}
                   </p>
-                  <h1 className="text-3xl font-black text-white leading-tight mb-2">
+                  <h1 className="text-4xl font-black text-white leading-tight mb-3">
                     {userName}
                   </h1>
                   <p className="text-slate-400 text-xs">Sebagai <span className="text-blue-300 font-semibold capitalize">{userRole || "User"}</span></p>
                 </div>
 
-                {/* Status and Time inline */}
-                <div className="flex items-center justify-between py-3 px-3 rounded-lg bg-white/5 border border-white/10">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                    <span className="text-xs text-slate-300">Optimal</span>
+                {/* Quick Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-xs text-slate-500 font-medium mb-2">Status</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                      <span className="text-sm font-semibold text-white">Optimal</span>
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-400">
-                    {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-xs text-slate-500 font-medium mb-2">Waktu</p>
+                    <p className="text-sm font-semibold text-white">
+                      {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-xs text-slate-500 font-medium mb-2">Total Aset</p>
+                    <p className="text-sm font-semibold text-white">{stats?.total || 0} unit</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-xs text-slate-500 font-medium mb-2">Tersedia</p>
+                    <p className="text-sm font-semibold text-emerald-300">{stats?.tersedia || 0}</p>
+                  </div>
+                </div>
+
+                {/* Access Info */}
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-xs text-slate-500 font-medium mb-2">Akses Sistem</p>
+                  <p className="text-xs text-slate-300">Dashboard, Laporan, Kelola Pengguna</p>
                 </div>
               </div>
 
@@ -309,7 +329,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => fetchStats()}
                 disabled={isRefreshing}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50 mt-4"
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 {isRefreshing ? "Memperbarui..." : "Perbarui Data"}
