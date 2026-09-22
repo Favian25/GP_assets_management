@@ -404,8 +404,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-10">
+      {/* Key Metrics Grid - Compact */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-10">
         {statCards.map((stat, index) => {
           const isRestricted = ["/aset/daftar", "/aksesoris", "/reports"].some(path => stat.link.startsWith(path)) && !["super admin", "admin"].includes(userRole);
 
@@ -419,26 +419,26 @@ export default function DashboardPage() {
                   showToast("Akses Dibatasi: Anda tidak memiliki izin untuk mengakses halaman ini.", "error");
                 }
               }}
-              className={`group relative rounded-2xl overflow-hidden bg-gradient-to-br ${stat.color} p-6 text-white shadow-lg hover:shadow-xl hover:shadow-current/20 hover:-translate-y-1 transition-all duration-300 ${isRestricted ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+              className={`group relative rounded-xl overflow-hidden bg-gradient-to-br ${stat.color} p-4 text-white shadow-md hover:shadow-lg hover:shadow-current/20 hover:-translate-y-0.5 transition-all duration-300 ${isRestricted ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
             >
               {/* Shine effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-              <div className="relative z-10 flex items-start justify-between mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
-                  {cloneElement(stat.icon, { className: "h-6 w-6 text-white" })}
+              <div className="relative z-10 flex items-start justify-between mb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
+                  {cloneElement(stat.icon, { className: "h-5 w-5 text-white" })}
                 </div>
-                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 backdrop-blur-sm">
-                  {stat.trend === 'up' && <ArrowUpRight className="h-4 w-4 text-emerald-200" />}
-                  {stat.trend === 'down' && <ArrowDownRight className="h-4 w-4 text-rose-200" />}
+                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs bg-white/10 backdrop-blur-sm">
+                  {stat.trend === 'up' && <ArrowUpRight className="h-3 w-3 text-emerald-200" />}
+                  {stat.trend === 'down' && <ArrowDownRight className="h-3 w-3 text-rose-200" />}
                 </div>
               </div>
 
               <div className="relative z-10">
-                <span className="text-4xl font-black text-white block leading-none mb-1">
+                <span className="text-2xl font-black text-white block leading-none mb-0.5">
                   {stats ? stat.value : "—"}
                 </span>
-                <span className="text-sm font-medium text-white/85 block">
+                <span className="text-xs font-medium text-white/80 block">
                   {stat.title}
                 </span>
               </div>
