@@ -264,9 +264,9 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Premium Header with Total Asset Value */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
         {/* Greeting Card */}
-        <div className="lg:col-span-2">
+        <div>
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 p-1 shadow-2xl h-full">
           {/* Animated border */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary via-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
