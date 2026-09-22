@@ -279,39 +279,49 @@ export default function DashboardPage() {
             {/* Shine effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
-            <div className="relative z-10">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="relative z-10 flex flex-col h-full">
+              {/* Top Section - Status Badge */}
+              <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-gradient-to-r from-primary/25 to-blue-500/15 border border-primary/40 backdrop-blur-sm w-fit">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-xs font-semibold text-primary">Live Dashboard</span>
+              </div>
+
+              {/* Middle Section - Main Content */}
+              <div className="flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full bg-gradient-to-r from-primary/25 to-blue-500/15 border border-primary/40 backdrop-blur-sm">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-xs font-semibold text-primary">Live Dashboard</span>
-                  </div>
-                  <h1 className="text-3xl font-black text-white leading-tight">
-                    Selamat {getGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-cyan-400">{userName}</span>! 👋
+                  <h1 className="text-4xl font-black text-white leading-tight mb-2">
+                    Selamat {getGreeting()}! 👋
                   </h1>
-                  <p className="text-slate-400 mt-1 text-xs">Sistem Manajemen Asset</p>
+                  <p className="text-lg text-white/90 font-semibold mb-1">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-cyan-400">{userName}</span>
+                  </p>
+                  <p className="text-slate-400 text-sm">Sistem Manajemen Asset Galeria Karya Media</p>
                 </div>
-                <button
-                  onClick={() => fetchStats()}
-                  disabled={isRefreshing}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary/80 to-blue-600/80 hover:from-primary hover:to-blue-600 text-white text-sm font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/50 hover:scale-110 active:scale-95 transition-all duration-300 disabled:opacity-50 cursor-pointer whitespace-nowrap backdrop-blur-sm"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} />
-                  {isRefreshing ? "Perbarui..." : "Perbarui"}
-                </button>
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-700/30 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Clock className="h-4 w-4" />
-                  Terakhir: <span className="text-slate-300 font-semibold">{formatLastUpdated()}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span className="text-xs text-slate-400">Sistem aktif</span>
+
+                {/* Bottom Status Info */}
+                <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-700/30">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                      <span className="text-xs text-slate-400">Sistem aktif</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-slate-300 font-semibold">{formatLastUpdated()}</span>
                   </div>
                 </div>
               </div>
+
+              {/* Button - Bottom Right */}
+              <button
+                onClick={() => fetchStats()}
+                disabled={isRefreshing}
+                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary/80 to-blue-600/80 hover:from-primary hover:to-blue-600 text-white text-sm font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/50 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 cursor-pointer backdrop-blur-sm group/btn"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
+                {isRefreshing ? "Perbarui..." : "Perbarui Data"}
+              </button>
             </div>
           </div>
         </div>
