@@ -263,9 +263,11 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* Premium Header - More Impressive */}
-      <div className="mb-10">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 p-1 shadow-2xl">
+      {/* Premium Header with Total Asset Value */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        {/* Greeting Card */}
+        <div className="lg:col-span-2">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 p-1 shadow-2xl h-full">
           {/* Animated border */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary via-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -305,6 +307,57 @@ export default function DashboardPage() {
                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                     <span className="text-xs text-slate-400">Sistem aktif</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+        {/* Total Asset Value Card */}
+        <div className="rounded-2xl bg-gradient-to-br from-primary to-blue-700 shadow-xl border border-blue-600/50 p-10 text-white relative overflow-hidden group h-full">
+          {/* Decorative background */}
+          <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-white/10 blur-3xl group-hover:scale-110 transition-transform duration-500" />
+          <div className="absolute -left-32 bottom-0 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col h-full justify-center">
+            {/* Icon & Title */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl group-hover:bg-white/30 transition-colors">
+                <BarChart3 className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold">Total Nilai Aset</h2>
+                <p className="text-blue-100 text-sm mt-1">Keseluruhan aset</p>
+              </div>
+            </div>
+
+            {/* Main Value Display */}
+            <div className="space-y-6">
+              <div>
+                <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-4 opacity-90">Nominal Keseluruhan</p>
+                <div className="flex items-baseline gap-4">
+                  <span className="text-5xl font-bold opacity-90">Rp</span>
+                  <span className="text-6xl font-black leading-none">
+                    {stats && stats.total
+                      ? (stats.total * 5000000).toLocaleString('id-ID')
+                      : '0'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-white/20"></div>
+
+              {/* Summary Info */}
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Total Unit</p>
+                  <p className="text-4xl font-black">{stats?.total || 0} unit</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Per Unit</p>
+                  <p className="text-2xl font-black">Rp 5 Juta</p>
                 </div>
               </div>
             </div>
@@ -353,59 +406,8 @@ export default function DashboardPage() {
       </div>
 
 
-      {/* Total Asset Value & Candlestick */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-        {/* Total Asset Value Card */}
-        <div className="lg:col-span-2 rounded-2xl bg-gradient-to-br from-primary to-blue-700 shadow-xl border border-blue-600/50 p-10 text-white relative overflow-hidden group">
-          {/* Decorative background */}
-          <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-white/10 blur-3xl group-hover:scale-110 transition-transform duration-500" />
-          <div className="absolute -left-32 bottom-0 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
-
-          <div className="relative z-10 flex flex-col h-full justify-center">
-            {/* Icon & Title */}
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl group-hover:bg-white/30 transition-colors">
-                <BarChart3 className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold">Total Nilai Aset</h2>
-                <p className="text-blue-100 text-sm mt-1">Keseluruhan aset Galeria Karya Media</p>
-              </div>
-            </div>
-
-            {/* Main Value Display */}
-            <div className="space-y-6">
-              <div>
-                <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-4 opacity-90">Nominal Keseluruhan</p>
-                <div className="flex items-baseline gap-4">
-                  <span className="text-5xl font-bold opacity-90">Rp</span>
-                  <span className="text-7xl font-black leading-none">
-                    {stats && stats.total
-                      ? (stats.total * 5000000).toLocaleString('id-ID')
-                      : '0'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="h-px bg-white/20"></div>
-
-              {/* Summary Info */}
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Total Unit</p>
-                  <p className="text-4xl font-black">{stats?.total || 0} unit</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-2 opacity-90">Per Unit</p>
-                  <p className="text-3xl font-black">Rp 5 Juta</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Asset Distribution */}
+      {/* Asset Distribution */}
+      <div className="mb-10">
         <div className="rounded-lg bg-white shadow-md border border-slate-200 p-6">
           <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
             <PieChart className="h-5 w-5 text-primary" />
