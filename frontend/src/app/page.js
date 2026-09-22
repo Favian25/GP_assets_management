@@ -312,7 +312,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Info Grid */}
-              <div className="space-y-2 mb-auto">
+              <div className="space-y-2">
                 <p className="text-slate-300 text-xs font-bold uppercase tracking-widest opacity-90 mb-3">Informasi Akun</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
@@ -326,11 +326,11 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Button */}
+              {/* Button - Push to bottom */}
               <button
                 onClick={() => fetchStats()}
                 disabled={isRefreshing}
-                className="mt-4 w-full group/btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
+                className="mt-auto pt-4 w-full group/btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
                 {isRefreshing ? "Memperbarui..." : "Perbarui Data"}
