@@ -274,52 +274,30 @@ export default function DashboardPage() {
             <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/25 to-transparent opacity-30 blur-3xl" />
             <div className="absolute -left-40 -bottom-40 h-96 w-96 rounded-full bg-gradient-to-tr from-blue-500/15 to-transparent opacity-20 blur-3xl" />
 
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              {/* Main Greeting - Single Line */}
-              <div className="mb-10">
-                <h1 className="text-4xl font-black text-white leading-tight">
+            <div className="relative z-10 flex items-center gap-4">
+              <span className="text-5xl">
+                {(() => {
+                  const hour = new Date().getHours();
+                  if (hour < 12) return '🌅';
+                  if (hour < 15) return '☀️';
+                  if (hour < 18) return '🌤️';
+                  return '🌙';
+                })()}
+              </span>
+              <div>
+                <p className="text-sm text-slate-400 font-medium">
                   {(() => {
                     const hour = new Date().getHours();
-                    let greeting = '';
-                    if (hour < 12) greeting = 'Selamat Pagi';
-                    else if (hour < 15) greeting = 'Selamat Siang';
-                    else if (hour < 18) greeting = 'Selamat Sore';
-                    else greeting = 'Selamat Malam';
-                    return `${greeting}, ${userName}`;
+                    if (hour < 12) return 'Selamat Pagi';
+                    if (hour < 15) return 'Selamat Siang';
+                    if (hour < 18) return 'Selamat Sore';
+                    return 'Selamat Malam';
                   })()}
+                </p>
+                <h1 className="text-4xl font-black text-white">
+                  {userName}
                 </h1>
               </div>
-
-              {/* Status Info - Simple */}
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-white/5 border border-white/10">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                    <span className="text-sm text-slate-300">Sistem Aktif</span>
-                  </div>
-                  <span className="text-sm font-semibold text-emerald-300">Optimal</span>
-                </div>
-
-                <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-white/5 border border-white/10">
-                  <span className="text-sm text-slate-300">Total Aset</span>
-                  <span className="text-sm font-semibold text-white">{stats?.total || 0} unit</span>
-                </div>
-
-                <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-white/5 border border-white/10">
-                  <span className="text-sm text-slate-300">Role</span>
-                  <span className="text-sm font-semibold text-blue-300 capitalize">{userRole || "User"}</span>
-                </div>
-              </div>
-
-              {/* Button */}
-              <button
-                onClick={() => fetchStats()}
-                disabled={isRefreshing}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                {isRefreshing ? "Memperbarui..." : "Perbarui Data"}
-              </button>
             </div>
           </div>
         </div>
