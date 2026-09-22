@@ -369,7 +369,7 @@ export default function PeminjamanAsetPage() {
   const canAdd = ["super admin", "admin", "supervisor", "user"].includes(userRole);
   const canEdit = ["super admin", "admin", "supervisor", "user"].includes(userRole);
   const canDelete = userRole === "super admin";
-  const canApprove = ["super admin", "admin", "supervisor"].includes(userRole);
+  const canApprove = ["admin", "supervisor"].includes(userRole);
 
   // Actions
   const handleDelete = async () => {
