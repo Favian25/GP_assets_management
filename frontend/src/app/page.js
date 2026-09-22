@@ -274,30 +274,45 @@ export default function DashboardPage() {
             <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/25 to-transparent opacity-30 blur-3xl" />
             <div className="absolute -left-40 -bottom-40 h-96 w-96 rounded-full bg-gradient-to-tr from-blue-500/15 to-transparent opacity-20 blur-3xl" />
 
-            <div className="relative z-10 flex items-center gap-4">
-              <span className="text-5xl">
-                {(() => {
-                  const hour = new Date().getHours();
-                  if (hour < 12) return '🌅';
-                  if (hour < 15) return '☀️';
-                  if (hour < 18) return '🌤️';
-                  return '🌙';
-                })()}
-              </span>
+            <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
-                <p className="text-sm text-slate-400 font-medium">
-                  {(() => {
-                    const hour = new Date().getHours();
-                    if (hour < 12) return 'Selamat Pagi';
-                    if (hour < 15) return 'Selamat Siang';
-                    if (hour < 18) return 'Selamat Sore';
-                    return 'Selamat Malam';
-                  })()}
-                </p>
-                <h1 className="text-4xl font-black text-white">
-                  {userName}
-                </h1>
-                <p className="text-xs text-slate-500 font-medium mt-2">Asset Management System</p>
+                <div className="flex items-center gap-4 mb-8">
+                  <span className="text-5xl">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      if (hour < 12) return '🌅';
+                      if (hour < 15) return '☀️';
+                      if (hour < 18) return '🌤️';
+                      return '🌙';
+                    })()}
+                  </span>
+                  <div>
+                    <p className="text-sm text-slate-400 font-medium">
+                      {(() => {
+                        const hour = new Date().getHours();
+                        if (hour < 12) return 'Selamat Pagi';
+                        if (hour < 15) return 'Selamat Siang';
+                        if (hour < 18) return 'Selamat Sore';
+                        return 'Selamat Malam';
+                      })()}
+                    </p>
+                    <h1 className="text-4xl font-black text-white">
+                      {userName}
+                    </h1>
+                    <p className="text-xs text-slate-500 font-medium mt-1">Asset Management System</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium mb-2">Role</p>
+                    <p className="text-sm font-semibold text-white capitalize">{userRole || "User"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium mb-2">Total Aset Terdaftar</p>
+                    <p className="text-2xl font-black text-white">{stats?.total || 0} Unit</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
