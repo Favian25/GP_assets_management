@@ -279,70 +279,54 @@ export default function DashboardPage() {
             {/* Shine effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
-            <div className="relative z-10 flex flex-col h-full">
-              {/* Top Status Bar */}
-              <div className="flex items-center justify-between mb-12">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 backdrop-blur">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                    <span className="text-xs font-semibold text-emerald-300">Online</span>
-                  </div>
+            <div className="relative z-10 flex flex-col h-full justify-between">
+              {/* Compact Top Info */}
+              <div className="flex items-center justify-between text-xs mb-4">
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <span className="font-semibold text-emerald-300">Online</span>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-500 font-medium">Sinkronisasi terakhir</p>
-                  <p className="text-xs font-semibold text-slate-300">{formatLastUpdated()}</p>
-                </div>
+                <span className="text-slate-400">{formatLastUpdated()}</span>
               </div>
 
-              {/* Main Greeting - Left Aligned */}
-              <div className="flex-1 flex flex-col justify-center space-y-6">
-                <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-blue-500/10 border border-primary/30 w-fit">
-                    <span className="text-xs font-semibold text-primary uppercase tracking-widest">Selamat {getGreeting()}</span>
-                  </div>
-                  <h1 className="text-6xl font-black text-white leading-tight">
+              {/* Main Content */}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-slate-500 font-medium mb-1">Selamat {getGreeting()},</p>
+                  <h1 className="text-3xl font-bold text-white leading-tight">
                     {userName}
                   </h1>
-                  <div className="h-1 w-24 bg-gradient-to-r from-primary via-blue-400 to-cyan-400 rounded-full"></div>
                 </div>
 
-                <p className="text-slate-400 text-sm leading-relaxed max-w-xl font-light">
-                  Kelola seluruh inventaris aset perusahaan secara real-time. Dashboard terpadu yang dirancang untuk efisiensi maksimal dan kontrol penuh.
+                <p className="text-slate-400 text-xs leading-relaxed font-light">
+                  Kelola aset dengan dashboard real-time terintegrasi
                 </p>
 
-                {/* Stats Pills */}
-                <div className="flex items-center gap-4 pt-4">
-                  <div className="flex flex-col space-y-1">
-                    <span className="text-xs text-slate-500 uppercase font-semibold tracking-wider">Status Sistem</span>
-                    <span className="text-lg font-bold text-white">Optimal</span>
+                {/* Compact Status */}
+                <div className="flex gap-4 text-xs py-3 border-y border-slate-700/20">
+                  <div>
+                    <p className="text-slate-500 font-medium mb-0.5">Status</p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                      <span className="font-semibold text-slate-200">Optimal</span>
+                    </div>
                   </div>
-                  <div className="h-12 w-px bg-slate-700/40"></div>
-                  <div className="flex flex-col space-y-1">
-                    <span className="text-xs text-slate-500 uppercase font-semibold tracking-wider">User Role</span>
-                    <span className="text-lg font-bold text-blue-300 capitalize">{userRole || "User"}</span>
+                  <div>
+                    <p className="text-slate-500 font-medium mb-0.5">Role</p>
+                    <span className="font-semibold text-blue-300 capitalize">{userRole || "User"}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Button */}
-              <div className="pt-8 mt-auto">
-                <button
-                  onClick={() => fetchStats()}
-                  disabled={isRefreshing}
-                  className="w-full group/btn relative flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-sm text-white overflow-hidden transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-emerald-500/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
-                  <RefreshCw className={`h-5 w-5 relative z-10 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
-                  <span className="relative z-10">
-                    {isRefreshing ? "Memperbarui Data..." : "Sinkronisasi Sekarang"}
-                  </span>
-                </button>
-              </div>
+              {/* Button */}
+              <button
+                onClick={() => fetchStats()}
+                disabled={isRefreshing}
+                className="w-full group/btn mt-4 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur transition-all duration-300 active:scale-95 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : "group-hover/btn:rotate-180 transition-transform duration-500"}`} />
+                {isRefreshing ? "Sync..." : "Perbarui"}
+              </button>
             </div>
           </div>
         </div>
