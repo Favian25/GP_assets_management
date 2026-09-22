@@ -8,7 +8,8 @@ import {
   Package, CheckCircle2, AlertCircle, Settings, AlertTriangle,
   RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus,
   Calendar, User, Clock, LayoutGrid, Cpu, Check, X, Zap, TrendingUp,
-  TrendingDown, BarChart3, PieChart, ArrowUpRight, ArrowDownRight
+  TrendingDown, BarChart3, PieChart, ArrowUpRight, ArrowDownRight,
+  Sunrise, Sun, CloudSun, Moon
 } from "lucide-react";
 import { getUserContext } from "./lib/authService";
 import { createPortal } from "react-dom";
@@ -24,9 +25,12 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [now, setNow] = useState(null);
 
   useEffect(() => {
     setMounted(true);
+    setNow(new Date());
+    const clockInterval = setInterval(() => setNow(new Date()), 15000);
     const ctx = getUserContext();
     if (ctx) {
       setUserRole(ctx.role || "user");
@@ -40,6 +44,8 @@ export default function DashboardPage() {
     }
 
     fetchStats();
+
+    return () => clearInterval(clockInterval);
   }, []);
 
   const showToast = (message, type = "error") => {
@@ -261,131 +267,152 @@ export default function DashboardPage() {
   const trendData = generateTrendData();
   const maxValue = Math.max(...trendData.map(d => d.value), 10);
 
+  // Greeting card: icon & aksen warna mengikuti waktu
+  const currentHour = new Date().getHours();
+  const greetingLabel = `Selamat ${getGreeting()}`;
+  const GreetingIcon = currentHour < 12 ? Sunrise : currentHour < 15 ? Sun : currentHour < 18 ? CloudSun : Moon;
+  const accentBadge = currentHour < 12 ? "from-amber-400 to-orange-500"
+    : currentHour < 15 ? "from-sky-400 to-blue-600"
+    : currentHour < 18 ? "from-orange-400 to-rose-500"
+    : "from-indigo-400 to-violet-600";
+  const accentGlow = currentHour < 12 ? "bg-amber-400/25"
+    : currentHour < 15 ? "bg-sky-400/25"
+    : currentHour < 18 ? "bg-orange-400/25"
+    : "bg-indigo-400/25";
+
   return (
     <div>
-      {/* Premium Header with Total Asset Value */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-        {/* Greeting Card */}
-        <div className="lg:col-span-2 lg:order-1">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-1 shadow-2xl h-full">
+      {/* Premium Header - Merged Greeting + Asset Card */}
+      <div className="mb-10">
+        <div className="group relative overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+          {/* Gradient base */}
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950" />
 
-          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-5 backdrop-blur-xl">
-            {/* Background */}
-            <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/25 to-transparent opacity-30 blur-3xl" />
-            <div className="absolute -left-40 -bottom-40 h-96 w-96 rounded-full bg-gradient-to-tr from-blue-500/15 to-transparent opacity-20 blur-3xl" />
+          {/* Ambient glow — mengikuti waktu */}
+          <div className={`absolute -right-32 -top-40 h-96 w-96 rounded-full blur-3xl transition-colors duration-700 ${accentGlow}`} />
+          <div className="absolute -left-32 bottom-0 h-96 w-96 rounded-full bg-blue-600/15 blur-3xl" />
 
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div>
-                <div className="flex items-center gap-4 mb-8">
-                  <span className="text-5xl">
-                    {(() => {
-                      const hour = new Date().getHours();
-                      if (hour < 12) return '🌅';
-                      if (hour < 15) return '☀️';
-                      if (hour < 18) return '🌤️';
-                      return '🌙';
-                    })()}
-                  </span>
-                  <div>
-                    <p className="text-sm text-slate-400 font-medium">
-                      {(() => {
-                        const hour = new Date().getHours();
-                        if (hour < 12) return 'Selamat Pagi';
-                        if (hour < 15) return 'Selamat Siang';
-                        if (hour < 18) return 'Selamat Sore';
-                        return 'Selamat Malam';
-                      })()}
-                    </p>
-                    <h1 className="text-4xl font-black text-white">
-                      {userName}
-                    </h1>
-                    <p className="text-xs text-slate-500 font-medium mt-1">Asset Management System</p>
-                  </div>
+          {/* Dot pattern halus */}
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+
+          {/* Garis highlight atas */}
+          <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+          <div className="relative z-10 flex flex-col p-6 lg:p-8">
+            {/* Baris atas: identitas + jam live */}
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8 pb-8 border-b border-white/10">
+              <div className="flex items-start gap-4 flex-1">
+                <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25`}>
+                  <GreetingIcon className="h-7 w-7 text-white" strokeWidth={1.75} />
                 </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs text-slate-500 font-medium mb-2">Role</p>
-                    <p className="text-sm font-semibold text-white capitalize">{userRole || "User"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 font-medium mb-2">Total Aset Terdaftar</p>
-                    <p className="text-2xl font-black text-white">{stats?.total || 0} Unit</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-        {/* Total Asset Value Card - With Integrated Metrics */}
-        <div className="lg:col-span-1 lg:order-2 rounded-3xl bg-gradient-to-br from-primary via-blue-600 to-blue-800 shadow-2xl border border-blue-500/40 p-6 text-white relative overflow-hidden group h-full hover:shadow-2xl hover:shadow-primary/30 transition-all duration-500">
-          {/* Decorative background circles */}
-          <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-white/15 blur-3xl group-hover:scale-125 transition-transform duration-700" />
-          <div className="absolute -left-32 bottom-0 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl" />
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-gradient-to-br from-white/10 to-transparent blur-2xl" />
-
-          {/* Shine effect on hover */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
-
-          <div className="relative z-10 flex flex-col h-full overflow-y-auto custom-scrollbar">
-            {/* Icon & Title */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300 shadow-lg flex-shrink-0">
-                <BarChart3 className="h-5 w-5 text-white" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-xl font-bold tracking-tight">Total Nilai Aset</h2>
-                <p className="text-blue-100 text-xs mt-0.5 font-medium">Keseluruhan inventori</p>
-              </div>
-            </div>
-
-            {/* Main Value Display */}
-            <div className="space-y-3 mb-4 pb-4 border-b border-white/20">
-              <div>
-                <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Nominal</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold opacity-95">Rp</span>
-                  <span className="text-3xl font-black leading-none drop-shadow-lg">
-                    {stats && stats.total
-                      ? (stats.total * 5000000).toLocaleString('id-ID')
-                      : '0'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Summary Info */}
-              <div className="flex items-end justify-between text-sm">
                 <div>
-                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-0.5 opacity-80">Unit</p>
-                  <p className="text-2xl font-black">{stats?.total || 0}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">
+                    {greetingLabel}
+                  </p>
+                  <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-white lg:text-4xl">
+                    {userName}
+                  </h1>
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Asset Management System
+                  </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-0.5 opacity-80">Per Unit</p>
-                  <p className="text-lg font-black">Rp 5M</p>
-                </div>
+              </div>
+
+              {/* Jam & tanggal live */}
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-right backdrop-blur-md shrink-0">
+                <p className="font-mono text-lg font-bold leading-none tabular-nums text-white">
+                  {now
+                    ? now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false })
+                    : "--:--"}
+                  <span className="ml-1.5 align-middle text-[10px] font-semibold tracking-wider text-slate-400">WIB</span>
+                </p>
+                <p className="mt-1.5 text-[11px] font-medium capitalize text-slate-400">
+                  {now
+                    ? now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+                    : "Memuat..."}
+                </p>
               </div>
             </div>
 
-            {/* Integrated Metrics Grid */}
-            <div className="space-y-2">
-              <p className="text-xs text-blue-100 font-bold uppercase tracking-widest opacity-80 mb-3">Distribusi Status</p>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2 },
-                  { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package },
-                  { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle },
-                  { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle }
-                ].map((item) => (
-                  <div key={item.label} className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      {item.icon && <item.icon className="h-3.5 w-3.5 text-blue-200" />}
-                      <span className="text-xs text-blue-100 font-medium">{item.label}</span>
-                    </div>
-                    <p className="text-lg font-bold text-white">{item.value}</p>
+            {/* Baris bawah: dua kolom - info chips (kiri) + asset metrics (kanan) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Kolom Kiri: Info Chips */}
+              <div className="flex flex-wrap items-start gap-3">
+                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/20 ring-1 ring-blue-400/30">
+                    <User className="h-4 w-4 text-blue-300" />
                   </div>
-                ))}
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Role</p>
+                    <p className="text-sm font-semibold capitalize text-white">{userRole || "User"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/30">
+                    <Package className="h-4 w-4 text-emerald-300" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Total Aset Terdaftar</p>
+                    <p className="text-sm font-semibold text-white">{stats?.total || 0} Unit</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Kolom Kanan: Asset Value Metrics */}
+              <div className="space-y-4">
+                {/* Nominal Display */}
+                <div>
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-2 opacity-80">Total Nilai Aset</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-slate-300">Rp</span>
+                    <span className="text-3xl font-black text-white drop-shadow-lg">
+                      {stats && stats.total
+                        ? (stats.total * 5000000).toLocaleString('id-ID')
+                        : '0'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Unit & Per Unit Info */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">Unit</p>
+                    <p className="text-xl font-black text-white">{stats?.total || 0}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-1 opacity-80">Per Unit</p>
+                    <p className="text-xl font-black text-white">Rp 5M</p>
+                  </div>
+                </div>
+
+                {/* Distribusi Status */}
+                <div>
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-2 opacity-80">Distribusi Status</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2 },
+                      { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package },
+                      { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle },
+                      { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle }
+                    ].map((item) => (
+                      <div key={item.label} className="p-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/5">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          {item.icon && <item.icon className="h-3.5 w-3.5 text-slate-300" />}
+                          <span className="text-xs text-slate-300 font-medium">{item.label}</span>
+                        </div>
+                        <p className="text-sm font-bold text-white">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
