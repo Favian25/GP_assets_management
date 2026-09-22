@@ -277,7 +277,7 @@ export default function DashboardPage() {
             <div className="relative z-10 flex flex-col h-full justify-between">
               {/* Main Greeting Section */}
               <div>
-                <div className="mb-8">
+                <div className="mb-6">
                   <p className="text-sm text-slate-400 font-medium mb-2">
                     {(() => {
                       const hour = new Date().getHours();
@@ -290,22 +290,31 @@ export default function DashboardPage() {
                   <h1 className="text-4xl font-black text-white leading-tight mb-3">
                     {userName}
                   </h1>
-                  <p className="text-slate-400 text-sm">Sebagai <span className="text-blue-300 font-semibold capitalize">{userRole || "User"}</span></p>
+                  <p className="text-slate-400 text-xs">Sebagai <span className="text-blue-300 font-semibold capitalize">{userRole || "User"}</span></p>
                 </div>
 
-                {/* Status Info */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-white/5 border border-white/10">
+                {/* Quick Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-xs text-slate-500 font-medium mb-2">Status</p>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                      <span className="text-sm text-slate-300">Sistem Aktif</span>
+                      <span className="text-sm font-semibold text-white">Optimal</span>
                     </div>
-                    <span className="text-sm font-semibold text-emerald-300">Optimal</span>
                   </div>
-
-                  <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-white/5 border border-white/10">
-                    <span className="text-sm text-slate-300">Total Aset</span>
-                    <span className="text-sm font-semibold text-white">{stats?.total || 0} unit</span>
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-xs text-slate-500 font-medium mb-2">Waktu</p>
+                    <p className="text-sm font-semibold text-white">
+                      {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-xs text-slate-500 font-medium mb-2">Total Aset</p>
+                    <p className="text-sm font-semibold text-white">{stats?.total || 0} unit</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p className="text-xs text-slate-500 font-medium mb-2">Tersedia</p>
+                    <p className="text-sm font-semibold text-emerald-300">{stats?.tersedia || 0}</p>
                   </div>
                 </div>
               </div>
