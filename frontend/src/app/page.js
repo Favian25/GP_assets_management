@@ -266,18 +266,13 @@ export default function DashboardPage() {
       {/* Premium Header with Total Asset Value */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
         {/* Greeting Card */}
-        <div className="group lg:col-span-2 lg:order-1">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-1 shadow-2xl h-full hover:shadow-2xl hover:shadow-primary/20 transition-all duration-500">
-          {/* Animated border glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/50 via-blue-500/30 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-all duration-500 rounded-3xl" />
+        <div className="lg:col-span-2 lg:order-1">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-1 shadow-2xl h-full">
 
           <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-5 backdrop-blur-xl">
-            {/* Animated background */}
-            <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/25 to-transparent opacity-30 blur-3xl animate-pulse" />
+            {/* Background */}
+            <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-gradient-to-br from-primary/25 to-transparent opacity-30 blur-3xl" />
             <div className="absolute -left-40 -bottom-40 h-96 w-96 rounded-full bg-gradient-to-tr from-blue-500/15 to-transparent opacity-20 blur-3xl" />
-
-            {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl" />
 
             <div className="relative z-10 flex flex-col h-full justify-between">
               {/* Header with Icon and Title */}
