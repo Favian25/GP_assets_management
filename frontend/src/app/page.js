@@ -283,7 +283,7 @@ export default function DashboardPage() {
               {/* Header with Icon and Title */}
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300 shadow-lg flex-shrink-0">
+                  <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl shadow-lg flex-shrink-0">
                     <span className="text-xl block">
                       {(() => {
                         const hour = new Date().getHours();
