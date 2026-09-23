@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { getAllPegawai, createPegawai, updatePegawai, deletePegawai } from "../lib/pegawaiService";
 import { getUserContext } from "../lib/authService";
-import { Search, Plus, Edit, Trash2, X, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  Search, Plus, Pencil, Trash2, X, AlertTriangle, 
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Check,
+  ChevronUp, ChevronDown, Users
+} from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const ROWS_OPTIONS = [10, 20, 30, 50];
+const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 
 // Format tanggal: "13 Mei 2026"
 const formatTanggalLahir = (dateStr) => {
@@ -33,9 +37,15 @@ const emptyForm = {
 export default function KelolaPegawaiPage() {
   const router = useRouter();
   const [pegawaiList, setPegawaiList] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Table controls
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState(""); // "" | "asc" | "desc"
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // Modals & States
   const [showModal, setShowModal] = useState(false);
   const [showEdit, setShowEdit] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
@@ -45,9 +55,8 @@ export default function KelolaPegawaiPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
   const [userRole, setUserRole] = useState("user");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [mounted, setMounted] = useState(false);
+  const [tableLoading, setTableLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -80,27 +89,59 @@ export default function KelolaPegawaiPage() {
 
   const fetchPegawai = async () => {
     try {
-      setLoading(true);
+      if (!loading) setTableLoading(true);
       const data = await getAllPegawai();
       setPegawaiList(data);
-      setFilteredData(data);
     } catch (err) {
       console.error("Error fetching pegawai:", err);
       showToast("Gagal memuat data pegawai", "error");
     } finally {
       setLoading(false);
+      setTableLoading(false);
     }
   };
 
-  useEffect(() => {
-    const filtered = pegawaiList.filter((item) =>
-      Object.values(item).some((val) =>
-        val?.toString().toLowerCase().includes(search.toLowerCase())
-      )
-    );
-    setFilteredData(filtered);
-    setCurrentPage(1);
-  }, [search, pegawaiList]);
+  const handleSortName = () => {
+    if (sortOrder === "") setSortOrder("asc");
+    else if (sortOrder === "asc") setSortOrder("desc");
+    else setSortOrder("");
+  };
+
+  // Filter & Sort
+  const processedData = useMemo(() => {
+    let result = [...pegawaiList];
+
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter((item) =>
+        Object.values(item).some((val) => val?.toString().toLowerCase().includes(q))
+      );
+    }
+
+    if (sortOrder === "asc") {
+      result.sort((a, b) => a.namaLengkap.localeCompare(b.namaLengkap));
+    } else if (sortOrder === "desc") {
+      result.sort((a, b) => b.namaLengkap.localeCompare(a.namaLengkap));
+    }
+
+    return result;
+  }, [pegawaiList, search, sortOrder]);
+
+  const totalItems = processedData.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  const indexOfLastItem = validCurrentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentData = processedData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const getPageNumbers = () => {
+    const p = [];
+    if (totalPages <= 4) { for (let i = 1; i <= totalPages; i++) p.push(i); }
+    else if (validCurrentPage <= 3) { for (let i = 1; i <= 3; i++) p.push(i); p.push("..."); p.push(totalPages); }
+    else if (validCurrentPage >= totalPages - 2) { p.push(1); p.push("..."); for (let i = totalPages - 2; i <= totalPages; i++) p.push(i); }
+    else { p.push(1); p.push("..."); p.push(validCurrentPage); p.push("..."); p.push(totalPages); }
+    return p;
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -111,7 +152,7 @@ export default function KelolaPegawaiPage() {
     try {
       setSubmitting(true);
       await createPegawai(formData);
-      showToast("Pegawai berhasil ditambahkan");
+      showToast("Pegawai berhasil ditambahkan!");
       setFormData(emptyForm);
       setShowModal(false);
       fetchPegawai();
@@ -143,7 +184,7 @@ export default function KelolaPegawaiPage() {
     try {
       setSubmitting(true);
       await updatePegawai(showEdit.id, editFormData);
-      showToast("Data pegawai berhasil diperbarui");
+      showToast("Data pegawai berhasil diperbarui!");
       setShowEdit(null);
       fetchPegawai();
     } catch (err) {
@@ -154,15 +195,20 @@ export default function KelolaPegawaiPage() {
   };
 
   const handleDelete = async () => {
+    if (!showDeleteConfirm) return;
     try {
       setSubmitting(true);
       await deletePegawai(showDeleteConfirm.id);
-      showToast("Pegawai berhasil dihapus");
+      showToast("Pegawai berhasil dihapus!");
       setShowDeleteConfirm(null);
       setDeleteError(null);
+      
+      if (currentData.length === 1 && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
+      }
+      
       fetchPegawai();
     } catch (err) {
-      // Handle 409 Conflict - pegawai linked to user
       if (err.response?.status === 409) {
         setDeleteError({
           title: "❌ Pegawai Masih Terhubung ke User",
@@ -178,511 +224,393 @@ export default function KelolaPegawaiPage() {
     }
   };
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+  const Pagination = () => (
+    <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-3 gap-3">
+      <div className="hidden sm:flex items-center gap-3">
+        <p className="text-sm text-slate-500 text-nowrap">Menampilkan {currentData.length === 0 ? 0 : indexOfFirstItem + 1}-{Math.min(indexOfFirstItem + itemsPerPage, processedData.length)} dari <span className="font-semibold text-slate-700">{processedData.length}</span> data</p>
+        <div className="flex items-center gap-2">
+          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
+            className="cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-primary-hover shadow-sm transition-colors hover:bg-primary-hover">
+            {ROWS_OPTIONS.map(opt => <option key={opt} value={opt} className="bg-white text-slate-700">{opt}</option>)}
+          </select>
+          <p className="text-sm text-slate-500 text-nowrap">baris per halaman</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        <button onClick={() => setCurrentPage(1)} disabled={validCurrentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Pertama"><ChevronsLeft className="h-4 w-4" /></button>
+        <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={validCurrentPage === 1} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Sebelumnya"><ChevronLeft className="h-4 w-4" /></button>
+        {getPageNumbers().map((page, idx) => page === "..." ? (<span key={`e-${idx}`} className="min-w-[32px] px-1 py-1.5 text-center text-sm text-slate-400">...</span>) : (<button key={page} onClick={() => setCurrentPage(page)} className={`cursor-pointer min-w-[32px] rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${validCurrentPage === page ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-100"}`}>{page}</button>))}
+        <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={validCurrentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Berikutnya"><ChevronRight className="h-4 w-4" /></button>
+        <button onClick={() => setCurrentPage(totalPages)} disabled={validCurrentPage === totalPages || totalPages === 0} className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Terakhir"><ChevronsRight className="h-4 w-4" /></button>
+      </div>
+    </div>
+  );
 
   if (!mounted) return null;
 
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Kelola Pegawai</h1><p className="text-sm text-slate-500">Manajemen data pegawai perusahaan</p></div>
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="p-8 space-y-3 animate-pulse">{[1,2,3].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/><div className="h-4 w-20 rounded bg-slate-200"/></div>))}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 py-6 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Kelola Pegawai</h1>
-            <p className="text-sm text-slate-500">{pegawaiList.length} pegawai terdaftar</p>
+    <div>
+      {/* Toast */}
+      {typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-[9999] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all ${toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"}`}>
+          {toast.type === "error" ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+          {toast.message}
+        </div>,
+        document.body
+      )}
+
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">Kelola Pegawai</h1>
+        <p className="text-sm text-slate-500">Manajemen data pegawai dan detail informasi personal</p>
+      </div>
+
+      {/* Toolbar & Table Section */}
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
+        {/* Table Loading Overlay */}
+        {tableLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] transition-all animate-in fade-in duration-200">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-sm" />
+              <div className="flex flex-col items-center">
+                <p className="text-sm font-bold text-slate-700">Memperbarui Data Pegawai</p>
+                <p className="text-[10px] text-slate-400">Mohon tunggu sebentar...</p>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={() => {
-              setFormData(emptyForm);
-              setShowModal(true);
-            }}
-            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700"
-          >
+        )}
+        
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 border-b border-slate-300 bg-slate-50/50">
+          {/* Search Input & Items per page */}
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                placeholder="Cari nama, email, nomor HP..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full rounded-lg border-2 border-slate-200 pl-10 pr-4 py-2 text-sm text-slate-700 hover:border-slate-300 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+              />
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+            </div>
+            
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-32 rounded-lg border-2 border-slate-200 px-3 py-2 text-sm text-slate-700 bg-white hover:border-slate-300 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer transition-colors"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
+              title="Items per page"
+            >
+              {ROWS_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt} Baris
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tambah Button */}
+          <button onClick={() => {
+            setFormData(emptyForm);
+            setShowModal(true);
+          }}
+            className="cursor-pointer flex w-full justify-center items-center gap-2 rounded-lg bg-primary px-4 py-2 sm:w-auto sm:px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">
             <Plus className="h-4 w-4" />
             Tambah Pegawai
           </button>
         </div>
 
-        {/* Search */}
-        <div className="mb-6 flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari nama, email, atau nomor HP..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-            />
-          </div>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            className="rounded-lg border-2 border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-          >
-            {ROWS_OPTIONS.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt} baris
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Table */}
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
-          {loading ? (
-            <div className="px-6 py-12 text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-emerald-600"></div>
-              <p className="mt-3 text-slate-600">Memuat data pegawai...</p>
-            </div>
-          ) : paginatedData.length === 0 ? (
-            <div className="px-6 py-12 text-center text-slate-500">
-              Tidak ada pegawai ditemukan
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b border-slate-200 bg-slate-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-700">
-                        Nama Lengkap
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-700">
-                        Email
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-700">
-                        Nomor HP
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-700">
-                        Tempat Lahir
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-700">
-                        Tanggal Lahir
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-700">
-                        Aksi
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        className={`border-b border-slate-100 transition-colors ${
-                          index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                        } hover:bg-slate-50`}
-                      >
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                          {item.namaLengkap}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {item.email || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {item.nomorHp || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {item.tempatLahir || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {formatTanggalLahir(item.tanggalLahir)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => openEdit(item)}
-                              className="rounded-lg bg-blue-100 p-2 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white"
-                              title="Edit"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => setShowDeleteConfirm(item)}
-                              className="rounded-lg bg-red-100 p-2 text-red-600 transition-colors hover:bg-red-600 hover:text-white"
-                              title="Hapus"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="border-t border-slate-200 bg-slate-50 px-6 py-4 flex items-center justify-between">
-                  <div className="text-sm text-slate-600">
-                    Halaman {currentPage} dari {totalPages} ({filteredData.length} total)
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                          currentPage === page
-                            ? "bg-emerald-600 text-white"
-                            : "text-slate-600 hover:bg-slate-200"
-                        }`}
-                      >
-                        {page}
+        {/* Pagination & Table */}
+        <Pagination />
+        <div className="overflow-x-auto border-t border-slate-200">
+          <table className="w-full text-left text-sm table-fixed">
+            <thead>
+              <tr className="border-t border-slate-300 border-b border-slate-300 bg-slate-50/50">
+                <th className="px-3 py-3 font-bold text-slate-700 w-[60px] text-center text-xs uppercase tracking-wider border-r border-slate-200">No</th>
+                <th className="px-4 py-3 font-bold text-slate-700 w-[240px] select-none hover:bg-slate-200/50 transition-colors border-r border-slate-200 text-center">
+                  <button onClick={handleSortName} className="flex items-center justify-center gap-2 w-full cursor-pointer uppercase text-xs tracking-wider">
+                    Nama Lengkap
+                    <div className="flex flex-col">
+                      <ChevronUp className={`h-2.5 w-2.5 ${sortOrder === "asc" ? "text-primary" : "text-slate-400"}`} />
+                      <ChevronDown className={`h-2.5 w-2.5 ${sortOrder === "desc" ? "text-primary" : "text-slate-400"}`} />
+                    </div>
+                  </button>
+                </th>
+                <th className="px-4 py-3 font-bold text-slate-700 w-[220px] text-xs uppercase tracking-wider border-r border-slate-200 text-center">Email</th>
+                <th className="px-3 py-3 font-bold text-slate-700 w-[140px] text-center text-xs uppercase tracking-wider border-r border-slate-200">Nomor HP</th>
+                <th className="px-3 py-3 font-bold text-slate-700 w-[140px] text-center text-xs uppercase tracking-wider border-r border-slate-200">Tempat Lahir</th>
+                <th className="px-3 py-3 font-bold text-slate-700 w-[140px] text-center text-xs uppercase tracking-wider border-r border-slate-200">Tanggal Lahir</th>
+                <th className="px-3 py-3 font-bold text-slate-700 text-center w-[120px] text-xs uppercase tracking-wider">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {currentData.map((item, index) => (
+                <tr key={item.id} className={`${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
+                  <td className="px-3 py-3 text-slate-400 font-medium text-center border-r border-slate-200 align-middle text-xs">{indexOfFirstItem + index + 1}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-800 border-r border-slate-200 align-middle text-xs truncate">{item.namaLengkap}</td>
+                  <td className="px-4 py-3 text-slate-600 border-r border-slate-200 align-middle text-xs truncate text-center">{item.email || "-"}</td>
+                  <td className="px-3 py-3 text-slate-600 border-r border-slate-200 align-middle text-xs truncate text-center">{item.nomorHp || "-"}</td>
+                  <td className="px-3 py-3 text-slate-600 border-r border-slate-200 align-middle text-xs truncate text-center">{item.tempatLahir || "-"}</td>
+                  <td className="px-3 py-3 text-slate-600 border-r border-slate-200 align-middle text-xs truncate text-center">{formatTanggalLahir(item.tanggalLahir)}</td>
+                  <td className="px-3 py-3 align-middle text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      {/* Edit */}
+                      <button onClick={() => openEdit(item)}
+                        className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Edit Pegawai">
+                        <Pencil className="h-3.5 w-3.5" />
                       </button>
-                    ))}
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+                      {/* Delete */}
+                      <button onClick={() => setShowDeleteConfirm(item)}
+                        className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {currentData.length === 0 && (<tr><td colSpan={7} className="px-5 py-10 text-center text-slate-400 text-sm">Belum ada pegawai terdaftar atau sesuai pencarian.</td></tr>)}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Modals */}
-      {mounted &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <>
-            {/* Modal Tambah */}
-            {showModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                <form
-                  onSubmit={handleCreate}
-                  className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500"
-                >
-                  <div className="flex items-center justify-between border-b border-slate-100 bg-emerald-50 px-6 py-4 rounded-t-2xl">
-                    <h2 className="text-lg font-bold text-emerald-800">Tambah Pegawai Baru</h2>
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <>
+          {/* Modal Tambah Pegawai */}
+          {showModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowModal(false)}>
+              <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-primary flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
+                  <h2 className="text-lg font-bold text-slate-800">Tambah Pegawai Baru</h2>
+                  <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
+                </div>
+                <form onSubmit={handleCreate} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                    <input
+                      type="text"
+                      value={formData.namaLengkap}
+                      onChange={(e) => setFormData({ ...formData, namaLengkap: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      placeholder="Masukkan nama lengkap"
+                      required
+                      onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")}
+                      onInput={(e) => e.target.setCustomValidity("")}
+                    />
                   </div>
-                  <div className="space-y-4 p-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Nama Lengkap <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.namaLengkap}
-                        onChange={(e) =>
-                          setFormData({ ...formData, namaLengkap: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                        placeholder="Nama lengkap"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Email
-                      </label>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="email@example.com"
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Nomor HP
-                      </label>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
                       <input
                         type="tel"
                         value={formData.nomorHp}
                         onChange={(e) => setFormData({ ...formData, nomorHp: e.target.value })}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="081234567890"
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Tempat Lahir
-                      </label>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Tempat Lahir</label>
                       <input
                         type="text"
                         value={formData.tempatLahir}
-                        onChange={(e) =>
-                          setFormData({ ...formData, tempatLahir: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                        onChange={(e) => setFormData({ ...formData, tempatLahir: e.target.value })}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="Kota lahir"
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Tanggal Lahir
-                      </label>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Lahir</label>
                       <input
                         type="date"
                         value={formData.tanggalLahir}
-                        onChange={(e) =>
-                          setFormData({ ...formData, tanggalLahir: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Alamat
-                      </label>
-                      <textarea
-                        value={formData.alamat}
-                        onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                        placeholder="Alamat lengkap"
-                        rows="2"
+                        onChange={(e) => setFormData({ ...formData, tanggalLahir: e.target.value })}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </div>
-                  <div className="flex gap-3 border-t border-slate-100 bg-white px-6 py-4 rounded-b-2xl">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
-                    >
-                      {submitting ? "Menyimpan..." : "Simpan"}
-                    </button>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Alamat</label>
+                    <textarea
+                      value={formData.alamat}
+                      onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      placeholder="Alamat lengkap"
+                      rows="3"
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
+                    <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-hover disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Pegawai"}</button>
                   </div>
                 </form>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Modal Edit */}
-            {showEdit && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                <form
-                  onSubmit={handleUpdate}
-                  className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500"
-                >
-                  <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl">
-                    <h2 className="text-lg font-bold text-blue-800">Edit Pegawai</h2>
-                    <button
-                      type="button"
-                      onClick={() => setShowEdit(null)}
-                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
+          {/* Modal Edit Pegawai */}
+          {showEdit && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowEdit(null)}>
+              <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
+                  <h2 className="text-lg font-bold text-slate-800">Edit Pegawai</h2>
+                  <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
+                </div>
+                <form onSubmit={handleUpdate} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                    <input
+                      type="text"
+                      value={editFormData.namaLengkap}
+                      onChange={(e) => setEditFormData({ ...editFormData, namaLengkap: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      placeholder="Nama lengkap"
+                      required
+                      onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")}
+                      onInput={(e) => e.target.setCustomValidity("")}
+                    />
                   </div>
-                  <div className="space-y-4 p-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Nama Lengkap <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={editFormData.namaLengkap}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, namaLengkap: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                        placeholder="Nama lengkap"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Email
-                      </label>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
                       <input
                         type="email"
                         value={editFormData.email}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, email: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="email@example.com"
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Nomor HP
-                      </label>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
                       <input
                         type="tel"
                         value={editFormData.nomorHp}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, nomorHp: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                        onChange={(e) => setEditFormData({ ...editFormData, nomorHp: e.target.value })}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="081234567890"
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Tempat Lahir
-                      </label>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Tempat Lahir</label>
                       <input
                         type="text"
                         value={editFormData.tempatLahir}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, tempatLahir: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                        onChange={(e) => setEditFormData({ ...editFormData, tempatLahir: e.target.value })}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="Kota lahir"
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Tanggal Lahir
-                      </label>
+                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Lahir</label>
                       <input
                         type="date"
                         value={editFormData.tanggalLahir}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, tanggalLahir: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        Alamat
-                      </label>
-                      <textarea
-                        value={editFormData.alamat}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, alamat: e.target.value })
-                        }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-                        placeholder="Alamat lengkap"
-                        rows="2"
+                        onChange={(e) => setEditFormData({ ...editFormData, tanggalLahir: e.target.value })}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </div>
-                  <div className="flex gap-3 border-t border-slate-100 bg-white px-6 py-4 rounded-b-2xl">
-                    <button
-                      type="button"
-                      onClick={() => setShowEdit(null)}
-                      className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
-                    >
-                      {submitting ? "Menyimpan..." : "Simpan Perubahan"}
-                    </button>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Alamat</label>
+                    <textarea
+                      value={editFormData.alamat}
+                      onChange={(e) => setEditFormData({ ...editFormData, alamat: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      placeholder="Alamat lengkap"
+                      rows="3"
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
+                    <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
                   </div>
                 </form>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Modal Error - Pegawai Masih Terhubung ke User */}
-            {deleteError && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
-                    <AlertTriangle className="h-6 w-6" />
+          {/* Modal Delete */}
+          {showDeleteConfirm && !deleteError && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteConfirm(null)}>
+              <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-rose-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 text-center overflow-y-auto custom-scrollbar">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100">
+                    <Trash2 className="h-7 w-7 text-rose-600" />
                   </div>
-                  <h3 className="mb-2 text-center text-lg font-bold text-slate-800">
-                    {deleteError.title}
-                  </h3>
-                  <p className="mb-3 text-center text-sm text-slate-600">
-                    {deleteError.message}
-                  </p>
-                  {deleteError.linkedUser && (
-                    <div className="mb-4 rounded-lg bg-rose-50 border border-rose-200 p-3">
-                      <p className="text-xs font-semibold text-rose-900 mb-1">👤 User Terhubung:</p>
-                      <p className="text-sm text-rose-800 font-medium">{deleteError.linkedUser.nama_lengkap}</p>
-                      <p className="text-xs text-rose-700">{deleteError.linkedUser.email}</p>
-                      <p className="text-xs text-rose-700 mt-1">Role: <span className="font-semibold">{deleteError.linkedUser.role}</span></p>
-                    </div>
-                  )}
-                  {deleteError.details && (
-                    <p className="mb-4 text-xs text-slate-600 bg-slate-50 rounded-lg p-3 border border-slate-200">
-                      {deleteError.details}
-                    </p>
-                  )}
-                  <button
-                    onClick={() => setDeleteError(null)}
-                    className="w-full rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-300"
-                  >
-                    Tutup
-                  </button>
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">Hapus Pegawai?</h3>
+                  <p className="text-sm text-slate-500 mb-1">{showDeleteConfirm.namaLengkap}</p>
+                  <p className="text-xs text-rose-500 mt-3">Tindakan ini tidak dapat dibatalkan.</p>
+                </div>
+                <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4">
+                  <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
+                  <button onClick={handleDelete} disabled={submitting} className="cursor-pointer rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-600 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Modal Hapus */}
-            {showDeleteConfirm && !deleteError && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 mx-auto">
-                    <AlertTriangle className="h-6 w-6" />
-                  </div>
-                  <h3 className="mb-2 text-center text-lg font-bold text-slate-800">
-                    Hapus Pegawai?
-                  </h3>
-                  <p className="mb-6 text-center text-sm text-slate-500">
-                    Apakah Anda yakin ingin menghapus pegawai{" "}
-                    <strong>{showDeleteConfirm.namaLengkap}</strong>? Data ini tidak dapat dipulihkan.
-                  </p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowDeleteConfirm(null)}
-                      className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      disabled={submitting}
-                      className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
-                    >
-                      {submitting ? "Menghapus..." : "Hapus"}
-                    </button>
-                  </div>
+          {/* Modal Delete Error */}
+          {deleteError && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300">
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
+                  <AlertTriangle className="h-7 w-7" />
                 </div>
+                <h3 className="mb-2 text-center text-lg font-bold text-slate-800">
+                  {deleteError.title}
+                </h3>
+                <p className="mb-3 text-center text-sm text-slate-600">
+                  {deleteError.message}
+                </p>
+                {deleteError.linkedUser && (
+                  <div className="mb-4 rounded-lg bg-rose-50 border border-rose-200 p-3">
+                    <p className="text-xs font-semibold text-rose-900 mb-1">👤 User Terhubung:</p>
+                    <p className="text-sm text-rose-800 font-medium">{deleteError.linkedUser.nama_lengkap || deleteError.linkedUser.namaLengkap}</p>
+                    <p className="text-xs text-rose-700">{deleteError.linkedUser.email}</p>
+                    <p className="text-xs text-rose-700 mt-1">Role: <span className="font-semibold">{deleteError.linkedUser.role}</span></p>
+                  </div>
+                )}
+                <button onClick={() => setDeleteError(null)} className="cursor-pointer w-full rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-300">
+                  Tutup
+                </button>
               </div>
-            )}
-          </>,
-          document.body
-        )}
-
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg text-white font-medium shadow-lg ${
-            toast.type === "success" ? "bg-green-600" : "bg-red-600"
-          }`}
-        >
-          {toast.message}
-        </div>
+            </div>
+          )}
+        </>,
+        document.body
       )}
     </div>
   );

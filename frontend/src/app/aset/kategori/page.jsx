@@ -332,101 +332,101 @@ export default function KategoriMerekPage() {
         {/* Table */}
         <div className="overflow-x-auto border-t border-slate-100">
           {activeTab === "kategori" ? (
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-sm table-fixed">
               <thead>
-                  <tr className="border-t border-t-slate-300 border-b border-b-slate-300 bg-slate-50">
-                  <th className="px-5 py-3 font-bold text-slate-700 w-16 text-center uppercase tracking-wider">No</th>
-                  <th className="px-5 py-3 font-bold text-slate-700">
-                    <button onClick={() => handleSort("nama")} className="cursor-pointer flex items-center uppercase tracking-wider">
+                <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
+                  <th className="w-16 px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">No</th>
+                  <th className="px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200">
+                    <button onClick={() => handleSort("nama")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">
                       Nama Kategori <SortIcon columnKey="nama" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-40 text-center">
+                  <th className="w-40 px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200">
                     <button onClick={() => handleSort("kode_singkat")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider">
                       Kode <SortIcon columnKey="kode_singkat" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-center text-slate-700 w-44 uppercase tracking-wider">
+                  <th className="w-44 px-4 py-3 font-bold text-center text-slate-700 uppercase tracking-wider text-xs border-r border-slate-200">
                     Tipe
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 text-center w-32">
+                  <th className="w-32 px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200">
                     <button onClick={() => handleSort("qty")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider">
                       QTY <SortIcon columnKey="qty" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-28 text-center uppercase tracking-wider">Aksi</th>
+                  <th className="w-28 px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedData.map((item, index) => (
                   <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                    <td className="px-5 py-3 text-center text-slate-500 font-medium">{startIndex + index + 1}</td>
-                    <td className="px-5 py-3 font-bold text-slate-700 text-sm">{item.nama}</td>
-                    <td className="px-5 py-3">
-                      <span className="block w-full text-center rounded-full border py-1 text-xs font-semibold tracking-wide uppercase border-blue-500 bg-blue-50 text-blue-700 shadow-sm">{item.kode_singkat}</span>
+                    <td className="w-16 px-4 py-3 text-center text-xs text-slate-500 font-medium border-r border-slate-200 align-middle">{startIndex + index + 1}</td>
+                    <td className="px-4 py-3 font-bold text-slate-700 text-xs border-r border-slate-200 align-middle truncate">{item.nama}</td>
+                    <td className="w-40 px-4 py-3 text-center border-r border-slate-200 align-middle">
+                      <span className="inline-block w-full text-center rounded-full border py-1 text-xs font-semibold tracking-wide uppercase border-blue-500 bg-blue-50 text-blue-700 shadow-sm">{item.kode_singkat}</span>
                     </td>
-                    <td className="px-5 py-3 text-center">
-                      <span className={`block min-w-[120px] w-full max-w-[140px] mx-auto rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
+                    <td className="w-44 px-4 py-3 text-center border-r border-slate-200 align-middle">
+                      <span className={`inline-block min-w-[120px] w-full max-w-[140px] mx-auto rounded-full border py-1 text-[10px] font-bold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
                         {item.tipe}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-center">
-                      <span className="font-bold text-slate-600 ">{item.qty || 0}</span>
+                    <td className="w-32 px-4 py-3 text-center border-r border-slate-200 align-middle">
+                      <span className="font-bold text-xs text-slate-600">{item.qty || 0}</span>
                     </td>
-                    <td className="px-5 py-3 text-center">
+                    <td className="w-28 px-4 py-3 text-center align-middle">
                       <div className="flex items-center justify-center gap-1.5">
-                        <button onClick={() => setShowEditKat(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-all hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => setShowDeleteKat(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-all hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => setShowEditKat(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-all hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setShowDeleteKat(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-all hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {paginatedData.length === 0 && (<tr><td colSpan={6} className="px-5 py-16 text-center text-slate-400 font-medium italic">Data tidak ditemukan.</td></tr>)}
+                {paginatedData.length === 0 && (<tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400 font-medium italic">Data tidak ditemukan.</td></tr>)}
               </tbody>
             </table>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-sm table-fixed">
               <thead>
-                  <tr className="border-t border-t-slate-300 border-b border-b-slate-300 bg-slate-50">
-                  <th className="px-5 py-3 font-bold text-slate-700 w-16 text-center uppercase tracking-wider">No</th>
-                  <th className="px-5 py-3 font-bold text-slate-700">
-                    <button onClick={() => handleSort("nama")} className="cursor-pointer flex items-center uppercase tracking-wider">
+                <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
+                  <th className="w-16 px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">No</th>
+                  <th className="px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200">
+                    <button onClick={() => handleSort("nama")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">
                       Nama Merek <SortIcon columnKey="nama" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-center text-slate-700 w-44 uppercase tracking-wider">
+                  <th className="w-44 px-4 py-3 font-bold text-center text-slate-700 uppercase tracking-wider text-xs border-r border-slate-200">
                     Tipe
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 text-center w-36">
+                  <th className="w-36 px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200">
                     <button onClick={() => handleSort("qty")} className="cursor-pointer flex items-center justify-center w-full uppercase tracking-wider">
                       QTY <SortIcon columnKey="qty" />
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-bold text-slate-700 w-28 text-center uppercase tracking-wider">Aksi</th>
+                  <th className="w-28 px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedData.map((item, index) => (
                   <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                    <td className="px-5 py-3 text-center text-slate-500 font-medium">{startIndex + index + 1}</td>
-                    <td className="px-5 py-3 font-bold text-slate-700 text-sm">{item.nama}</td>
-                    <td className="px-5 py-3 text-center">
-                      <span className={`block min-w-[120px] w-full max-w-[140px] mx-auto rounded-full border py-1 text-xs font-semibold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
+                    <td className="w-16 px-4 py-3 text-center text-xs text-slate-500 font-medium border-r border-slate-200 align-middle">{startIndex + index + 1}</td>
+                    <td className="px-4 py-3 font-bold text-slate-700 text-xs border-r border-slate-200 align-middle truncate">{item.nama}</td>
+                    <td className="w-44 px-4 py-3 text-center border-r border-slate-200 align-middle">
+                      <span className={`inline-block min-w-[120px] w-full max-w-[140px] mx-auto rounded-full border py-1 text-[10px] font-bold tracking-wide uppercase shadow-sm ${item.tipe === 'aset' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
                         {item.tipe}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-center">
-                      <span className="font-bold text-slate-600">{item.qty || 0}</span>
+                    <td className="w-36 px-4 py-3 text-center border-r border-slate-200 align-middle">
+                      <span className="font-bold text-xs text-slate-600">{item.qty || 0}</span>
                     </td>
-                    <td className="px-5 py-3 text-center">
+                    <td className="w-28 px-4 py-3 text-center align-middle">
                       <div className="flex items-center justify-center gap-1.5">
-                        <button onClick={() => setShowEditMerek(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-all hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => setShowDeleteMerek(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-all hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => setShowEditMerek(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-all hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setShowDeleteMerek(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-all hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {paginatedData.length === 0 && (<tr><td colSpan={5} className="px-5 py-16 text-center text-slate-400 font-medium italic">Data tidak ditemukan.</td></tr>)}
+                {paginatedData.length === 0 && (<tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400 font-medium italic">Data tidak ditemukan.</td></tr>)}
               </tbody>
             </table>
           )}

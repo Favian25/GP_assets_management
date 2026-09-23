@@ -506,13 +506,13 @@ export default function KelolaUserPage() {
         {/* Table Controls (Pagination Top) & Table */}
         <Pagination />
         <div className="overflow-x-auto border-t border-slate-200">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+          <table className="w-full text-left text-sm table-fixed">
             <thead>
-              <tr className="border-b border-slate-300 bg-slate-50/50">
-                <th className="px-5 py-3 font-bold text-slate-700 w-12 text-center uppercase text-[10px] tracking-wider">No</th>
-                <th className="px-5 py-3 font-bold text-slate-700 w-14 text-center"></th>
-                <th className="px-5 py-3 font-bold text-slate-700 select-none hover:bg-slate-200/50 transition-colors">
-                  <button onClick={handleSortName} className="flex items-center justify-between gap-2 w-full cursor-pointer uppercase text-[10px] tracking-wider">
+              <tr className="border-t border-slate-300 border-b border-slate-300 bg-slate-50/50">
+                <th className="px-3 py-3 font-bold text-slate-700 w-[60px] text-center text-xs uppercase tracking-wider border-r border-slate-200">No</th>
+                <th className="px-3 py-3 font-bold text-slate-700 w-[80px] text-center text-xs uppercase tracking-wider border-r border-slate-200">Profil</th>
+                <th className="px-4 py-3 font-bold text-slate-700 w-[220px] select-none hover:bg-slate-200/50 transition-colors border-r border-slate-200 text-center">
+                  <button onClick={handleSortName} className="flex items-center justify-center gap-2 w-full cursor-pointer uppercase text-xs tracking-wider">
                     Nama Lengkap
                     <div className="flex flex-col">
                       <ChevronUp className={`h-2.5 w-2.5 ${sortOrder === "asc" ? "text-primary" : "text-slate-400"}`} />
@@ -520,18 +520,18 @@ export default function KelolaUserPage() {
                     </div>
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Email</th>
-                <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Status</th>
-                <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Role</th>
-                <th className="px-5 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">Terdaftar</th>
-                <th className="px-5 py-3 font-bold text-slate-700 text-center w-[160px] uppercase text-[10px] tracking-wider">Aksi</th>
+                <th className="px-4 py-3 font-bold text-slate-700 w-[200px] text-xs uppercase tracking-wider border-r border-slate-200 text-center">Email</th>
+                <th className="px-3 py-3 font-bold text-slate-700 w-[120px] text-center text-xs uppercase tracking-wider border-r border-slate-200">Status</th>
+                <th className="px-3 py-3 font-bold text-slate-700 w-[120px] text-center text-xs uppercase tracking-wider border-r border-slate-200">Role</th>
+                <th className="px-3 py-3 font-bold text-slate-700 w-[130px] text-center text-xs uppercase tracking-wider border-r border-slate-200">Terdaftar</th>
+                <th className="px-3 py-3 font-bold text-slate-700 text-center w-[180px] text-xs uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {currentData.map((user, index) => (
                 <tr key={user.id} className={`${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="px-5 py-3 text-slate-400 font-medium text-center">{indexOfFirstItem + index + 1}</td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 py-3 text-slate-400 font-medium text-center border-r border-slate-200 align-middle text-xs">{indexOfFirstItem + index + 1}</td>
+                  <td className="px-3 py-3 border-r border-slate-200 align-middle">
                     <div className="flex justify-center">
                       <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-slate-200 shadow-sm cursor-pointer group" onClick={() => {
                         const src = user.fotoProfil || user.foto_profil;
@@ -552,38 +552,38 @@ export default function KelolaUserPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3 font-semibold text-slate-800">{user.namaLengkap}</td>
-                  <td className="px-5 py-3 text-slate-600">{user.email}</td>
-                  <td className="px-5 py-3">
+                  <td className="px-4 py-3 font-semibold text-slate-800 border-r border-slate-200 align-middle text-xs truncate">{user.namaLengkap}</td>
+                  <td className="px-4 py-3 text-slate-600 border-r border-slate-200 align-middle text-xs truncate">{user.email}</td>
+                  <td className="px-3 py-3 text-center border-r border-slate-200 align-middle">
                     {user.role !== "super admin" && (
                       <>
                         {isGuestUser(user) ? (
-                          <span className="inline-block rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 shadow-sm">👤 Guest</span>
+                          <span className="inline-block w-[85px] rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 shadow-sm text-center">👤 Guest</span>
                         ) : (
-                          <span className="inline-block rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 shadow-sm">👨 Regular</span>
+                          <span className="inline-block w-[85px] rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 shadow-sm text-center">👨 Regular</span>
                         )}
                       </>
                     )}
                   </td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-block rounded-full border px-2.5 py-0.5 font-semibold capitalize shadow-sm text-xs ${getRoleBadge(user.role)}`}>{user.role}</span>
+                  <td className="px-3 py-3 text-center border-r border-slate-200 align-middle">
+                    <span className={`inline-block w-[85px] rounded-full border px-2.5 py-0.5 font-semibold capitalize shadow-sm text-[10px] tracking-wide text-center ${getRoleBadge(user.role)}`}>{user.role}</span>
                   </td>
-                  <td className="px-5 py-3 text-slate-500 text-sm">{formatDate(user.createdAt)}</td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center justify-center gap-1.5">
+                  <td className="px-3 py-3 text-slate-500 text-xs text-center border-r border-slate-200 align-middle">{formatDate(user.createdAt)}</td>
+                  <td className="px-3 py-3 align-middle text-center">
+                    <div className="flex items-center justify-center gap-1">
                       {canManageUser(user.role) ? (
                         <>
                           {/* Detail Guest (hanya untuk guest) */}
                           {user.role === "guest" && (
                             <button onClick={() => setShowGuestDetailModal(user)}
-                              className="cursor-pointer rounded-lg bg-indigo-100 p-1.5 text-indigo-600 transition-colors hover:bg-indigo-600 hover:text-white" title="Lihat Detail">
-                              <Eye className="h-4 w-4" />
+                              className="cursor-pointer rounded-lg bg-indigo-100 p-1 text-indigo-600 transition-colors hover:bg-indigo-600 hover:text-white" title="Lihat Detail">
+                              <Eye className="h-3.5 w-3.5" />
                             </button>
                           )}
                           {/* Edit */}
                           <button onClick={() => openEditModal(user)}
-                            className="cursor-pointer rounded-lg bg-blue-100 p-1.5 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Edit User">
-                            <Pencil className="h-4 w-4" />
+                            className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Edit User">
+                            <Pencil className="h-3.5 w-3.5" />
                           </button>
                           {/* Change Role */}
                           <button onClick={() => {
@@ -594,19 +594,19 @@ export default function KelolaUserPage() {
                               setSelectedRole(user.role);
                             }
                           }}
-                            className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Ubah Role">
-                            <Shield className="h-4 w-4" />
+                            className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Ubah Role">
+                            <Shield className="h-3.5 w-3.5" />
                           </button>
                           {/* Toggle Active/Inactive */}
                           <button onClick={() => handleToggleActive(user)} disabled={submitting}
-                            className={`cursor-pointer rounded-lg p-1.5 transition-colors ${user.isActive ? "bg-green-100 text-green-600 hover:bg-green-600 hover:text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white"}`}
+                            className={`cursor-pointer rounded-lg p-1 transition-colors ${user.isActive ? "bg-green-100 text-green-600 hover:bg-green-600 hover:text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white"}`}
                             title={user.isActive ? "Nonaktifkan User" : "Aktifkan User"}>
-                            {user.isActive ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                            {user.isActive ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
                           </button>
                           {/* Delete */}
                           <button onClick={() => setShowDeleteConfirm(user)}
-                            className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus">
-                            <Trash2 className="h-4 w-4" />
+                            className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus">
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </>
                       ) : (
@@ -616,7 +616,7 @@ export default function KelolaUserPage() {
                   </td>
                 </tr>
               ))}
-              {currentData.length === 0 && (<tr><td colSpan={6} className="px-5 py-10 text-center text-slate-400">Belum ada user terdaftar atau sesuai pencarian.</td></tr>)}
+              {currentData.length === 0 && (<tr><td colSpan={8} className="px-5 py-10 text-center text-slate-400 text-sm">Belum ada user terdaftar atau sesuai pencarian.</td></tr>)}
             </tbody>
           </table>
         </div>
@@ -864,26 +864,20 @@ export default function KelolaUserPage() {
                   <h2 className="text-lg font-bold text-slate-800">Detail User Guest</h2>
                   <button type="button" onClick={() => setShowGuestDetailModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
                 </div>
-                <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nama Lengkap</label>
-                    <p className="text-sm font-medium text-slate-800 mt-1">{showGuestDetailModal.namaLengkap}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</label>
-                    <p className="text-sm font-medium text-slate-800 mt-1">{showGuestDetailModal.email}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nomor HP</label>
-                    <p className="text-sm font-medium text-slate-800 mt-1">{showGuestDetailModal.nomorHp || "-"}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Keterangan</label>
-                    <p className="text-sm font-medium text-slate-800 mt-1 break-words">{showGuestDetailModal.keterangan || "-"}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Terdaftar</label>
-                    <p className="text-sm font-medium text-slate-800 mt-1">{formatDate(showGuestDetailModal.createdAt)}</p>
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                  <div className="grid grid-cols-1 gap-4 md:gap-6">
+                    {[
+                      ["Nama Lengkap", showGuestDetailModal.namaLengkap],
+                      ["Email", showGuestDetailModal.email],
+                      ["Nomor HP", showGuestDetailModal.nomorHp || "-"],
+                      ["Keterangan", showGuestDetailModal.keterangan || "-"],
+                      ["Terdaftar", formatDate(showGuestDetailModal.createdAt)]
+                    ].map(([l, v]) => (
+                      <div key={l} className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{l}</span>
+                        <span className="text-sm font-medium text-slate-800 break-words">{v}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
