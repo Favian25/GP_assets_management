@@ -50,7 +50,9 @@ export const createPeminjaman = async (data, files = []) => {
       Array.from(files).forEach((file) => {
         formData.append("bukti", file);
       });
-      const response = await api.post("/peminjaman", formData);
+      const response = await api.post("/peminjaman", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return response.data;
     } else {
       const response = await api.post("/peminjaman", backendData);
@@ -78,7 +80,9 @@ export const updatePeminjaman = async (id, data, files = []) => {
       Array.from(files).forEach((file) => {
         formData.append("bukti", file);
       });
-      const response = await api.put(`/peminjaman/${id}`, formData);
+      const response = await api.put(`/peminjaman/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return response.data;
     } else {
       const response = await api.put(`/peminjaman/${id}`, backendData);
