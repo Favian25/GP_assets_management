@@ -83,7 +83,7 @@ function ImageCarouselInner({ images, title, backendUrl, onImageClick }) {
       <span className="text-sm font-semibold text-slate-600 block mb-2">{title}</span>
       <div className="flex items-center gap-2">
         {images.length > 3 && (
-          <button onClick={prev} className="p-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm">
+          <button type="button" onClick={prev} className="p-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm">
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
@@ -102,7 +102,7 @@ function ImageCarouselInner({ images, title, backendUrl, onImageClick }) {
           ))}
         </div>
         {images.length > 3 && (
-          <button onClick={next} className="p-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm">
+          <button type="button" onClick={next} className="p-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm">
             <ChevronRight className="h-5 w-5" />
           </button>
         )}
