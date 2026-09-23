@@ -173,7 +173,8 @@ export function mapPeminjamanToBackend(frontendData) {
   if (frontendData.tanggalPeminjaman !== undefined) mapped.tanggal_peminjaman = frontendData.tanggalPeminjaman;
   if (frontendData.tanggalPengembalian !== undefined) mapped.tanggal_pengembalian = frontendData.tanggalPengembalian;
   if (frontendData.status !== undefined) mapped.status = frontendData.status;
-  if (frontendData.yangMenyerahkan !== undefined) mapped.yang_menyerahkan = frontendData.yangMenyerahkan;
+  // Jangan include yang_menyerahkan saat create, hanya saat approve
+  if (frontendData.yangMenyerahkan !== undefined && frontendData.yangMenyerahkan !== null) mapped.yang_menyerahkan = frontendData.yangMenyerahkan;
   if (frontendData.approvedBy !== undefined) mapped.approved_by = frontendData.approvedBy;
   if (frontendData.buktiPeminjaman !== undefined) mapped.bukti_peminjaman = frontendData.buktiPeminjaman;
   if (frontendData.buktiPengembalian !== undefined) mapped.bukti_pengembalian = frontendData.buktiPengembalian;

@@ -64,10 +64,7 @@ const peminjamanController = {
         return res.status(400).json({ success: false, message: "Alasan/keperluan peminjaman wajib diisi!" });
       }
 
-      // yang_menyerahkan wajib hanya untuk superadmin, admin, supervisor
-      if (!isUserRole && !yang_menyerahkan) {
-        return res.status(400).json({ success: false, message: "Yang menyerahkan wajib diisi!" });
-      }
+      // yang_menyerahkan akan diisi saat approval, tidak perlu saat create
 
       let itemsArray = items;
       if (typeof items === "string") {

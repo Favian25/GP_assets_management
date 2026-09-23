@@ -691,7 +691,7 @@ export default function PeminjamanAsetPage() {
                         }} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit / Pengembalian"><Pencil className="h-3.5 w-3.5" /></button>
                       )}
                       {/* Approve */}
-                      {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && (
+                      {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && item.namaPeminjam !== userName && (
                         <button onClick={() => {
                           setShowApproveConfirm(item);
                           setApproveYangMenyerahkan("");
