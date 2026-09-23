@@ -88,7 +88,7 @@ export default function ClientWrapper({ children }) {
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <Navbar isCollapsed={isCollapsed} onMenuToggle={() => setMobileOpen(!mobileOpen)} />
       <div className={`flex min-h-screen flex-col transition-all duration-300 ease-in-out ml-0 ${isCollapsed ? "lg:ml-20" : "lg:ml-64"}`}>
-        <main key={pathname} className="flex-1 bg-background p-4 sm:p-6 pt-20 sm:pt-22 animate-page-in">
+        <main key={pathname} className="flex-1 bg-background p-4 sm:p-6 pt-16 sm:pt-20 lg:pt-22 animate-page-in">
           {children}
         </main>
         <Footer />

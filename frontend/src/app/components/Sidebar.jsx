@@ -301,8 +301,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
             </div>
           )}
 
-          {/* Kelola User - Only Super Admin & Admin */}
-          {["super admin", "admin"].includes(userRole) && (
+          {/* Kelola User - Only Super Admin */}
+          {userRole === "super admin" && (
             <>
               <Link
                 href="/kelola-user"

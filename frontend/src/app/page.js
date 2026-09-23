@@ -30,7 +30,7 @@ export default function DashboardPage() {
   useEffect(() => {
     setMounted(true);
     setNow(new Date());
-    const clockInterval = setInterval(() => setNow(new Date()), 15000);
+    const clockInterval = setInterval(() => setNow(new Date()), 1000);
     const ctx = getUserContext();
     if (ctx) {
       setUserRole(ctx.role || "user");
@@ -282,8 +282,16 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Header Mobile — Hanya tampil di mobile */}
+      <div className="mb-6 block lg:hidden">
+        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+        <p className="text-sm text-slate-500 mt-1 uppercase tracking-widest font-semibold">
+          Asset Management System
+        </p>
+      </div>
+
       {/* Premium Header — Ucapan (kiri) + Nilai Aset (kanan) */}
-      <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:auto-rows-max">
         {/* === Card Ucapan === */}
         <div className="lg:col-span-2">
           <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
@@ -306,91 +314,105 @@ export default function DashboardPage() {
             {/* Garis highlight atas */}
             <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-            <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
+            <div className="relative z-10 flex h-full flex-col p-4 lg:p-7">
               {/* Baris 1 — identitas + jam live */}
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25`}>
-                    <GreetingIcon className="h-7 w-7 text-white" strokeWidth={1.75} />
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25 lg:h-14 lg:w-14`}>
+                    <GreetingIcon className="h-6 w-6 text-white lg:h-7 lg:w-7" strokeWidth={1.75} />
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300/80 lg:text-[11px]">
                       {greetingLabel}
                     </p>
-                    <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-white lg:text-4xl">
+                    <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-white lg:text-4xl">
                       {userName}
                     </h1>
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                      <LayoutGrid className="h-3.5 w-3.5" />
+                    <p className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-slate-400 lg:mt-1.5 lg:text-xs">
+                      <LayoutGrid className="h-3 w-3 lg:h-3.5 lg:w-3.5" />
                       Asset Management System
                     </p>
                   </div>
                 </div>
 
                 {/* Jam & tanggal live */}
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-right backdrop-blur-md">
-                  <p className="font-mono text-lg font-bold leading-none tabular-nums text-white">
-                    {now
-                      ? now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false })
-                      : "--:--"}
-                    <span className="ml-1.5 align-middle text-[10px] font-semibold tracking-wider text-slate-400">WIB</span>
-                  </p>
-                  <p className="mt-1.5 text-[11px] font-medium capitalize text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center backdrop-blur-md lg:rounded-2xl lg:px-4 lg:py-2.5">
+                  <p className="font-mono text-[9px] font-bold leading-none text-slate-300 lg:text-[11px]">
                     {now
                       ? now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
                       : "Memuat..."}
+                  </p>
+                  <p className="mt-1 font-mono text-sm font-bold leading-none tabular-nums text-white lg:text-lg">
+                    {now
+                      ? now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
+                      : "--:--:--"}
                   </p>
                 </div>
               </div>
 
               {/* Baris 2 — chip info ringkasan */}
-              <div className="mt-6 flex flex-1 flex-col justify-end">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/20 ring-1 ring-blue-400/30">
-                      <User className="h-4 w-4 text-blue-300" />
+              <div className="mt-4 flex flex-1 flex-col justify-end lg:mt-6">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30 lg:h-9 lg:w-9 lg:rounded-xl">
+                      <User className="h-3.5 w-3.5 text-blue-300 lg:h-4 lg:w-4" />
                     </div>
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Role</p>
-                      <p className="text-sm font-semibold capitalize text-white">{userRole || "User"}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/30">
-                      <Package className="h-4 w-4 text-emerald-300" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Total Aset Terdaftar</p>
-                      <p className="text-sm font-semibold text-white">{stats?.total || 0} Unit</p>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 lg:text-[10px]">Role</p>
+                      <p className="text-xs font-semibold capitalize text-white lg:text-sm">{userRole || "User"}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/20 ring-1 ring-sky-400/30">
-                      <BarChart3 className="h-4 w-4 text-sky-300" />
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30 lg:h-9 lg:w-9 lg:rounded-xl">
+                      <Package className="h-3.5 w-3.5 text-emerald-300 lg:h-4 lg:w-4" />
                     </div>
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Nilai Aset</p>
-                      <p className="text-sm font-semibold text-white">
-                        Rp {stats && stats.total ? ((stats.total * 5000000) / 1000000000).toFixed(1) : "0"} M
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 lg:text-[10px]">Total Aset</p>
+                      <p className="text-xs font-semibold text-white lg:text-sm">{stats?.total || 0} Unit</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-sky-500/20 ring-1 ring-sky-400/30 lg:h-9 lg:w-9 lg:rounded-xl">
+                      <BarChart3 className="h-3.5 w-3.5 text-sky-300 lg:h-4 lg:w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 lg:text-[10px]">Nilai Aset</p>
+                      <p className="truncate text-xs font-semibold text-white lg:text-sm">
+                        {["super admin", "admin"].includes(userRole?.toLowerCase()) ? (
+                          stats?.totalNilaiKeseluruhan > 0
+                            ? (
+                              <>
+                                <span className="hidden lg:inline">
+                                  {`Rp ${stats.totalNilaiKeseluruhan.toLocaleString("id-ID")}`}
+                                </span>
+                                <span className="lg:hidden">
+                                  {`Rp ${(stats.totalNilaiKeseluruhan / 1000000).toFixed(1)} Jt`}
+                                </span>
+                              </>
+                            )
+                            : "Rp -"
+                        ) : (
+                          "-"
+                        )}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Status strip */}
-                <div className="mt-5 flex flex-wrap gap-2 border-t border-white/10 pt-4">
+                <div className="mt-3 flex flex-wrap gap-1 border-t border-white/10 pt-3 lg:mt-5 lg:gap-2 lg:pt-4">
                   {[
                     { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2, chip: "bg-emerald-500/10 text-emerald-300 ring-emerald-400/20" },
                     { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package, chip: "bg-blue-500/10 text-blue-300 ring-blue-400/20" },
                     { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle, chip: "bg-amber-500/10 text-amber-300 ring-amber-400/20" },
                     { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle, chip: "bg-rose-500/10 text-rose-300 ring-rose-400/20" }
                   ].map((item) => (
-                    <span key={item.label} className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${item.chip}`}>
-                      <item.icon className="h-3.5 w-3.5" />
-                      {item.label}
-                      <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-white">{item.value}</span>
+                    <span key={item.label} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-semibold ring-1 lg:gap-2 lg:px-3 lg:py-1.5 lg:text-xs ${item.chip}`}>
+                      <item.icon className="h-3 w-3 lg:h-3.5 lg:w-3.5" />
+                      <span className="hidden sm:inline">{item.label}</span>
+                      <span className="rounded-full bg-white/10 px-1 py-0.5 text-[8px] font-bold text-white lg:px-1.5 lg:py-0.5 lg:text-[10px]">{item.value}</span>
                     </span>
                   ))}
                 </div>
@@ -399,120 +421,70 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* === Card Total Nilai Aset === */}
+        {/* === Card Distribusi Aset === */}
         <div className="lg:col-span-1">
-          <div className="group relative h-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-blue-600 to-blue-800 p-6 text-white shadow-xl shadow-blue-600/20 ring-1 ring-blue-400/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/30">
-            {/* Decorative background circles */}
-            <div className="absolute -right-24 -top-24 h-56 w-56 rounded-full bg-white/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
-            <div className="absolute -left-20 bottom-0 h-48 w-48 rounded-full bg-blue-400/10 blur-3xl" />
+          <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+            {/* Gradient base */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-cyan-950 to-teal-950" />
 
-            {/* Shine effect on hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-5" />
+            {/* Ambient glow */}
+            <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+            <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-teal-500/15 blur-3xl" />
 
-            <div className="relative z-10 flex h-full flex-col">
-              {/* Icon & Title */}
-              <div className="flex items-center gap-3">
-                <div className="flex-shrink-0 rounded-2xl bg-white/20 p-3 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:scale-110 group-hover:bg-white/30">
-                  <BarChart3 className="h-5 w-5 text-white" />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg font-bold tracking-tight">Total Nilai Aset</h2>
-                  <p className="mt-0.5 text-xs font-medium text-blue-100">Keseluruhan inventori</p>
-                </div>
-              </div>
+            {/* Dot pattern */}
+            <div
+              className="absolute inset-0 opacity-[0.05]"
+              style={{
+                backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                backgroundSize: "22px 22px",
+              }}
+            />
 
-              {/* Nilai utama */}
-              <div className="mt-6">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 opacity-80">Nominal</p>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold opacity-90">Rp</span>
-                  <span className="text-3xl font-black leading-none drop-shadow-lg lg:text-4xl">
-                    {stats && stats.total
-                      ? (stats.total * 5000000).toLocaleString("id-ID")
-                      : "0"}
-                  </span>
-                </div>
-                <div className="mt-4 flex items-end justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 opacity-80">Unit</p>
-                    <p className="text-xl font-black">{stats?.total || 0}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100 opacity-80">Per Unit</p>
-                    <p className="text-base font-black">Rp 5M</p>
-                  </div>
-                </div>
-              </div>
+            {/* Garis highlight atas */}
+            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-              {/* Distribusi */}
-              <div className="mt-auto border-t border-white/20 pt-4">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-blue-100 opacity-80">Distribusi Status</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2 },
-                    { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package },
-                    { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle },
-                    { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle }
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-xl bg-white/10 p-2.5 backdrop-blur-sm">
-                      <div className="flex items-center gap-1.5">
-                        <item.icon className="h-3.5 w-3.5 text-blue-100" />
-                        <span className="truncate text-[11px] font-medium text-blue-100">{item.label}</span>
-                      </div>
-                      <p className="mt-1 text-lg font-bold leading-none">{item.value}</p>
+            <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
+              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 p-2 shadow-lg">
+                  <PieChart className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-white">Distribusi Aset</span>
+              </h2>
+
+            <div className="space-y-4 flex-1">
+              {[
+                { label: "Siap Digunakan", value: stats?.tersedia || 0, color: "emerald" },
+                { label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "blue" },
+                { label: "Maintenance", value: stats?.maintenance || 0, color: "amber" },
+                { label: "Rusak", value: stats?.rusak || 0, color: "rose" }
+              ].map((item) => {
+                const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+                const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
+
+                const colorMap = {
+                  emerald: "bg-emerald-500",
+                  blue: "bg-blue-500",
+                  amber: "bg-amber-500",
+                  rose: "bg-rose-500"
+                };
+
+                return (
+                  <div key={item.label}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-slate-300">{item.label}</span>
+                      <span className="text-sm font-bold text-white">{item.value} ({percentage}%)</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-
-      {/* Asset Distribution */}
-      <div className="mb-10">
-        <div className="rounded-2xl bg-gradient-to-br from-white via-slate-50 to-blue-50 shadow-lg border border-slate-200/60 p-6 hover:shadow-xl transition-shadow duration-300">
-          <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-blue-500/10">
-              <PieChart className="h-5 w-5 text-primary" />
-            </div>
-            <span>Distribusi Aset</span>
-          </h2>
-
-          <div className="space-y-4">
-            {[
-              { label: "Siap Digunakan", value: stats?.tersedia || 0, color: "emerald" },
-              { label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "blue" },
-              { label: "Maintenance", value: stats?.maintenance || 0, color: "amber" },
-              { label: "Rusak", value: stats?.rusak || 0, color: "rose" }
-            ].map((item) => {
-              const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
-              const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
-
-              const colorMap = {
-                emerald: "bg-emerald-500",
-                blue: "bg-blue-500",
-                amber: "bg-amber-500",
-                rose: "bg-rose-500"
-              };
-
-              return (
-                <div key={item.label}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                    <span className="text-sm font-bold text-slate-900">{item.value} ({percentage}%)</span>
+                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className={`${colorMap[item.color]} h-full rounded-full transition-all`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div
-                      className={`${colorMap[item.color]} h-full rounded-full transition-all`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+            </div>
           </div>
         </div>
       </div>
@@ -522,97 +494,138 @@ export default function DashboardPage() {
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
 
         {/* Peminjaman Aktif - Card Layout */}
-        <div>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100">
-                <ClipboardList className="h-5 w-5 text-blue-600" />
-              </div>
-              Peminjaman Aktif
-            </h2>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari..."
-                  value={loanSearch}
-                  onChange={(e) => setLoanSearch(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                />
+        <div className="group relative overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+          {/* Gradient base */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-cyan-950" />
+
+          {/* Ambient glow */}
+          <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-blue-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+          <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
+
+          {/* Dot pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+
+          {/* Garis highlight atas */}
+          <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+          <div className="relative z-10 p-6 lg:p-7">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-white flex items-center gap-3">
+                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 p-2 shadow-lg">
+                  <ClipboardList className="h-5 w-5 text-white" />
+                </div>
+                Peminjaman Aktif
+              </h2>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Cari..."
+                    value={loanSearch}
+                    onChange={(e) => setLoanSearch(e.target.value)}
+                    className="rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {filteredLoans && filteredLoans.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto custom-scrollbar">
+            {filteredLoans && filteredLoans.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto custom-scrollbar">
               {filteredLoans.map((loan) => (
                 <div
                   key={loan.id}
                   onClick={() => router.push(`/aset/peminjaman?search=${loan.kodePinjam}`)}
-                  className="group relative p-5 bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg hover:border-blue-300/50 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden"
+                  className="group relative p-5 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md shadow-md hover:shadow-lg hover:bg-white/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden"
                 >
                   {/* Gradient overlay on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                   <div className="relative z-10 flex items-start justify-between mb-3">
                     <div>
-                      <p className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{loan.namaPeminjam}</p>
-                      <p className="text-xs text-slate-500 font-mono">{loan.kodePinjam}</p>
+                      <p className="font-semibold text-white group-hover:text-blue-300 transition-colors">{loan.namaPeminjam}</p>
+                      <p className="text-xs text-slate-400 font-mono">{loan.kodePinjam}</p>
                     </div>
                     <span className={`text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm ${
-                      loan.status === 'Menunggu Persetujuan' ? 'bg-amber-100/80 text-amber-700' :
-                      loan.status === 'Sedang Dipinjam' ? 'bg-blue-100/80 text-blue-700' :
-                      'bg-violet-100/80 text-violet-700'
+                      loan.status === 'Menunggu Persetujuan' ? 'bg-amber-500/20 text-amber-200' :
+                      loan.status === 'Sedang Dipinjam' ? 'bg-blue-500/20 text-blue-200' :
+                      'bg-violet-500/20 text-violet-200'
                     }`}>
                       {loan.status}
                     </span>
                   </div>
-                  <div className="relative z-10 flex items-center gap-2 text-sm text-slate-600 group-hover:text-slate-900 transition-colors">
-                    <Package className="h-4 w-4 text-blue-500" />
+                  <div className="relative z-10 flex items-center gap-2 text-sm text-slate-300 group-hover:text-white transition-colors">
+                    <Package className="h-4 w-4 text-blue-400" />
                     <span className="font-medium">{loan.totalItems || 0} Alat</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl border border-slate-200/60">
-              <div className="p-3 rounded-full bg-slate-200/50 mb-3">
-                <ClipboardList className="h-8 w-8 text-slate-400" />
+            <div className="flex flex-col items-center justify-center py-12 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+              <div className="p-3 rounded-full bg-cyan-500/20 mb-3">
+                <ClipboardList className="h-8 w-8 text-cyan-300" />
               </div>
-              <p className="text-sm text-slate-600 font-medium">Tidak ada peminjaman aktif</p>
+              <p className="text-sm text-slate-300 font-medium">Tidak ada peminjaman aktif</p>
             </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Aktivitas Terbaru - Card Layout */}
-        <div>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-slate-200/50">
-                <Clock className="h-5 w-5 text-slate-600" />
-              </div>
-              Aktivitas Terbaru
-            </h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari..."
-                value={activitySearch}
-                onChange={(e) => setActivitySearch(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 transition-all"
-              />
-            </div>
-          </div>
+        <div className="group relative overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+          {/* Gradient base */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-amber-950 to-orange-950" />
 
-          {filteredActivities.length > 0 ? (
-            <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+          {/* Ambient glow */}
+          <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-orange-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+          <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-amber-500/15 blur-3xl" />
+
+          {/* Dot pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+
+          {/* Garis highlight atas */}
+          <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+          <div className="relative z-10 p-6 lg:p-7">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-white flex items-center gap-3">
+                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-2 shadow-lg">
+                  <Clock className="h-5 w-5 text-white" />
+                </div>
+                Aktivitas Terbaru
+              </h2>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Cari..."
+                  value={activitySearch}
+                  onChange={(e) => setActivitySearch(e.target.value)}
+                  className="rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+              </div>
+            </div>
+
+            {filteredActivities.length > 0 ? (
+              <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
               {filteredActivities.map((activity) => (
                 <div
                   key={activity.id}
                   onClick={() => handleActivityClick(activity)}
-                  className="group relative p-4 bg-gradient-to-r from-white to-slate-50/50 rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg hover:border-slate-300/80 hover:-translate-x-1 transition-all duration-300 cursor-pointer overflow-hidden"
+                  className="group relative p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md shadow-md hover:shadow-lg hover:bg-white/10 hover:-translate-x-1 transition-all duration-300 cursor-pointer overflow-hidden"
                 >
                   {/* Left accent bar */}
                   <div className={`absolute left-0 top-0 bottom-0 w-1 ${
@@ -623,20 +636,20 @@ export default function DashboardPage() {
 
                   <div className="relative z-10 flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-semibold text-slate-900">{activity.createdBy}</span>
+                      <span className="text-sm font-semibold text-white">{activity.createdBy}</span>
                       <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full backdrop-blur-sm ${
-                        activity.action === 'Peminjaman' ? 'bg-amber-100/80 text-amber-700' :
-                        activity.action === 'Pengembalian' ? 'bg-blue-100/80 text-blue-700' :
-                        'bg-emerald-100/80 text-emerald-700'
+                        activity.action === 'Peminjaman' ? 'bg-amber-500/20 text-amber-200' :
+                        activity.action === 'Pengembalian' ? 'bg-blue-500/20 text-blue-200' :
+                        'bg-emerald-500/20 text-emerald-200'
                       }`}>
                         {activity.action}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors flex items-center gap-2 mb-2">
+                    <p className="text-sm text-slate-300 group-hover:text-white transition-colors flex items-center gap-2 mb-2">
                       <Package className="h-4 w-4 text-slate-400" />
                       <span className="truncate">{activity.item}</span>
                     </p>
-                    <p className="text-xs text-slate-500 font-medium">
+                    <p className="text-xs text-slate-400 font-medium">
                       {formatActivityDate(activity.date).datePart} · {formatActivityDate(activity.date).timePart}
                     </p>
                   </div>
@@ -644,13 +657,14 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-gradient-to-br from-slate-50 to-gray-50 rounded-2xl border border-slate-200/60">
-              <div className="p-3 rounded-full bg-slate-200/50 mb-3">
-                <Clock className="h-8 w-8 text-slate-400" />
+            <div className="flex flex-col items-center justify-center py-12 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+              <div className="p-3 rounded-full bg-orange-500/20 mb-3">
+                <Clock className="h-8 w-8 text-orange-300" />
               </div>
-              <p className="text-sm text-slate-600 font-medium">Tidak ada aktivitas</p>
+              <p className="text-sm text-slate-300 font-medium">Tidak ada aktivitas</p>
             </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

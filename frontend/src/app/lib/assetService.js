@@ -165,6 +165,16 @@ export async function getDashboardStats() {
 
   const dipinjam = dipinjamAset + dipinjamAksesoris;
 
+  // ── Total Nilai Aset: harga sebenarnya dari semua aset (hargaAset × jumlahTotal) ──
+  const totalNilaiAset = assets
+    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
+    .reduce((sum, a) => sum + ((parseInt(a.hargaAset) || 0) * (parseInt(a.jumlahTotal) || 0)), 0);
+
+  // ── Total Nilai Aksesoris: harga sebenarnya dari semua aksesoris (hargaAset × jumlahTotal) ──
+  const totalNilaiAksesoris = aksesoris
+    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
+    .reduce((sum, a) => sum + ((parseInt(a.hargaAset) || 0) * (parseInt(a.jumlahTotal) || 0)), 0);
+
   // Peringatan Stok Rendah (jumlah <= 3)
   const lowStockAssets = [
     ...assets.filter(a => (parseInt(a.jumlah) || 0) <= 3),
@@ -212,6 +222,9 @@ export async function getDashboardStats() {
   return {
     total: totalAset,
     aksesorisTotal: totalAksesoris,
+    totalNilaiAset,
+    totalNilaiAksesoris,
+    totalNilaiKeseluruhan: totalNilaiAset + totalNilaiAksesoris,
     tersedia,
     maintenance,
     rusak,
