@@ -37,7 +37,7 @@ export default function AuditReportPage() {
 
   useEffect(() => {
     fetchData();
-
+    
     // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
@@ -62,9 +62,9 @@ export default function AuditReportPage() {
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
-      if (prev.key === key) {
-        if (prev.direction === "asc") return { key, direction: "desc" };
-        if (prev.direction === "desc") return { key: null, direction: null };
+      if (prev.key === key) { 
+        if (prev.direction === "asc") return { key, direction: "desc" }; 
+        if (prev.direction === "desc") return { key: null, direction: null }; 
       }
       return { key, direction: "asc" };
     });
@@ -82,23 +82,23 @@ export default function AuditReportPage() {
 
   const filteredData = useMemo(() => {
     let result = [...logs];
-
+    
     // Search filter
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(log =>
-        log.userName?.toLowerCase().includes(s) ||
+      result = result.filter(log => 
+        log.userName?.toLowerCase().includes(s) || 
         log.details?.toLowerCase().includes(s) ||
         log.entityId?.toString().includes(s) ||
         log.entityType?.toLowerCase().includes(s)
       );
     }
-
+    
     // Action filter
     if (actionFilter) {
       result = result.filter(log => log.action === actionFilter);
     }
-
+    
     // Entity filter
     if (entityFilter) {
       result = result.filter(log => log.entityType === entityFilter);
@@ -167,8 +167,8 @@ export default function AuditReportPage() {
         const d = log.createdAt || log.created_at;
         return {
           ...log,
-          formattedDate: d && !isNaN(new Date(d).getTime())
-            ? new Date(d).toLocaleString("id-ID")
+          formattedDate: d && !isNaN(new Date(d).getTime()) 
+            ? new Date(d).toLocaleString("id-ID") 
             : "-"
         };
       });
@@ -188,8 +188,8 @@ export default function AuditReportPage() {
         const d = log.createdAt || log.created_at;
         return {
           ...log,
-          formattedDate: d && !isNaN(new Date(d).getTime())
-            ? new Date(d).toLocaleString("id-ID")
+          formattedDate: d && !isNaN(new Date(d).getTime()) 
+            ? new Date(d).toLocaleString("id-ID") 
             : "-"
         };
       });
@@ -202,10 +202,10 @@ export default function AuditReportPage() {
   };
 
   const getActionBadge = (action) => {
-    const s = {
-      "CREATE": "bg-emerald-50 text-emerald-700 border-emerald-500",
-      "UPDATE": "bg-blue-50 text-blue-700 border-blue-500",
-      "DELETE": "bg-rose-50 text-rose-700 border-rose-500",
+    const s = { 
+      "CREATE": "bg-emerald-50 text-emerald-700 border-emerald-500", 
+      "UPDATE": "bg-blue-50 text-blue-700 border-blue-500", 
+      "DELETE": "bg-rose-50 text-rose-700 border-rose-500", 
       "PATCH": "bg-amber-50 text-amber-700 border-amber-500",
       "APPROVE PEMINJAMAN": "bg-emerald-50 text-emerald-700 border-emerald-500",
       "APPROVE PENGEMBALIAN": "bg-blue-50 text-blue-700 border-blue-500"
@@ -218,7 +218,7 @@ export default function AuditReportPage() {
       <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500 text-nowrap">Menampilkan {filteredData.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredData.length)} dari <span className="font-semibold text-slate-700">{filteredData.length}</span> data</p>
         <div className="flex items-center gap-2">
-          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
             className="cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-primary-hover shadow-sm transition-colors hover:bg-primary-hover">
             {ROWS_OPTIONS.map(opt => <option key={opt} value={opt} className="bg-white text-slate-700">{opt}</option>)}
           </select>
@@ -248,11 +248,11 @@ export default function AuditReportPage() {
             disabled={exporting || loading || filteredData.length === 0}
             className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <Printer className="h-4 w-4" />
+            <Printer className="h-4 w-4" /> 
             <span>Cetak Laporan</span>
             <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showExportMenu ? "rotate-180" : ""}`} />
           </button>
-
+          
           {showExportMenu && (
             <div className="absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-full sm:w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
               <button
@@ -306,12 +306,12 @@ export default function AuditReportPage() {
                     Mulai
                   </span>
                 )}
-                <input
+                <input 
                   type="date"
-                  value={startDate}
+                  value={startDate} 
                   onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
-                  onClick={(e) => { try { e.target.showPicker(); } catch (err) { } }}
-                  className={`bg-transparent text-xs w-full focus:outline-none cursor-pointer ${!startDate ? 'text-transparent' : 'text-slate-700'}`}
+                  onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                  className={`bg-transparent text-xs w-full focus:outline-none cursor-pointer ${!startDate ? 'text-transparent' : 'text-slate-700'}`} 
                 />
               </div>
               <span className="text-slate-300">-</span>
@@ -321,12 +321,12 @@ export default function AuditReportPage() {
                     Akhir
                   </span>
                 )}
-                <input
+                <input 
                   type="date"
-                  value={endDate}
+                  value={endDate} 
                   onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
-                  onClick={(e) => { try { e.target.showPicker(); } catch (err) { } }}
-                  className={`bg-transparent text-xs w-full focus:outline-none cursor-pointer ${!endDate ? 'text-transparent' : 'text-slate-700'}`}
+                  onClick={(e) => { try { e.target.showPicker(); } catch(err) {} }}
+                  className={`bg-transparent text-xs w-full focus:outline-none cursor-pointer ${!endDate ? 'text-transparent' : 'text-slate-700'}`} 
                 />
               </div>
             </div>
@@ -352,7 +352,7 @@ export default function AuditReportPage() {
                 {getUniqueValues('entityType').map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
-            <button
+            <button 
               onClick={resetFilters}
               className="flex items-center justify-center gap-2 h-10 w-full col-span-2 sm:col-span-1 sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 border border-slate-300 rounded-lg hover:bg-slate-300 transition-colors cursor-pointer shrink-0"
               title="Reset Filter"
@@ -401,13 +401,13 @@ export default function AuditReportPage() {
                     <td className="px-5 py-3 text-slate-600">
                       <div className="flex flex-col leading-tight">
                         <span className="text-sm font-semibold text-slate-700">
-                          {(log.createdAt || log.created_at) && !isNaN(new Date(log.createdAt || log.created_at).getTime())
-                            ? new Date(log.createdAt || log.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+                          {(log.createdAt || log.created_at) && !isNaN(new Date(log.createdAt || log.created_at).getTime()) 
+                            ? new Date(log.createdAt || log.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) 
                             : "-"}
                         </span>
                         <span className="text-xs text-slate-400 font-medium tracking-wide mt-0.5">
-                          {(log.createdAt || log.created_at) && !isNaN(new Date(log.createdAt || log.created_at).getTime())
-                            ? new Date(log.createdAt || log.created_at).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) + " WIB"
+                          {(log.createdAt || log.created_at) && !isNaN(new Date(log.createdAt || log.created_at).getTime()) 
+                            ? new Date(log.createdAt || log.created_at).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) + " WIB" 
                             : ""}
                         </span>
                       </div>
