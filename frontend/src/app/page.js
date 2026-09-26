@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { getUserContext } from "./lib/authService";
 import { createPortal } from "react-dom";
+import { ResponsivePie } from "@nivo/pie";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -444,46 +445,81 @@ export default function DashboardPage() {
             <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
             <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
-              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+              <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
                 <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 p-2 shadow-lg">
                   <PieChart className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-white">Distribusi Aset</span>
+                <span>Distribusi Aset</span>
               </h2>
 
-            <div className="space-y-4 flex-1">
-              {[
-                { label: "Siap Digunakan", value: stats?.tersedia || 0, color: "emerald" },
-                { label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "blue" },
-                { label: "Maintenance", value: stats?.maintenance || 0, color: "amber" },
-                { label: "Rusak", value: stats?.rusak || 0, color: "rose" }
-              ].map((item) => {
-                const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
-                const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
-
-                const colorMap = {
-                  emerald: "bg-emerald-500",
-                  blue: "bg-blue-500",
-                  amber: "bg-amber-500",
-                  rose: "bg-rose-500"
-                };
-
-                return (
-                  <div key={item.label}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-slate-300">{item.label}</span>
-                      <span className="text-sm font-bold text-white">{item.value} ({percentage}%)</span>
-                    </div>
-                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div
-                        className={`${colorMap[item.color]} h-full rounded-full transition-all`}
-                        style={{ width: `${percentage}%` }}
-                      />
+              {/* Nivo Pie Chart - Legend & Chart Side by Side */}
+              {mounted && (
+                <div className="flex-1 flex gap-6 items-center justify-center" style={{ minHeight: 'auto' }}>
+                  {/* Legend di Kiri */}
+                  <div className="flex flex-col justify-center flex-shrink-0">
+                    <h3 className="text-sm font-semibold text-white mb-3">Keterangan</h3>
+                    <div className="space-y-2 text-xs">
+                      {[
+                        { color: "#10b981", label: "Siap Digunakan" },
+                        { color: "#3b82f6", label: "Sedang Dipinjam" },
+                        { color: "#f59e0b", label: "Maintenance" },
+                        { color: "#ef4444", label: "Rusak" }
+                      ].map((item) => (
+                        <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
+                          <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-slate-300 text-[12px]">{item.label}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Pie Chart di Kanan */}
+                  <div style={{ width: '100%', height: '200px', flex: 1 }}>
+                    <ResponsivePie
+                      data={[
+                        { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                        { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "#3b82f6" },
+                        { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                        { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                      ].filter(d => d.value > 0)}
+                      margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
+                      innerRadius={0.58}
+                      padAngle={2}
+                      cornerRadius={3}
+                      activeOuterRadiusOffset={8}
+                      colors={(datum) => {
+                        const colorMap = {
+                          "Siap": "#10b981",
+                          "Dipinjam": "#3b82f6",
+                          "Maintenance": "#f59e0b",
+                          "Rusak": "#ef4444"
+                        };
+                        return colorMap[datum.id] || "#999999";
+                      }}
+                      borderColor="rgba(255, 255, 255, 0.12)"
+                      borderWidth={1.5}
+                      enableArcLabels={true}
+                      arcLabelsSkipAngle={12}
+                      arcLabelsTextColor="#ffffff"
+                      arcLabelsRadiusOffset={0.48}
+                      arcLabel={(datum) => {
+                        const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+                        const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                        return `${percentage}%`;
+                      }}
+                      enableArcLinkLabels={false}
+                      tooltip={({ datum }) => (
+                        <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                          <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                          <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                        </div>
+                      )}
+                      motionConfig="gentle"
+                      legends={[]}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
