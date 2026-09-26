@@ -256,6 +256,7 @@ export function mapAuditLogToFrontend(log) {
     action: log.action,
     entityType: log.entity_type,
     entityId: log.entity_id,
+    entityName: log.entity_name,
     details: log.details,
     createdAt: log.created_at
   };

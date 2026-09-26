@@ -26,6 +26,7 @@ export default function AsetReportPage() {
   const [kondisiFilter, setKondisiFilter] = useState("");
   const [merekFilter, setMerekFilter] = useState("");
   const [lokasiFilter, setLokasiFilter] = useState("");
+  const [jenisAsetFilter, setJenisAsetFilter] = useState("");
   const [exporting, setExporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef(null);
@@ -77,6 +78,7 @@ export default function AsetReportPage() {
     setKondisiFilter("");
     setMerekFilter("");
     setLokasiFilter("");
+    setJenisAsetFilter("");
     setCurrentPage(1);
   };
 
@@ -103,6 +105,9 @@ export default function AsetReportPage() {
     if (lokasiFilter) {
       result = result.filter(a => a.lokasiAset === lokasiFilter);
     }
+    if (jenisAsetFilter) {
+      result = result.filter(a => a.jenisAset === jenisAsetFilter);
+    }
 
     if (sortConfig.key) {
       result.sort((a, b) => {
@@ -115,7 +120,7 @@ export default function AsetReportPage() {
     }
 
     return result;
-  }, [assets, search, kategoriFilter, kondisiFilter, merekFilter, lokasiFilter, sortConfig]);
+  }, [assets, search, kategoriFilter, kondisiFilter, merekFilter, lokasiFilter, jenisAsetFilter, sortConfig]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredAssets.length / itemsPerPage);
@@ -138,6 +143,7 @@ export default function AsetReportPage() {
   const getColumns = () => [
     { header: "Kode Aset", dataKey: "kodeAset" },
     { header: "Nama Aset", dataKey: "namaAset" },
+    { header: "Jenis Brand", dataKey: "jenisAset" },
     { header: "Kategori", dataKey: "kategori" },
     { header: "Merek", dataKey: "merek" },
     { header: "Kondisi", dataKey: "kondisi" },
@@ -302,6 +308,17 @@ export default function AsetReportPage() {
             <div className="relative w-full sm:w-auto sm:flex-1 lg:flex-none">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <select
+                value={jenisAsetFilter}
+                onChange={(e) => { setJenisAsetFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Jenis Brand</option>
+                {getUniqueValues('jenisAset').map(j => <option key={j} value={j}>{j}</option>)}
+              </select>
+            </div>
+            <div className="relative w-full sm:w-auto sm:flex-1 lg:flex-none">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
                 value={kondisiFilter}
                 onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
                 className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
@@ -339,6 +356,11 @@ export default function AsetReportPage() {
                   </button>
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("jenisAset")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                    Jenis Brand <SortIcon columnKey="jenisAset" sortConfig={sortConfig} />
+                  </button>
+                </th>
+                <th className="px-5 py-3 font-bold text-slate-700">
                   <button onClick={() => handleSort("kategori")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} />
                   </button>
@@ -354,9 +376,9 @@ export default function AsetReportPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
-                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
+                <tr><td colSpan="7" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
               ) : paginatedData.length === 0 ? (
-                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
+                <tr><td colSpan="7" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
               ) : (
                 paginatedData.map((asset, index) => (
                   <tr key={asset.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
@@ -367,6 +389,7 @@ export default function AsetReportPage() {
                         <span className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{asset.merek} {asset.model}</span>
                       </div>
                     </td>
+                    <td className="px-5 py-3 text-slate-600 text-sm font-medium">{asset.jenisAset}</td>
                     <td className="px-5 py-3 text-slate-600 text-sm">{asset.kategori}</td>
                     <td className="px-5 py-3 text-center">
                       <span className={`${getKondisiBadge(asset.kondisi)} px-3 py-1 rounded-full border text-xs font-semibold uppercase tracking-wide shadow-sm`}>

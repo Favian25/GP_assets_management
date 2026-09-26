@@ -351,15 +351,20 @@ export default function PeminjamanReportPage() {
                     Tgl Pinjam <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} />
                   </button>
                 </th>
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("tanggalPengembalian")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                    Tgl Kembali <SortIcon columnKey="tanggalPengembalian" sortConfig={sortConfig} />
+                  </button>
+                </th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Keperluan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
-                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
+                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
               ) : paginatedData.length === 0 ? (
-                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
+                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
               ) : (
                 paginatedData.map((item, index) => (
                   <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
@@ -372,6 +377,18 @@ export default function PeminjamanReportPage() {
                           ? new Date(item.tanggalPeminjaman).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
                           : "-"}
                       </div>
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">
+                      {item.tanggalPengembalian && !isNaN(new Date(item.tanggalPengembalian).getTime()) ? (
+                        <div className="flex items-center gap-1.5 text-sm font-semibold">
+                          <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                          {new Date(item.tanggalPengembalian).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                        </div>
+                      ) : (
+                        <span className="inline-block px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 text-xs font-semibold rounded-md">
+                          Belum Dikembalikan
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-center">
                       <span className={`${getStatusBadge(item.status)} px-3 py-1 rounded-full border text-xs font-semibold uppercase tracking-wide shadow-sm`}>

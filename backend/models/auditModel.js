@@ -17,28 +17,42 @@ const AuditLog = {
 
   getAll: async () => {
     const [rows] = await db.query(
-      `SELECT * FROM audit_logs ORDER BY created_at DESC`
+      `SELECT al.*,
+        CASE 
+          WHEN al.entity_type = 'Aset' THEN (SELECT CONCAT(a.nama_aset, ' (', a.kode_aset, ')') FROM assets a WHERE a.id = al.entity_id)
+          WHEN al.entity_type = 'Aksesoris' THEN (SELECT CONCAT(ak.nama_aksesoris, ' (', ak.kode_aksesoris, ')') FROM aksesoris ak WHERE ak.id = al.entity_id)
+          WHEN al.entity_type = 'Peminjaman' THEN (SELECT CONCAT(p.kode_pinjam, ' - ', p.nama_peminjam) FROM peminjaman p WHERE p.id = al.entity_id)
+          ELSE CONCAT('#', al.entity_id)
+        END AS entity_name
+       FROM audit_logs al ORDER BY al.created_at DESC`
     );
     return rows;
   },
   
   getWithPaginationAndSearch: async (page = 1, limit = 10, search = "", dateStart = "", dateEnd = "") => {
     const offset = (page - 1) * limit;
-    let query = "SELECT * FROM audit_logs";
-    let countQuery = "SELECT COUNT(*) as total FROM audit_logs";
+    let query = `SELECT al.*,
+        CASE 
+          WHEN al.entity_type = 'Aset' THEN (SELECT CONCAT(a.nama_aset, ' (', a.kode_aset, ')') FROM assets a WHERE a.id = al.entity_id)
+          WHEN al.entity_type = 'Aksesoris' THEN (SELECT CONCAT(ak.nama_aksesoris, ' (', ak.kode_aksesoris, ')') FROM aksesoris ak WHERE ak.id = al.entity_id)
+          WHEN al.entity_type = 'Peminjaman' THEN (SELECT CONCAT(p.kode_pinjam, ' - ', p.nama_peminjam) FROM peminjaman p WHERE p.id = al.entity_id)
+          ELSE CONCAT('#', al.entity_id)
+        END AS entity_name
+       FROM audit_logs al`;
+    let countQuery = "SELECT COUNT(*) as total FROM audit_logs al";
     const queryParams = [];
     const countParams = [];
     let whereClauses = [];
 
     if (search) {
-      whereClauses.push(`(action LIKE ? OR entity_type LIKE ? OR user_name LIKE ? OR details LIKE ?)`);
+      whereClauses.push(`(al.action LIKE ? OR al.entity_type LIKE ? OR al.user_name LIKE ? OR al.details LIKE ?)`);
       const searchStr = `%${search}%`;
       queryParams.push(searchStr, searchStr, searchStr, searchStr);
       countParams.push(searchStr, searchStr, searchStr, searchStr);
     }
 
     if (dateStart && dateEnd) {
-      whereClauses.push(`(DATE(created_at) BETWEEN ? AND ?)`);
+      whereClauses.push(`(DATE(al.created_at) BETWEEN ? AND ?)`);
       queryParams.push(dateStart, dateEnd);
       countParams.push(dateStart, dateEnd);
     }
@@ -49,7 +63,7 @@ const AuditLog = {
       countQuery += whereStr;
     }
 
-    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+    query += " ORDER BY al.created_at DESC LIMIT ? OFFSET ?";
     queryParams.push(Number(limit), Number(offset));
 
     const [rows] = await db.query(query, queryParams);

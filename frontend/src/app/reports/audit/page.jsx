@@ -155,7 +155,7 @@ export default function AuditReportPage() {
     { header: "User", dataKey: "userName" },
     { header: "Aksi", dataKey: "action" },
     { header: "Modul", dataKey: "entityType" },
-    { header: "ID Record / Item", dataKey: "entityId" },
+    { header: "Item Terkait", dataKey: "entityName" },
     { header: "Rincian Perubahan", dataKey: "details" }
   ];
 
@@ -206,9 +206,11 @@ export default function AuditReportPage() {
       "CREATE": "bg-emerald-50 text-emerald-700 border-emerald-500", 
       "UPDATE": "bg-blue-50 text-blue-700 border-blue-500", 
       "DELETE": "bg-rose-50 text-rose-700 border-rose-500", 
-      "PATCH": "bg-amber-50 text-amber-700 border-amber-500" 
+      "PATCH": "bg-amber-50 text-amber-700 border-amber-500",
+      "APPROVE PEMINJAMAN": "bg-emerald-50 text-emerald-700 border-emerald-500",
+      "APPROVE PENGEMBALIAN": "bg-blue-50 text-blue-700 border-blue-500"
     };
-    return `inline-block w-[140px] text-center ${s[action] || "bg-slate-50 text-slate-700 border-slate-200"}`;
+    return `inline-block w-[180px] text-center ${s[action] || "bg-slate-50 text-slate-700 border-slate-200"}`;
   };
 
   const Pagination = () => (
@@ -380,7 +382,11 @@ export default function AuditReportPage() {
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
                 <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Modul</th>
-                <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">ID Record / Item</th>
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("entityId")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                    Item Terkait <SortIcon columnKey="entityId" sortConfig={sortConfig} />
+                  </button>
+                </th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-nowrap uppercase tracking-wider">Rincian Perubahan</th>
               </tr>
             </thead>
@@ -422,8 +428,11 @@ export default function AuditReportPage() {
                     <td className="px-5 py-3">
                       <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{log.entityType}</span>
                     </td>
-                    <td className="px-5 py-3 text-center">
-                       <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded font-mono text-xs font-bold">#{log.entityId}</span>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">{log.entityName || "-"}</span>
+                        <span className="text-[10px] text-slate-400 font-mono mt-0.5">#{log.entityId}</span>
+                      </div>
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-sm whitespace-normal min-w-[250px]">{log.details}</td>
                   </tr>

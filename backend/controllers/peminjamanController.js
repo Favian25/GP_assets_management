@@ -234,7 +234,7 @@ const peminjamanController = {
         action: 'UPDATE',
         entityType: 'Peminjaman',
         entityId: id,
-        details: `Memperbarui peminjaman: ${checkData.kode_pinjam}`
+        details: `Mengisi pengembalian ${checkData.kode_pinjam}`
       });
 
       res.status(200).json({ success: true, message: "Data peminjaman berhasil diperbarui" });
@@ -280,13 +280,18 @@ const peminjamanController = {
         targetRoles: 'super admin,admin,supervisor,user',
       });
 
+      const isApprovePinjam = checkData.status === "Menunggu Persetujuan";
+      const actionBadge = isApprovePinjam ? 'APPROVE PEMINJAMAN' : 'APPROVE PENGEMBALIAN';
+      
       await AuditLog.create({
         userId: req.user?.userId,
         userName: req.user?.nama,
-        action: 'UPDATE',
+        action: actionBadge,
         entityType: 'Peminjaman',
         entityId: id,
-        details: `Melakukan approve/verifikasi peminjaman: ${checkData.kode_pinjam}`
+        details: isApprovePinjam 
+            ? `Menyetujui peminjaman: ${checkData.kode_pinjam}`
+            : `Memverifikasi pengembalian: ${checkData.kode_pinjam}`
       });
 
       res.status(200).json({ success: true, message: "Peminjaman berhasil di-approve" });
@@ -388,7 +393,7 @@ const peminjamanController = {
         action: 'UPDATE',
         entityType: 'Peminjaman',
         entityId: id,
-        details: `Menukar barang pada peminjaman ID ${id}`
+        details: `Menukar barang (${old_item_type} ID: ${old_item_id} -> ${new_item_type} ID: ${new_item_id}, jml: ${jumlah}) pada peminjaman ID ${id}`
       });
 
       res.status(200).json({ success: true, message: 'Barang berhasil ditukar' });
@@ -413,7 +418,7 @@ const peminjamanController = {
         action: 'UPDATE',
         entityType: 'Peminjaman',
         entityId: id,
-        details: `Menambah barang pada peminjaman ID ${id}`
+        details: `Menambah barang (${item_type} ID: ${item_id}, jml: ${jumlah}) pada peminjaman ID ${id}`
       });
 
       res.status(200).json({ success: true, message: 'Barang berhasil ditambahkan' });

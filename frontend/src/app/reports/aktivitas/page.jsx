@@ -65,7 +65,7 @@ export default function AktivitasReportPage() {
           createdBy: a.createdByName || "Admin",
           action: "Tambah Aset",
           item: a.namaAset,
-          target: "-",
+          target: a.kodeAset || "-",
           type: "Aset"
         })),
         ...aksesoris.map(a => ({
@@ -74,7 +74,7 @@ export default function AktivitasReportPage() {
           createdBy: a.createdByName || "Admin",
           action: "Tambah Aksesoris",
           item: a.namaAksesoris,
-          target: "-",
+          target: a.kodeAksesoris || "-",
           type: "Aksesoris"
         })),
         ...peminjaman.map(p => ({
@@ -83,7 +83,7 @@ export default function AktivitasReportPage() {
           createdBy: p.createdByName || "User",
           action: (p.status === 'Menunggu Persetujuan' || p.status === 'Sedang Dipinjam') ? 'Peminjaman' : 'Pengembalian',
           item: p.kodePinjam,
-          target: p.namaPeminjam,
+          target: p.daftarAset || "-",
           type: "Peminjaman"
         }))
       ];
@@ -180,8 +180,8 @@ export default function AktivitasReportPage() {
     { header: "Dibuat Oleh", dataKey: "createdBy" },
     { header: "Aksi", dataKey: "action" },
     { header: "Modul", dataKey: "type" },
-    { header: "Item / Kode Transaksi", dataKey: "item" },
-    { header: "Penerima / Pihak Terkait", dataKey: "target" }
+    { header: "Nama Item", dataKey: "item" },
+    { header: "Keterangan", dataKey: "target" }
   ];
 
   const handleExportPDF = () => {
@@ -395,10 +395,10 @@ export default function AktivitasReportPage() {
                 <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
                 <th className="px-5 py-3 font-bold text-slate-700">
                   <button onClick={() => handleSort("item")} className="flex items-center uppercase tracking-wider cursor-pointer">
-                    Item / Kode Transaksi <SortIcon columnKey="item" sortConfig={sortConfig} />
+                    Nama Item <SortIcon columnKey="item" sortConfig={sortConfig} />
                   </button>
                 </th>
-                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Penerima / Pihak Terkait</th>
+                <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Keterangan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">

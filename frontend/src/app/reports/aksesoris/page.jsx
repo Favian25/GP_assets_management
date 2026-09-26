@@ -25,6 +25,8 @@ export default function AksesorisReportPage() {
   const [kategoriFilter, setKategoriFilter] = useState("");
   const [kondisiFilter, setKondisiFilter] = useState("");
   const [merekFilter, setMerekFilter] = useState("");
+  const [jenisAsetFilter, setJenisAsetFilter] = useState("");
+  const [lokasiFilter, setLokasiFilter] = useState("");
   const [exporting, setExporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef(null);
@@ -75,6 +77,8 @@ export default function AksesorisReportPage() {
     setKategoriFilter("");
     setKondisiFilter("");
     setMerekFilter("");
+    setJenisAsetFilter("");
+    setLokasiFilter("");
     setCurrentPage(1);
   };
 
@@ -97,6 +101,12 @@ export default function AksesorisReportPage() {
     if (merekFilter) {
       result = result.filter(a => a.merek === merekFilter);
     }
+    if (jenisAsetFilter) {
+      result = result.filter(a => a.jenisAset === jenisAsetFilter);
+    }
+    if (lokasiFilter) {
+      result = result.filter(a => a.lokasi === lokasiFilter);
+    }
 
     if (sortConfig.key) {
       result.sort((a, b) => {
@@ -109,7 +119,7 @@ export default function AksesorisReportPage() {
     }
 
     return result;
-  }, [aksesoris, search, kategoriFilter, kondisiFilter, merekFilter, sortConfig]);
+  }, [aksesoris, search, kategoriFilter, kondisiFilter, merekFilter, jenisAsetFilter, lokasiFilter, sortConfig]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -132,6 +142,7 @@ export default function AksesorisReportPage() {
   const getColumns = () => [
     { header: "Kode", dataKey: "kodeAksesoris" },
     { header: "Nama Aksesoris", dataKey: "namaAksesoris" },
+    { header: "Jenis Brand", dataKey: "jenisAset" },
     { header: "Kategori", dataKey: "kategori" },
     { header: "Merek", dataKey: "merek" },
     { header: "Kondisi", dataKey: "kondisi" },
@@ -281,6 +292,28 @@ export default function AksesorisReportPage() {
                 {getUniqueValues('merek').map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
+            <div className="relative w-full sm:w-auto sm:flex-1 lg:flex-none">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={jenisAsetFilter}
+                onChange={(e) => { setJenisAsetFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Jenis Brand</option>
+                {getUniqueValues('jenisAset').map(j => <option key={j} value={j}>{j}</option>)}
+              </select>
+            </div>
+            <div className="relative w-full sm:w-auto sm:flex-1 lg:flex-none">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={lokasiFilter}
+                onChange={(e) => { setLokasiFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white appearance-none cursor-pointer hover:border-slate-300 transition-colors"
+              >
+                <option value="">Semua Lokasi</option>
+                {getUniqueValues('lokasi').map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
             <div className="relative w-full col-span-2 sm:col-span-1 sm:w-auto sm:flex-1 lg:flex-none">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <select
@@ -321,19 +354,29 @@ export default function AksesorisReportPage() {
                   </button>
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("jenisAset")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                    Jenis Brand <SortIcon columnKey="jenisAset" sortConfig={sortConfig} />
+                  </button>
+                </th>
+                <th className="px-5 py-3 font-bold text-slate-700">
                   <button onClick={() => handleSort("kategori")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} />
                   </button>
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Kondisi</th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Unit</th>
+                <th className="px-5 py-3 font-bold text-slate-700">
+                  <button onClick={() => handleSort("lokasi")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                    Lokasi <SortIcon columnKey="lokasi" sortConfig={sortConfig} />
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {loading ? (
-                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
+                <tr><td colSpan="7" className="px-5 py-10 text-center text-slate-500">Memuat data...</td></tr>
               ) : paginatedData.length === 0 ? (
-                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
+                <tr><td colSpan="7" className="px-5 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td></tr>
               ) : (
                 paginatedData.map((item, index) => (
                   <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
@@ -344,6 +387,7 @@ export default function AksesorisReportPage() {
                         <span className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{item.merek || "-"}</span>
                       </div>
                     </td>
+                    <td className="px-5 py-3 text-slate-600 text-sm font-medium">{item.jenisAset}</td>
                     <td className="px-5 py-3 text-slate-600">{item.kategori}</td>
                     <td className="px-5 py-3 text-center">
                       <span className={`${getKondisiBadge(item.kondisi)} px-3 py-1 rounded-full border text-xs font-semibold uppercase tracking-wide shadow-sm`}>
@@ -351,6 +395,7 @@ export default function AksesorisReportPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-center text-slate-700 font-bold">{item.jumlahUnit}</td>
+                    <td className="px-5 py-3 text-slate-600 text-sm">{item.lokasi || "-"}</td>
                   </tr>
                 ))
               )}

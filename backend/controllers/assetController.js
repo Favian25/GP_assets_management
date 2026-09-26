@@ -185,13 +185,37 @@ const assetController = {
 
       const updated = await Asset.getById(id);
 
+      const changedFields = [];
+      const dataKeys = Object.keys(req.body);
+      dataKeys.forEach(key => {
+        let existingVal = existing[key];
+        let newVal = req.body[key];
+
+        // Format Date ke YYYY-MM-DD agar sama dengan format dari frontend
+        if (existingVal instanceof Date) {
+          existingVal = existingVal.toISOString().split('T')[0];
+        }
+
+        // Tangani null dan empty string
+        if (existingVal === null || existingVal === 'null') existingVal = "";
+        if (newVal === null || newVal === 'null') newVal = "";
+
+        if (existingVal !== undefined && String(existingVal) !== String(newVal)) {
+          changedFields.push(key.replace(/_/g, ' '));
+        }
+      });
+      if (req.file) changedFields.push('gambar');
+      const changedText = changedFields.length > 0 ? changedFields.join(", ") : "";
+
       await AuditLog.create({
         userId: req.user?.userId,
         userName: req.user?.nama,
         action: 'UPDATE',
         entityType: 'Aset',
         entityId: id,
-        details: `Memperbarui aset: ${updated.nama_aset} (${updated.kode_aset})`
+        details: changedText 
+          ? `Memperbarui ${changedText} pada ${updated.nama_aset} (${updated.kode_aset})`
+          : `Memperbarui ${updated.nama_aset} (${updated.kode_aset})`
       });
 
       res.json({
