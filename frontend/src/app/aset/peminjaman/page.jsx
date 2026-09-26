@@ -622,7 +622,7 @@ export default function PeminjamanAsetPage() {
             <button onClick={() => router.push("/aset/peminjaman/tambah")}
               className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-primary-hover hover:shadow-lg active:scale-95">
               <Plus className="h-4 w-4" />
-              Pinjam Aset
+              Pinjam Alat
             </button>
           )}
         </div>
@@ -781,9 +781,6 @@ export default function PeminjamanAsetPage() {
                                 <th className="px-3 py-2 text-left font-semibold text-slate-600">Kode</th>
                                 <th className="px-3 py-2 text-left font-semibold text-slate-600">Nama Alat</th>
                                 <th className="px-3 py-2 text-center font-semibold text-slate-600 w-16">Jml</th>
-                                {showDetail.status === 'Sedang Dipinjam' && canApprove && (
-                                  <th className="px-3 py-2 text-center font-semibold text-slate-600 w-20">Aksi</th>
-                                )}
                               </tr>
                             </thead>
                             <tbody>
@@ -793,18 +790,6 @@ export default function PeminjamanAsetPage() {
                                   <td className="px-3 py-2 text-slate-600 font-mono text-xs">{it.kodeAset || "-"}</td>
                                   <td className="px-3 py-2 text-slate-700 font-medium">{it.namaAset || it.namaAksesoris || it.namaItem || "-"}</td>
                                   <td className="px-3 py-2 text-center font-semibold text-slate-700">{it.jumlah}</td>
-                                  {showDetail.status === 'Sedang Dipinjam' && canApprove && (
-                                    <td className="px-3 py-2 text-center">
-                                      <button
-                                        onClick={() => handleOpenSwapModal(showDetail, it)}
-                                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors cursor-pointer"
-                                        title="Tukar Barang"
-                                      >
-                                        <ArrowLeftRight className="h-3 w-3" />
-                                        Tukar
-                                      </button>
-                                    </td>
-                                  )}
                                 </tr>
                               ))}
                             </tbody>
@@ -812,16 +797,6 @@ export default function PeminjamanAsetPage() {
                         </div>
                       ) : (
                         <span className="text-sm text-slate-500">-</span>
-                      )}
-                      {/* Tambah Barang button when Sedang Dipinjam */}
-                      {showDetail.status === 'Sedang Dipinjam' && canApprove && (
-                        <button
-                          onClick={() => { setAddNewItem(null); setAddNewJumlah(1); setShowAddItemModal(showDetail); fetchBorrowableItems(); }}
-                          className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors cursor-pointer w-full justify-center"
-                        >
-                          <PackagePlus className="h-4 w-4" />
-                          Tambah Barang Kurang
-                        </button>
                       )}
                     </div>
                     

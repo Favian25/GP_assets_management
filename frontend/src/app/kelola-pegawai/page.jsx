@@ -308,23 +308,6 @@ export default function KelolaPegawaiPage() {
               />
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
             </div>
-            
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="w-full sm:w-32 rounded-lg border-2 border-slate-200 px-3 py-2 text-sm text-slate-700 bg-white hover:border-slate-300 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer transition-colors"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
-              title="Items per page"
-            >
-              {ROWS_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt} Baris
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Tambah Button */}
@@ -389,6 +372,9 @@ export default function KelolaPegawaiPage() {
               {currentData.length === 0 && (<tr><td colSpan={7} className="px-5 py-10 text-center text-slate-400 text-sm">Belum ada pegawai terdaftar atau sesuai pencarian.</td></tr>)}
             </tbody>
           </table>
+        </div>
+        <div className="border-t border-slate-200">
+          <Pagination />
         </div>
       </div>
 
