@@ -323,27 +323,27 @@ export default function DashboardPage() {
                     <GreetingIcon className="h-6 w-6 text-white lg:h-7 lg:w-7" strokeWidth={1.75} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300/80 lg:text-[11px]">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-blue-300/80 lg:text-sm">
                       {greetingLabel}
                     </p>
-                    <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-white lg:text-4xl">
+                    <h1 className="mt-1 text-3xl font-bold tracking-tight text-white lg:text-4xl">
                       {userName}
                     </h1>
-                    <p className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-slate-400 lg:mt-1.5 lg:text-xs">
-                      <LayoutGrid className="h-3 w-3 lg:h-3.5 lg:w-3.5" />
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400 lg:mt-2 lg:text-sm">
+                      <LayoutGrid className="h-4 w-4 lg:h-4 lg:w-4" />
                       Asset Management System
                     </p>
                   </div>
                 </div>
 
                 {/* Jam & tanggal live */}
-                <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center backdrop-blur-md lg:rounded-2xl lg:px-4 lg:py-2.5">
-                  <p className="font-mono text-[9px] font-bold leading-none text-slate-300 lg:text-[11px]">
+                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center backdrop-blur-md lg:rounded-2xl lg:px-5 lg:py-3.5">
+                  <p className="font-mono text-xs font-bold leading-none text-slate-300 lg:text-sm">
                     {now
                       ? now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
                       : "Memuat..."}
                   </p>
-                  <p className="mt-1 font-mono text-sm font-bold leading-none tabular-nums text-white lg:text-lg">
+                  <p className="mt-2 font-mono text-lg font-bold leading-none tabular-nums text-white lg:text-2xl">
                     {now
                       ? now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
                       : "--:--:--"}
@@ -353,14 +353,14 @@ export default function DashboardPage() {
 
               {/* Baris 2 — chip info ringkasan */}
               <div className="mt-4 flex flex-1 flex-col justify-end lg:mt-6">
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                   <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30 lg:h-9 lg:w-9 lg:rounded-xl">
                       <User className="h-3.5 w-3.5 text-blue-300 lg:h-4 lg:w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 lg:text-[10px]">Role</p>
-                      <p className="text-xs font-semibold capitalize text-white lg:text-sm">{userRole || "User"}</p>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 lg:text-xs">Role</p>
+                      <p className="text-sm font-bold capitalize text-white lg:text-base">{userRole || "User"}</p>
                     </div>
                   </div>
 
@@ -369,18 +369,18 @@ export default function DashboardPage() {
                       <Package className="h-3.5 w-3.5 text-emerald-300 lg:h-4 lg:w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 lg:text-[10px]">Total Aset</p>
-                      <p className="text-xs font-semibold text-white lg:text-sm">{stats?.total || 0} Unit</p>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 lg:text-xs">Total Aset</p>
+                      <p className="text-sm font-bold text-white lg:text-base">{stats?.total || 0} Unit</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
+                  <div className="col-span-2 sm:col-span-1 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-sky-500/20 ring-1 ring-sky-400/30 lg:h-9 lg:w-9 lg:rounded-xl">
                       <BarChart3 className="h-3.5 w-3.5 text-sky-300 lg:h-4 lg:w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 lg:text-[10px]">Nilai Aset</p>
-                      <p className="truncate text-xs font-semibold text-white lg:text-sm">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 lg:text-xs">Nilai Aset</p>
+                      <p className="truncate text-sm font-bold text-white lg:text-base">
                         {["super admin", "admin"].includes(userRole?.toLowerCase()) ? (
                           stats?.totalNilaiKeseluruhan > 0
                             ? (
@@ -410,10 +410,10 @@ export default function DashboardPage() {
                     { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle, chip: "bg-amber-500/10 text-amber-300 ring-amber-400/20" },
                     { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle, chip: "bg-rose-500/10 text-rose-300 ring-rose-400/20" }
                   ].map((item) => (
-                    <span key={item.label} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-semibold ring-1 lg:gap-2 lg:px-3 lg:py-1.5 lg:text-xs ${item.chip}`}>
-                      <item.icon className="h-3 w-3 lg:h-3.5 lg:w-3.5" />
+                    <span key={item.label} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ring-1 lg:gap-2 lg:px-4 lg:py-2 lg:text-sm ${item.chip}`}>
+                      <item.icon className="h-4 w-4 lg:h-4 lg:w-4" />
                       <span className="hidden sm:inline">{item.label}</span>
-                      <span className="rounded-full bg-white/10 px-1 py-0.5 text-[8px] font-bold text-white lg:px-1.5 lg:py-0.5 lg:text-[10px]">{item.value}</span>
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-bold text-white lg:px-2 lg:py-1 lg:text-sm">{item.value}</span>
                     </span>
                   ))}
                 </div>
@@ -454,11 +454,11 @@ export default function DashboardPage() {
 
               {/* Nivo Pie Chart - Legend & Chart Side by Side */}
               {mounted && (
-                <div className="flex-1 flex gap-6 items-center justify-center" style={{ minHeight: 'auto' }}>
-                  {/* Legend di Kiri */}
-                  <div className="flex flex-col justify-center flex-shrink-0">
-                    <h3 className="text-sm font-semibold text-white mb-3">Keterangan</h3>
-                    <div className="space-y-2 text-xs">
+                <div className="flex-1 flex flex-col sm:flex-row gap-6 items-center justify-center" style={{ minHeight: 'auto' }}>
+                  {/* Legend di Kiri (Desktop) / Atas (Mobile) */}
+                  <div className="flex flex-col justify-center flex-shrink-0 w-full sm:w-auto order-2 sm:order-1">
+                    <h3 className="text-sm font-semibold text-white mb-3 text-center sm:text-left">Keterangan</h3>
+                    <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-3 sm:gap-0 sm:space-y-2 text-xs">
                       {[
                         { color: "#10b981", label: "Siap Digunakan" },
                         { color: "#3b82f6", label: "Sedang Dipinjam" },
@@ -473,8 +473,8 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Pie Chart di Kanan */}
-                  <div style={{ width: '100%', height: '200px', flex: 1 }}>
+                  {/* Pie Chart di Kanan (Desktop) / Bawah (Mobile) */}
+                  <div className="order-1 sm:order-2 w-full" style={{ height: '200px', minHeight: '200px', flex: '1 1 auto' }}>
                     <ResponsivePie
                       data={[
                         { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
@@ -551,22 +551,22 @@ export default function DashboardPage() {
           <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
           <div className="relative z-10 p-6 lg:p-7">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
               <h2 className="text-lg font-bold text-white flex items-center gap-3">
                 <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 p-2 shadow-lg">
                   <ClipboardList className="h-5 w-5 text-white" />
                 </div>
                 Peminjaman Aktif
               </h2>
-              <div className="flex items-center gap-2">
-                <div className="relative">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative w-full sm:w-auto">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                   <input
                     type="text"
                     placeholder="Cari..."
                     value={loanSearch}
                     onChange={(e) => setLoanSearch(e.target.value)}
-                    className="rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full sm:w-auto rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
               </div>
@@ -636,21 +636,21 @@ export default function DashboardPage() {
           <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
           <div className="relative z-10 p-6 lg:p-7">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
               <h2 className="text-lg font-bold text-white flex items-center gap-3">
                 <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-2 shadow-lg">
                   <Clock className="h-5 w-5 text-white" />
                 </div>
                 Aktivitas Terbaru
               </h2>
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                 <input
                   type="text"
                   placeholder="Cari..."
                   value={activitySearch}
                   onChange={(e) => setActivitySearch(e.target.value)}
-                  className="rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  className="w-full sm:w-auto rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
             </div>

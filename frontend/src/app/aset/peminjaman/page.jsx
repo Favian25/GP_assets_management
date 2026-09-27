@@ -630,13 +630,13 @@ export default function PeminjamanAsetPage() {
         {/* Table Controls (Pagination Top) & Table */}
         <Pagination />
         <div className="overflow-x-auto border-t border-slate-100">
-          <table className="w-full text-left text-sm table-fixed">
+          <table className="w-full min-w-[1150px] text-left text-sm table-fixed">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                 <th className="w-[140px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kodePinjam")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kode Pinjam <SortIcon columnKey="kodePinjam" sortConfig={sortConfig} /></button></th>
                 <th className="w-[150px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("namaPeminjam")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Nama Peminjam <SortIcon columnKey="namaPeminjam" sortConfig={sortConfig} /></button></th>
                 <th className="w-[80px] px-3 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">Jumlah Alat</th>
-                <th className="px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">Keperluan</th>
+                <th className="w-[200px] px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">Keperluan</th>
                 <th className="w-[145px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("tanggalPeminjaman")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">TGL PINJAM <SortIcon columnKey="tanggalPeminjaman" sortConfig={sortConfig} /></button></th>
                 <th className="w-[145px] px-3 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">TGL KEMBALI</th>
                 <th className="w-[140px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("status")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Status <SortIcon columnKey="status" sortConfig={sortConfig} /></button></th>
@@ -732,7 +732,7 @@ export default function PeminjamanAsetPage() {
                 <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
                   <div>
                     <h4 className="mb-4 text-sm font-bold text-slate-800">Informasi Peminjaman</h4>
-                    <div className="grid grid-cols-2 gap-4 md:gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                       {[
                         ["No. Peminjaman", showDetail.kodePinjam],
                         ["Nama Peminjam", showDetail.namaPeminjam],
@@ -816,7 +816,7 @@ export default function PeminjamanAsetPage() {
                       <hr className="border-slate-300" />
                       <div>
                         <h4 className="mb-4 text-sm font-bold text-slate-800">Informasi Pengembalian</h4>
-                        <div className="grid grid-cols-2 gap-4 md:gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                           {[
                             ["Tanggal Pengembalian", formatDateTime(showDetail.tanggalPengembalian)],
                             ["Penerima Aset", showDetail.penerimaAset],

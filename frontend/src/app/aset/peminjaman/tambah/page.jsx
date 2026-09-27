@@ -651,31 +651,35 @@ export default function TambahPeminjamanPage() {
                   <div
                     key={`${item.tipe}-${item.id}`}
                     onClick={() => addItemToList(item)}
-                    className={`p-3 rounded-lg border-2 cursor-pointer transition flex items-center justify-between ${
+                    className={`p-3 rounded-lg border-2 cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 ${
                       items.some((it) => it.id === item.id && it.tipe === item.tipe)
                         ? "border-primary bg-blue-50"
                         : "border-slate-200 hover:border-primary"
                     } ${item.kondisi !== "Siap Digunakan" || item.stok <= 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
-                    <div className="flex items-center gap-2 flex-1">
-                      {renderBrandBadge(item.jenisAset, true)}
-                      <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
-                        item.tipe === "asset"
-                          ? "bg-blue-100 text-blue-700 border-blue-200"
-                          : "bg-purple-100 text-purple-700 border-purple-200"
-                      }`}>
-                        {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900">{item.nama}</p>
-                        <p className="text-xs text-slate-500">{item.kode} • {item.kategori} • {item.merek}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full">
+                      <div className="flex items-center gap-2 shrink-0">
+                        {renderBrandBadge(item.jenisAset, true)}
+                        <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
+                          item.tipe === "asset"
+                            ? "bg-blue-100 text-blue-700 border-blue-200"
+                            : "bg-purple-100 text-purple-700 border-purple-200"
+                        }`}>
+                          {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0 mt-1 sm:mt-0">
+                        <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
+                        <p className="text-xs text-slate-500 truncate">{item.kode} • {item.kategori} • {item.merek}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-600">Stok: {item.stok}</span>
-                      {item.harga > 0 && (
-                        <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span>
-                      )}
+                    <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 shrink-0 border-t sm:border-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto">
+                      <div className="flex items-center gap-3 sm:gap-2">
+                        <span className="text-xs font-semibold text-slate-600">Stok: {item.stok}</span>
+                        {item.harga > 0 && (
+                          <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span>
+                        )}
+                      </div>
                       <span className={`text-center inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
                         {item.kondisi}
                       </span>
@@ -703,16 +707,18 @@ export default function TambahPeminjamanPage() {
                 {items.map((item, idx) => (
                   <div key={idx} className="p-3 rounded-lg border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     {/* Item Info */}
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {renderBrandBadge(item.jenisAset, true)}
-                      <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
-                        item.tipe === "asset"
-                          ? "bg-blue-100 text-blue-700 border-blue-200"
-                          : "bg-purple-100 text-purple-700 border-purple-200"
-                      }`}>
-                        {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                      </span>
-                      <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full">
+                      <div className="flex items-center gap-2 shrink-0">
+                        {renderBrandBadge(item.jenisAset, true)}
+                        <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
+                          item.tipe === "asset"
+                            ? "bg-blue-100 text-blue-700 border-blue-200"
+                            : "bg-purple-100 text-purple-700 border-purple-200"
+                        }`}>
+                          {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0 mt-1 sm:mt-0">
                         <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
                         <p className="text-xs text-slate-500 truncate">{item.kode} • Stok: {item.stok}</p>
                       </div>

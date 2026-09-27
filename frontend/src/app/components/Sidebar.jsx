@@ -197,7 +197,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
                   <div className="flex w-12 h-full items-center justify-center shrink-0">
                     <FileText className="h-4 w-4" />
                   </div>
-                  <span className="text-[13px] whitespace-nowrap">Peminjaman Aset</span>
+                  <span className="text-[13px] whitespace-nowrap">Peminjaman Alat</span>
                 </Link>
 
                 {/* Riwayat - Hidden for super admin, admin, supervisor */}
