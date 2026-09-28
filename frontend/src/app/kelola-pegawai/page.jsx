@@ -14,11 +14,11 @@ import {
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 
-// Format tanggal: "13 Mei 2026"
+// Format tanggal: "23 Sep 2026"
 const formatTanggalLahir = (dateStr) => {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
-  const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
   const hari = String(date.getDate()).padStart(2, "0");
   const bulanText = bulan[date.getMonth()];
   const tahun = date.getFullYear();
@@ -416,9 +416,10 @@ export default function KelolaPegawaiPage() {
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
                       <input
-                        type="tel"
+                        type="text"
+                        inputMode="numeric"
                         value={formData.nomorHp}
-                        onChange={(e) => setFormData({ ...formData, nomorHp: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, nomorHp: e.target.value.replace(/\D/g, '') })}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="081234567890"
                       />
@@ -500,9 +501,10 @@ export default function KelolaPegawaiPage() {
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
                       <input
-                        type="tel"
+                        type="text"
+                        inputMode="numeric"
                         value={editFormData.nomorHp}
-                        onChange={(e) => setEditFormData({ ...editFormData, nomorHp: e.target.value })}
+                        onChange={(e) => setEditFormData({ ...editFormData, nomorHp: e.target.value.replace(/\D/g, '') })}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="081234567890"
                       />
