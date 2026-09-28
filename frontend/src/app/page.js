@@ -215,13 +215,7 @@ export default function DashboardPage() {
   // Loading skeleton
   if (loading) {
     return (
-      <div>
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-sm text-slate-500">
-            Selamat datang di Sistem Pencatatan Asset Galeria Karya Media
-          </p>
-        </div>
+      <div className="pt-6 lg:pt-0">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm animate-pulse">
@@ -243,13 +237,7 @@ export default function DashboardPage() {
   // Error state
   if (error) {
     return (
-      <div>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-sm text-slate-500">
-            Selamat datang di Sistem Pencatatan Asset Galeria Karya Media
-          </p>
-        </div>
+      <div className="pt-6 lg:pt-0">
         <div className="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-10">
         <AlertTriangle className="h-12 w-12 text-rose-400 mb-3" />
         <p className="text-sm font-medium text-rose-700 mb-1">Koneksi Gagal</p>
@@ -283,14 +271,7 @@ export default function DashboardPage() {
     : "bg-indigo-400/25";
 
   return (
-    <div>
-      {/* Header Mobile — Hanya tampil di mobile */}
-      <div className="mb-6 block lg:hidden">
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1 uppercase tracking-widest font-semibold">
-          Asset Management System
-        </p>
-      </div>
+      <div className="pt-6 lg:pt-0">
 
       {/* Premium Header — Ucapan & Distribusi Grid */}
       <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:auto-rows-max">
@@ -344,7 +325,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
                   <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
                     <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30">
                       <Package className="h-4 w-4 text-emerald-300" />
@@ -439,73 +420,49 @@ export default function DashboardPage() {
                     </div>
 
                     <div style={{ height: '220px', width: '100%' }}>
-                      {chartSlide === 0 ? (
-                        <ResponsivePie
-                          data={[
-                            { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
-                            { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "#3b82f6" },
-                            { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
-                            { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
-                          ].filter(d => d.value > 0)}
-                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                          innerRadius={0.55}
-                          padAngle={2}
-                          cornerRadius={3}
-                          colors={{ datum: 'data.color' }}
-                          borderColor="rgba(255, 255, 255, 0.12)"
-                          borderWidth={1.5}
-                          enableArcLabels={true}
-                          arcLabelsSkipAngle={15}
-                          arcLabelsTextColor="#ffffff"
-                          arcLabel={(datum) => {
-                            const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
-                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                            return `${percentage}%`;
-                          }}
-                          enableArcLinkLabels={false}
-                          tooltip={({ datum }) => (
-                            <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                              <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
-                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
-                            </div>
-                          )}
-                          motionConfig="gentle"
-                          legends={[]}
-                        />
-                      ) : (
-                        <ResponsivePie
-                          data={[
-                            { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
-                            { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
-                            { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
-                            { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
-                          ].filter(d => d.value > 0)}
-                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                          innerRadius={0.55}
-                          padAngle={2}
-                          cornerRadius={3}
-                          colors={{ datum: 'data.color' }}
-                          borderColor="rgba(255, 255, 255, 0.12)"
-                          borderWidth={1.5}
-                          enableArcLabels={true}
-                          arcLabelsSkipAngle={15}
-                          arcLabelsTextColor="#ffffff"
-                          arcLabel={(datum) => {
-                            const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
-                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                            return `${percentage}%`;
-                          }}
-                          enableArcLinkLabels={false}
-                          tooltip={({ datum }) => (
-                            <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                              <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
-                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
-                            </div>
-                          )}
-                          motionConfig="gentle"
-                          legends={[]}
-                        />
-                      )}
+                      <ResponsivePie
+                        data={chartSlide === 0 
+                          ? [
+                              { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "#3b82f6" },
+                              { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                              { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                            ].filter(d => d.value > 0)
+                          : [
+                              { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                              { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                              { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                            ].filter(d => d.value > 0)
+                        }
+                        margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                        innerRadius={0.55}
+                        padAngle={2}
+                        cornerRadius={3}
+                        activeOuterRadiusOffset={5}
+                        colors={{ datum: 'data.color' }}
+                        borderColor="rgba(255, 255, 255, 0.12)"
+                        borderWidth={1.5}
+                        enableArcLabels={true}
+                        arcLabelsSkipAngle={15}
+                        arcLabelsTextColor="#ffffff"
+                        arcLabel={(datum) => {
+                          const total = chartSlide === 0 
+                            ? (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0)
+                            : (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
+                          const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                          return `${percentage}%`;
+                        }}
+                        enableArcLinkLabels={false}
+                        tooltip={({ datum }) => (
+                          <div className={`bg-slate-950/95 border ${chartSlide === 0 ? 'border-cyan-400/30' : 'border-indigo-400/30'} rounded-xl px-3 py-2 backdrop-blur-md shadow-lg`}>
+                            <p className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>{datum.label}</p>
+                            <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                          </div>
+                        )}
+                        motionConfig="gentle"
+                        legends={[]}
+                      />
                     </div>
 
                     {/* Legend (Mobile) */}
@@ -541,6 +498,7 @@ export default function DashboardPage() {
                           innerRadius={0.55}
                           padAngle={2}
                           cornerRadius={3}
+                          activeOuterRadiusOffset={5}
                           colors={{ datum: 'data.color' }}
                           borderColor="rgba(255, 255, 255, 0.12)"
                           borderWidth={1.5}
@@ -580,6 +538,7 @@ export default function DashboardPage() {
                           innerRadius={0.55}
                           padAngle={2}
                           cornerRadius={3}
+                          activeOuterRadiusOffset={8}
                           colors={{ datum: 'data.color' }}
                           borderColor="rgba(255, 255, 255, 0.12)"
                           borderWidth={1.5}
@@ -760,7 +719,7 @@ export default function DashboardPage() {
             </div>
 
             {filteredActivities.length > 0 ? (
-              <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+              <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar lg:[&::-webkit-scrollbar]:hidden lg:[scrollbar-width:none]">
               {filteredActivities.map((activity) => (
                 <div
                   key={activity.id}
