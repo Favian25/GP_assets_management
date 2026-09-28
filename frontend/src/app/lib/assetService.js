@@ -155,15 +155,31 @@ export async function getDashboardStats() {
     .filter(a => a.kondisi === "Maintenance")
     .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
-  // ── Dipinjam Aset: aset dengan kondisi "Sedang Dipinjam" ──
+  // ── Dipinjam Aset: hitung dari selisih jumlahTotal dan jumlah (tersedia) ──
   const dipinjamAset = assets
-    .filter(a => a.kondisi === "Sedang Dipinjam")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
+    .reduce((sum, a) => {
+      if (a.kondisi === "Siap Digunakan") {
+        return sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlah) || 0));
+      }
+      if (a.kondisi === "Sedang Dipinjam") {
+        return sum + (parseInt(a.jumlahTotal) || 0);
+      }
+      return sum;
+    }, 0);
 
-  // ── Dipinjam Aksesoris: aksesoris dengan kondisi "Sedang Dipinjam" ──
+  // ── Dipinjam Aksesoris: hitung dari selisih jumlahTotal dan jumlahUnit (tersedia) ──
   const dipinjamAksesoris = aksesoris
-    .filter(a => a.kondisi === "Sedang Dipinjam")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
+    .reduce((sum, a) => {
+      if (a.kondisi === "Siap Digunakan") {
+        return sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlahUnit) || 0));
+      }
+      if (a.kondisi === "Sedang Dipinjam") {
+        return sum + (parseInt(a.jumlahTotal) || 0);
+      }
+      return sum;
+    }, 0);
 
   const aksesorisRusak = aksesoris
     .filter(a => a.kondisi === "Rusak")
