@@ -156,9 +156,13 @@ export async function getDashboardStats() {
     .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
   // ── Alat Dipinjam: jumlah unit aset + aksesoris yang sedang terpinjam (selisih total - tersedia) ──
-  const dipinjamAset = assets
-    .filter(a => a.kondisi === "Siap Digunakan")
-    .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlah) || 0)), 0);
+  const dipinjamAset =
+    assets
+      .filter(a => a.kondisi === "Siap Digunakan")
+      .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlah) || 0)), 0)
+    + assets
+      .filter(a => a.kondisi === "Sedang Dipinjam")
+      .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
   const dipinjamAksesoris = aksesoris
     .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlahUnit) || 0)), 0);

@@ -21,7 +21,7 @@ const getBackendURL = () => {
   return "http://localhost:5000";
 };
 const BACKEND_URL = getBackendURL();
-const kondisiOptions = ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"];
+const kondisiOptions = ["Siap Digunakan", "Sedang Dipinjam", "Rusak", "Rusak Berat", "Maintenance", "Dijual"];
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 
 const emptyForm = {
@@ -485,6 +485,7 @@ export default function DaftarAsetPage() {
   const getKondisiBadge = (kondisi) => {
     const s = {
       "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600",
+      "Sedang Dipinjam": "bg-blue-50 text-blue-700 border-blue-500 hover:bg-blue-600 hover:text-white hover:border-blue-600",
       "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600",
       "Rusak Berat": "bg-rose-900 text-white border-rose-950 hover:bg-black hover:border-black",
       "Maintenance": "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600",
