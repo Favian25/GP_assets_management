@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { getDashboardStats } from "./lib/assetService";
 import {
   Package, CheckCircle2, AlertCircle, Settings, AlertTriangle,
-  RefreshCw, ClipboardList, ChevronRight, Search, Minus, Plus,
+  RefreshCw, ClipboardList, ChevronRight, ChevronLeft, Search, Minus, Plus,
   Calendar, User, Clock, LayoutGrid, Cpu, Check, X, Zap, TrendingUp,
   TrendingDown, BarChart3, PieChart, ArrowUpRight, ArrowDownRight,
   Sunrise, Sun, CloudSun, Moon
@@ -97,6 +97,7 @@ export default function DashboardPage() {
   const [isActivityMinimized, setIsActivityMinimized] = useState(false);
   const [isLoanMinimized, setIsLoanMinimized] = useState(false);
   const [loanSearch, setLoanSearch] = useState("");
+  const [chartSlide, setChartSlide] = useState(0);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -317,50 +318,75 @@ export default function DashboardPage() {
 
             <div className="relative z-10 flex h-full flex-col justify-between p-6 lg:p-7">
               {/* identitas */}
-              <div className="flex flex-col gap-4">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25 lg:h-14 lg:w-14`}>
+              <div className="flex items-center gap-4">
+                <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25 lg:h-14 lg:w-14`}>
                   <GreetingIcon className="h-6 w-6 text-white lg:h-7 lg:w-7" strokeWidth={1.75} />
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-blue-300/80 lg:text-sm">
                     {greetingLabel}
                   </p>
-                  <h1 className="mt-1 text-3xl font-bold tracking-tight text-white lg:text-4xl">
+                  <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-white lg:text-3xl">
                     {userName}
                   </h1>
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400 lg:mt-2 lg:text-sm">
-                    <LayoutGrid className="h-4 w-4 lg:h-4 lg:w-4" />
-                    Asset Management System
-                  </p>
                 </div>
               </div>
 
-              {/* Jam & tanggal live */}
-              <div className="mt-6 rounded-xl border border-white/10 bg-white/5 px-4 py-4 text-center backdrop-blur-md lg:rounded-2xl lg:px-5 lg:py-5">
-                <p className="font-mono text-xs font-bold leading-none text-slate-300 lg:text-sm">
-                  {now
-                    ? now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-                    : "Memuat..."}
-                </p>
-                <p className="mt-3 font-mono text-2xl font-bold leading-none tabular-nums text-white lg:text-3xl">
-                  {now
-                    ? now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
-                    : "--:--:--"}
-                </p>
+              {/* Status Cards (Role, Harga Aset, Harga Aksesoris) */}
+              <div className="mt-6 flex flex-col gap-3">
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30">
+                    <User className="h-4 w-4 text-blue-300" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Role</p>
+                    <p className="text-sm font-bold capitalize text-white">{userRole || "User"}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30">
+                      <Package className="h-4 w-4 text-emerald-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Harga Aset</p>
+                      <p className="truncate text-sm font-bold text-white">
+                        {["super admin", "admin"].includes(userRole?.toLowerCase()) ? (
+                          stats?.totalNilaiAset > 0 ? `Rp ${stats.totalNilaiAset.toLocaleString("id-ID")}` : "Rp 0"
+                        ) : "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-purple-500/20 ring-1 ring-purple-400/30">
+                      <Cpu className="h-4 w-4 text-purple-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Harga Aksesoris</p>
+                      <p className="truncate text-sm font-bold text-white">
+                        {["super admin", "admin"].includes(userRole?.toLowerCase()) ? (
+                          stats?.totalNilaiAksesoris > 0 ? `Rp ${stats.totalNilaiAksesoris.toLocaleString("id-ID")}` : "Rp 0"
+                        ) : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* === Card Distribusi Aset === */}
-        <div className="lg:col-span-1">
+        {/* === Card Ringkasan Distribusi Inventaris === */}
+        <div className="lg:col-span-2">
           <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
             {/* Gradient base */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-cyan-950 to-teal-950" />
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-cyan-950 to-indigo-950" />
 
             {/* Ambient glow */}
             <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
-            <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-teal-500/15 blur-3xl" />
+            <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl" />
 
             {/* Dot pattern */}
             <div
@@ -376,19 +402,114 @@ export default function DashboardPage() {
 
             <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
               <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
-                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 p-2 shadow-lg">
+                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-2 shadow-lg">
                   <PieChart className="h-5 w-5 text-white" />
                 </div>
-                <span>Distribusi Aset</span>
+                <span>Ringkasan Distribusi Inventaris</span>
               </h2>
 
-              {/* Nivo Pie Chart - Legend & Chart Side by Side */}
+              {/* Nivo Pie Chart - Aset, Aksesoris & Legend */}
               {mounted && (
-                <div className="flex-1 flex flex-col sm:flex-row gap-6 items-center justify-center" style={{ minHeight: 'auto' }}>
-                  {/* Legend di Kiri (Desktop) / Atas (Mobile) */}
-                  <div className="flex flex-col justify-center flex-shrink-0 w-full sm:w-auto order-2 sm:order-1">
-                    <h3 className="text-sm font-semibold text-white mb-3 text-center sm:text-left">Keterangan</h3>
-                    <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-3 sm:gap-0 sm:space-y-2 text-xs">
+                <>
+                  {/* === Mobile: Carousel (tampil 1 chart + tombol navigasi) === */}
+                  <div className="sm:hidden">
+                    <div className="flex items-center justify-between mb-3">
+                      <button
+                        onClick={() => setChartSlide(chartSlide === 0 ? 1 : 0)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md transition-colors hover:bg-white/10 hover:text-white"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <h3 className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>
+                        {chartSlide === 0 ? 'Distribusi Aset' : 'Distribusi Aksesoris'}
+                      </h3>
+                      <button
+                        onClick={() => setChartSlide(chartSlide === 0 ? 1 : 0)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md transition-colors hover:bg-white/10 hover:text-white"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Dot indicators */}
+                    <div className="flex justify-center gap-2 mb-3">
+                      {[0, 1].map((i) => (
+                        <button key={i} onClick={() => setChartSlide(i)} className={`h-2 rounded-full transition-all duration-300 ${chartSlide === i ? 'w-6 bg-white' : 'w-2 bg-white/30'}`} />
+                      ))}
+                    </div>
+
+                    <div style={{ height: '220px', width: '100%' }}>
+                      {chartSlide === 0 ? (
+                        <ResponsivePie
+                          data={[
+                            { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                            { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "#3b82f6" },
+                            { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                            { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                          ].filter(d => d.value > 0)}
+                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                          innerRadius={0.55}
+                          padAngle={2}
+                          cornerRadius={3}
+                          colors={{ datum: 'data.color' }}
+                          borderColor="rgba(255, 255, 255, 0.12)"
+                          borderWidth={1.5}
+                          enableArcLabels={true}
+                          arcLabelsSkipAngle={15}
+                          arcLabelsTextColor="#ffffff"
+                          arcLabel={(datum) => {
+                            const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                            return `${percentage}%`;
+                          }}
+                          enableArcLinkLabels={false}
+                          tooltip={({ datum }) => (
+                            <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                              <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                            </div>
+                          )}
+                          motionConfig="gentle"
+                          legends={[]}
+                        />
+                      ) : (
+                        <ResponsivePie
+                          data={[
+                            { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                            { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                            { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                            { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                          ].filter(d => d.value > 0)}
+                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                          innerRadius={0.55}
+                          padAngle={2}
+                          cornerRadius={3}
+                          colors={{ datum: 'data.color' }}
+                          borderColor="rgba(255, 255, 255, 0.12)"
+                          borderWidth={1.5}
+                          enableArcLabels={true}
+                          arcLabelsSkipAngle={15}
+                          arcLabelsTextColor="#ffffff"
+                          arcLabel={(datum) => {
+                            const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
+                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                            return `${percentage}%`;
+                          }}
+                          enableArcLinkLabels={false}
+                          tooltip={({ datum }) => (
+                            <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                              <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
+                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                            </div>
+                          )}
+                          motionConfig="gentle"
+                          legends={[]}
+                        />
+                      )}
+                    </div>
+
+                    {/* Legend (Mobile) */}
+                    <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-white/10 pt-4">
                       {[
                         { color: "#10b981", label: "Siap Digunakan" },
                         { color: "#3b82f6", label: "Sedang Dipinjam" },
@@ -397,160 +518,111 @@ export default function DashboardPage() {
                       ].map((item) => (
                         <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
                           <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-slate-300 text-[12px]">{item.label}</span>
+                          <span className="text-slate-300 text-xs font-medium">{item.label}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Pie Chart di Kanan (Desktop) / Bawah (Mobile) */}
-                  <div className="order-1 sm:order-2 w-full" style={{ height: '200px', minHeight: '200px', flex: '1 1 auto' }}>
-                    <ResponsivePie
-                      data={[
-                        { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
-                        { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "#3b82f6" },
-                        { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
-                        { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
-                      ].filter(d => d.value > 0)}
-                      margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
-                      innerRadius={0.58}
-                      padAngle={2}
-                      cornerRadius={3}
-                      activeOuterRadiusOffset={8}
-                      colors={(datum) => {
-                        const colorMap = {
-                          "Siap": "#10b981",
-                          "Dipinjam": "#3b82f6",
-                          "Maintenance": "#f59e0b",
-                          "Rusak": "#ef4444"
-                        };
-                        return colorMap[datum.id] || "#999999";
-                      }}
-                      borderColor="rgba(255, 255, 255, 0.12)"
-                      borderWidth={1.5}
-                      enableArcLabels={true}
-                      arcLabelsSkipAngle={12}
-                      arcLabelsTextColor="#ffffff"
-                      arcLabelsRadiusOffset={0.48}
-                      arcLabel={(datum) => {
-                        const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
-                        const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                        return `${percentage}%`;
-                      }}
-                      enableArcLinkLabels={false}
-                      tooltip={({ datum }) => (
-                        <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                          <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
-                          <p className="text-sm font-bold text-white">{datum.value} unit</p>
-                        </div>
-                      )}
-                      motionConfig="gentle"
-                      legends={[]}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+                  {/* === Tablet & Desktop: Horizontal Layout === */}
+                  <div className="hidden sm:flex flex-1 sm:flex-row gap-6 items-center justify-center">
+                    {/* Pie Chart Aset */}
+                    <div className="w-full sm:w-1/3 flex flex-col items-center">
+                      <h3 className="text-sm font-semibold text-cyan-300 mb-2">Distribusi Aset</h3>
+                      <div style={{ height: '210px', width: '100%' }}>
+                        <ResponsivePie
+                          data={[
+                            { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                            { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.dipinjam || 0, color: "#3b82f6" },
+                            { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                            { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                          ].filter(d => d.value > 0)}
+                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                          innerRadius={0.55}
+                          padAngle={2}
+                          cornerRadius={3}
+                          colors={{ datum: 'data.color' }}
+                          borderColor="rgba(255, 255, 255, 0.12)"
+                          borderWidth={1.5}
+                          enableArcLabels={true}
+                          arcLabelsSkipAngle={15}
+                          arcLabelsTextColor="#ffffff"
+                          arcLabel={(datum) => {
+                            const total = (stats?.tersedia || 0) + (stats?.dipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                            return `${percentage}%`;
+                          }}
+                          enableArcLinkLabels={false}
+                          tooltip={({ datum }) => (
+                            <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                              <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                            </div>
+                          )}
+                          motionConfig="gentle"
+                          legends={[]}
+                        />
+                      </div>
+                    </div>
 
-        {/* === Card Distribusi Aksesoris === */}
-        <div className="lg:col-span-1">
-          <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
-            {/* Gradient base (Beda Warna untuk Aksesoris) */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950" />
+                    {/* Pie Chart Aksesoris */}
+                    <div className="w-full sm:w-1/3 flex flex-col items-center">
+                      <h3 className="text-sm font-semibold text-indigo-300 mb-2">Distribusi Aksesoris</h3>
+                      <div style={{ height: '210px', width: '100%' }}>
+                        <ResponsivePie
+                          data={[
+                            { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                            { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                            { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                            { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                          ].filter(d => d.value > 0)}
+                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                          innerRadius={0.55}
+                          padAngle={2}
+                          cornerRadius={3}
+                          colors={{ datum: 'data.color' }}
+                          borderColor="rgba(255, 255, 255, 0.12)"
+                          borderWidth={1.5}
+                          enableArcLabels={true}
+                          arcLabelsSkipAngle={15}
+                          arcLabelsTextColor="#ffffff"
+                          arcLabel={(datum) => {
+                            const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
+                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                            return `${percentage}%`;
+                          }}
+                          enableArcLinkLabels={false}
+                          tooltip={({ datum }) => (
+                            <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                              <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
+                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                            </div>
+                          )}
+                          motionConfig="gentle"
+                          legends={[]}
+                        />
+                      </div>
+                    </div>
 
-            {/* Ambient glow */}
-            <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
-            <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-purple-500/15 blur-3xl" />
-
-            {/* Dot pattern */}
-            <div
-              className="absolute inset-0 opacity-[0.05]"
-              style={{
-                backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-                backgroundSize: "22px 22px",
-              }}
-            />
-
-            {/* Garis highlight atas */}
-            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-
-            <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
-              <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
-                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 p-2 shadow-lg">
-                  <Cpu className="h-5 w-5 text-white" />
-                </div>
-                <span>Distribusi Aksesoris</span>
-              </h2>
-
-              {/* Nivo Pie Chart - Legend & Chart Side by Side */}
-              {mounted && (
-                <div className="flex-1 flex flex-col sm:flex-row gap-6 items-center justify-center" style={{ minHeight: 'auto' }}>
-                  {/* Legend di Kiri (Desktop) / Atas (Mobile) */}
-                  <div className="flex flex-col justify-center flex-shrink-0 w-full sm:w-auto order-2 sm:order-1">
-                    <h3 className="text-sm font-semibold text-white mb-3 text-center sm:text-left">Keterangan</h3>
-                    <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-3 sm:gap-0 sm:space-y-2 text-xs">
-                      {[
-                        { color: "#10b981", label: "Siap Digunakan" },
-                        { color: "#3b82f6", label: "Sedang Dipinjam" },
-                        { color: "#f59e0b", label: "Maintenance" },
-                        { color: "#ef4444", label: "Rusak" }
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
-                          <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-slate-300 text-[12px]">{item.label}</span>
-                        </div>
-                      ))}
+                    {/* Legend Keterangan */}
+                    <div className="w-full sm:w-1/3 flex flex-col justify-center items-center sm:items-start pl-0 sm:pl-6 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0">
+                      <h3 className="text-sm font-semibold text-white mb-4">Keterangan Kondisi</h3>
+                      <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-4 sm:gap-3 text-sm">
+                        {[
+                          { color: "#10b981", label: "Siap Digunakan" },
+                          { color: "#3b82f6", label: "Sedang Dipinjam" },
+                          { color: "#f59e0b", label: "Maintenance" },
+                          { color: "#ef4444", label: "Rusak" }
+                        ].map((item) => (
+                          <div key={item.label} className="flex items-center gap-3 whitespace-nowrap">
+                            <div className="flex-shrink-0 w-3 h-3 rounded-full shadow-md" style={{ backgroundColor: item.color }} />
+                            <span className="text-slate-200 font-medium">{item.label}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-
-                  {/* Pie Chart di Kanan (Desktop) / Bawah (Mobile) */}
-                  <div className="order-1 sm:order-2 w-full" style={{ height: '200px', minHeight: '200px', flex: '1 1 auto' }}>
-                    <ResponsivePie
-                      data={[
-                        { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
-                        { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
-                        { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
-                        { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
-                      ].filter(d => d.value > 0)}
-                      margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
-                      innerRadius={0.58}
-                      padAngle={2}
-                      cornerRadius={3}
-                      activeOuterRadiusOffset={8}
-                      colors={(datum) => {
-                        const colorMap = {
-                          "Siap": "#10b981",
-                          "Dipinjam": "#3b82f6",
-                          "Maintenance": "#f59e0b",
-                          "Rusak": "#ef4444"
-                        };
-                        return colorMap[datum.id] || "#999999";
-                      }}
-                      borderColor="rgba(255, 255, 255, 0.12)"
-                      borderWidth={1.5}
-                      enableArcLabels={true}
-                      arcLabelsSkipAngle={12}
-                      arcLabelsTextColor="#ffffff"
-                      arcLabelsRadiusOffset={0.48}
-                      arcLabel={(datum) => {
-                        const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
-                        const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                        return `${percentage}%`;
-                      }}
-                      enableArcLinkLabels={false}
-                      tooltip={({ datum }) => (
-                        <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                          <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
-                          <p className="text-sm font-bold text-white">{datum.value} unit</p>
-                        </div>
-                      )}
-                      motionConfig="gentle"
-                      legends={[]}
-                    />
-                  </div>
-                </div>
+                </>
               )}
             </div>
           </div>
