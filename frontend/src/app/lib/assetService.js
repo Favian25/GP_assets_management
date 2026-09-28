@@ -155,13 +155,15 @@ export async function getDashboardStats() {
     .filter(a => a.kondisi === "Maintenance")
     .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
-  // ── Alat Dipinjam: jumlah unit aset + aksesoris yang sedang terpinjam (selisih total - tersedia) ──
+  // ── Dipinjam Aset: aset dengan kondisi "Sedang Dipinjam" ──
   const dipinjamAset = assets
-    .filter(a => a.kondisi === "Siap Digunakan")
-    .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlah) || 0)), 0);
+    .filter(a => a.kondisi === "Sedang Dipinjam")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
+  // ── Dipinjam Aksesoris: aksesoris dengan kondisi "Sedang Dipinjam" ──
   const dipinjamAksesoris = aksesoris
-    .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlahUnit) || 0)), 0);
+    .filter(a => a.kondisi === "Sedang Dipinjam")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
   const aksesorisRusak = aksesoris
     .filter(a => a.kondisi === "Rusak")
@@ -172,6 +174,11 @@ export async function getDashboardStats() {
     .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
 
   const dipinjam = dipinjamAset + dipinjamAksesoris;
+
+  // ── Aksesoris Tersedia (pie chart): hanya yang kondisi "Siap Digunakan" ──
+  const aksesorisTersediaCount = aksesoris
+    .filter(a => a.kondisi === "Siap Digunakan")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahUnit) || 0), 0);
 
   // ── Total Nilai Aset: harga sebenarnya dari semua aset (hargaAset × jumlahTotal) ──
   const totalNilaiAset = assets
@@ -237,7 +244,8 @@ export async function getDashboardStats() {
     maintenance,
     rusak,
     dipinjam,
-    aksesorisTersedia: totalAksesoris,
+    asetDipinjam: dipinjamAset,
+    aksesorisTersedia: aksesorisTersediaCount,
     aksesorisDipinjam: dipinjamAksesoris,
     aksesorisMaintenance,
     aksesorisRusak,
