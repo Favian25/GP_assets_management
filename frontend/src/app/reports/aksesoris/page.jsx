@@ -176,12 +176,11 @@ export default function AksesorisReportPage() {
 
   const getKondisiBadge = (kondisi) => {
     const s = { 
-      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500",
-      "Sedang Dipinjam": "bg-blue-50 text-blue-700 border-blue-500",
-      "Rusak": "bg-red-50 text-red-700 border-red-500",
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500", 
+      "Rusak": "bg-red-50 text-red-700 border-red-500", 
       "Rusak Berat": "bg-rose-900 text-white border-rose-900",
-      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500",
-      "Dijual": "bg-slate-100 text-slate-600 border-slate-500"
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500", 
+      "Dijual": "bg-slate-100 text-slate-600 border-slate-500" 
     };
     return `inline-block w-[180px] text-center ${s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200"}`;
   };
