@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getAllUsers, createUser, updateUser, updateUserRole, deleteUser } from "../lib/userService";
 import { getUserContext } from "../lib/authService";
-import { getAllPegawai, createPegawai } from "../lib/pegawaiService";
+import { getAllPegawai } from "../lib/pegawaiService";
 import { 
   Eye, EyeOff, Search, Plus, Pencil, Trash2, X, Check, 
   ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, 
@@ -75,11 +75,6 @@ export default function KelolaUserPage() {
   const [filteredPegawai, setFilteredPegawai] = useState([]);
   const [showPegawaiDropdown, setShowPegawaiDropdown] = useState(false);
   const [pegawaiLoading, setPegawaiLoading] = useState(false);
-
-  // Tambah Pegawai Baru (inline dari form User)
-  const [showAddPegawaiModal, setShowAddPegawaiModal] = useState(false);
-  const [newPegawaiForm, setNewPegawaiForm] = useState({ namaLengkap: "", email: "", nomorHp: "", tempatLahir: "", tanggalLahir: "", alamat: "" });
-  const [submittingPegawai, setSubmittingPegawai] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -172,40 +167,6 @@ export default function KelolaUserPage() {
   const handleSelectPegawai = (pegawai) => {
     setNewUser(p => ({...p, pegawaiId: pegawai.id, namaLengkap: pegawai.namaLengkap, email: pegawai.email || ""}));
     setShowPegawaiDropdown(false);
-  };
-
-  // Buka modal tambah pegawai baru (pre-fill nama dari input yang sudah diketik)
-  const openAddPegawaiModal = () => {
-    setNewPegawaiForm({ namaLengkap: newUser.namaLengkap, email: "", nomorHp: "", tempatLahir: "", tanggalLahir: "", alamat: "" });
-    setShowPegawaiDropdown(false);
-    setShowAddPegawaiModal(true);
-  };
-
-  // Submit tambah pegawai baru dari dalam form user
-  const handleCreatePegawaiInline = async (e) => {
-    e.preventDefault();
-    if (!newPegawaiForm.namaLengkap.trim()) {
-      showToast("Nama lengkap wajib diisi", "error");
-      return;
-    }
-    try {
-      setSubmittingPegawai(true);
-      const result = await createPegawai(newPegawaiForm);
-      // Refresh list pegawai
-      const updatedList = await getAllPegawai();
-      setPegawaiList(updatedList);
-      // Auto-select pegawai yang baru dibuat
-      const created = updatedList.find(p => p.id === result.data?.id) || updatedList.find(p => p.namaLengkap === newPegawaiForm.namaLengkap);
-      if (created) {
-        handleSelectPegawai(created);
-      }
-      showToast("Pegawai berhasil ditambahkan dan dipilih!");
-      setShowAddPegawaiModal(false);
-    } catch (err) {
-      showToast(err.response?.data?.message || "Gagal menambahkan pegawai", "error");
-    } finally {
-      setSubmittingPegawai(false);
-    }
   };
 
   const handleAddUser = async (e) => {
@@ -726,16 +687,7 @@ export default function KelolaUserPage() {
                               </button>
                             ))
                           ) : (
-                            <div className="px-3 py-2 text-sm text-slate-500 text-center">
-                              <p className="mb-2">Tidak ada pegawai yang sesuai</p>
-                              <button
-                                type="button"
-                                onMouseDown={(e) => { e.preventDefault(); openAddPegawaiModal(); }}
-                                className="cursor-pointer w-full rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover transition-colors flex items-center justify-center gap-1"
-                              >
-                                <Plus className="w-3 h-3" /> Tambah Pegawai Baru
-                              </button>
-                            </div>
+                            <div className="px-3 py-2 text-sm text-slate-500 text-center">Tidak ada pegawai yang sesuai</div>
                           )}
                         </div>
                       )}
@@ -801,93 +753,6 @@ export default function KelolaUserPage() {
                   <div className="flex items-center justify-end gap-3 pt-2">
                     <button type="button" onClick={() => setShowAddModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
                     <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-hover disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Modal Tambah Pegawai Baru (inline dari form User) */}
-          {showAddPegawaiModal && (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-300" onClick={() => setShowAddPegawaiModal(false)}>
-              <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
-                  <h2 className="text-lg font-bold text-slate-800">Tambah Pegawai Baru</h2>
-                  <button type="button" onClick={() => setShowAddPegawaiModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
-                </div>
-                <form onSubmit={handleCreatePegawaiInline} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
-                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                    <p className="text-xs text-emerald-700">Setelah disimpan, pegawai ini akan otomatis dipilih di form tambah user.</p>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
-                    <input
-                      type="text"
-                      value={newPegawaiForm.namaLengkap}
-                      onChange={(e) => setNewPegawaiForm(p => ({...p, namaLengkap: e.target.value}))}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                      placeholder="Masukkan nama lengkap"
-                      required
-                      onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")}
-                      onInput={(e) => e.target.setCustomValidity("")}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-                      <input
-                        type="email"
-                        value={newPegawaiForm.email}
-                        onChange={(e) => setNewPegawaiForm(p => ({...p, email: e.target.value}))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder="email@example.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
-                      <input
-                        type="tel"
-                        value={newPegawaiForm.nomorHp}
-                        onChange={(e) => setNewPegawaiForm(p => ({...p, nomorHp: e.target.value}))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder="081234567890"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Tempat Lahir</label>
-                      <input
-                        type="text"
-                        value={newPegawaiForm.tempatLahir}
-                        onChange={(e) => setNewPegawaiForm(p => ({...p, tempatLahir: e.target.value}))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder="Kota lahir"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Lahir</label>
-                      <input
-                        type="date"
-                        value={newPegawaiForm.tanggalLahir}
-                        onChange={(e) => setNewPegawaiForm(p => ({...p, tanggalLahir: e.target.value}))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Alamat</label>
-                    <textarea
-                      value={newPegawaiForm.alamat}
-                      onChange={(e) => setNewPegawaiForm(p => ({...p, alamat: e.target.value}))}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                      placeholder="Alamat lengkap"
-                      rows="3"
-                    />
-                  </div>
-                  <div className="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" onClick={() => setShowAddPegawaiModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
-                    <button type="submit" disabled={submittingPegawai} className="cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60">{submittingPegawai ? "Menyimpan..." : "Simpan & Pilih"}</button>
                   </div>
                 </form>
               </div>

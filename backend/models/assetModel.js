@@ -21,7 +21,7 @@ const Asset = {
   // Generate kode aset berikutnya
   getNextKodeAset: async (jenisAset, kodeSingkatKategori) => {
     // Determine prefix based on jenis_aset
-    const jenisKode = jenisAset === "Galeria Production" ? "GPRO" : "GS";
+    const jenisKode = jenisAset === "Galeria Production" ? "PRO" : "STD";
     const kategoriKode = kodeSingkatKategori ? kodeSingkatKategori.toUpperCase().slice(0, 4) : "GEN";
     const prefix = `AST-${jenisKode}-${kategoriKode}-`;
     const [rows] = await db.query(
