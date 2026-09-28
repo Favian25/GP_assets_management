@@ -291,10 +291,10 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Premium Header — Ucapan (kiri) + Nilai Aset (kanan) */}
+      {/* Premium Header — Ucapan & Distribusi Grid */}
       <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:auto-rows-max">
         {/* === Card Ucapan === */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-1">
           <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
             {/* Gradient base */}
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950" />
@@ -315,108 +315,38 @@ export default function DashboardPage() {
             {/* Garis highlight atas */}
             <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-            <div className="relative z-10 flex h-full flex-col p-4 lg:p-7">
-              {/* Baris 1 — identitas + jam live */}
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25 lg:h-14 lg:w-14`}>
-                    <GreetingIcon className="h-6 w-6 text-white lg:h-7 lg:w-7" strokeWidth={1.75} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-blue-300/80 lg:text-sm">
-                      {greetingLabel}
-                    </p>
-                    <h1 className="mt-1 text-3xl font-bold tracking-tight text-white lg:text-4xl">
-                      {userName}
-                    </h1>
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400 lg:mt-2 lg:text-sm">
-                      <LayoutGrid className="h-4 w-4 lg:h-4 lg:w-4" />
-                      Asset Management System
-                    </p>
-                  </div>
+            <div className="relative z-10 flex h-full flex-col justify-between p-6 lg:p-7">
+              {/* identitas */}
+              <div className="flex flex-col gap-4">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25 lg:h-14 lg:w-14`}>
+                  <GreetingIcon className="h-6 w-6 text-white lg:h-7 lg:w-7" strokeWidth={1.75} />
                 </div>
-
-                {/* Jam & tanggal live */}
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center backdrop-blur-md lg:rounded-2xl lg:px-5 lg:py-3.5">
-                  <p className="font-mono text-xs font-bold leading-none text-slate-300 lg:text-sm">
-                    {now
-                      ? now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-                      : "Memuat..."}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-blue-300/80 lg:text-sm">
+                    {greetingLabel}
                   </p>
-                  <p className="mt-2 font-mono text-lg font-bold leading-none tabular-nums text-white lg:text-2xl">
-                    {now
-                      ? now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
-                      : "--:--:--"}
+                  <h1 className="mt-1 text-3xl font-bold tracking-tight text-white lg:text-4xl">
+                    {userName}
+                  </h1>
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400 lg:mt-2 lg:text-sm">
+                    <LayoutGrid className="h-4 w-4 lg:h-4 lg:w-4" />
+                    Asset Management System
                   </p>
                 </div>
               </div>
 
-              {/* Baris 2 — chip info ringkasan */}
-              <div className="mt-4 flex flex-1 flex-col justify-end lg:mt-6">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30 lg:h-9 lg:w-9 lg:rounded-xl">
-                      <User className="h-3.5 w-3.5 text-blue-300 lg:h-4 lg:w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 lg:text-xs">Role</p>
-                      <p className="text-sm font-bold capitalize text-white lg:text-base">{userRole || "User"}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30 lg:h-9 lg:w-9 lg:rounded-xl">
-                      <Package className="h-3.5 w-3.5 text-emerald-300 lg:h-4 lg:w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 lg:text-xs">Total Aset</p>
-                      <p className="text-sm font-bold text-white lg:text-base">{stats?.total || 0} Unit</p>
-                    </div>
-                  </div>
-
-                  <div className="col-span-2 sm:col-span-1 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-colors duration-300 hover:bg-white/10 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-2.5">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-sky-500/20 ring-1 ring-sky-400/30 lg:h-9 lg:w-9 lg:rounded-xl">
-                      <BarChart3 className="h-3.5 w-3.5 text-sky-300 lg:h-4 lg:w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 lg:text-xs">Nilai Aset</p>
-                      <p className="truncate text-sm font-bold text-white lg:text-base">
-                        {["super admin", "admin"].includes(userRole?.toLowerCase()) ? (
-                          stats?.totalNilaiKeseluruhan > 0
-                            ? (
-                              <>
-                                <span className="hidden lg:inline">
-                                  {`Rp ${stats.totalNilaiKeseluruhan.toLocaleString("id-ID")}`}
-                                </span>
-                                <span className="lg:hidden">
-                                  {`Rp ${(stats.totalNilaiKeseluruhan / 1000000).toFixed(1)} Jt`}
-                                </span>
-                              </>
-                            )
-                            : "Rp -"
-                        ) : (
-                          "-"
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Status strip */}
-                <div className="mt-3 flex flex-wrap gap-1 border-t border-white/10 pt-3 lg:mt-5 lg:gap-2 lg:pt-4">
-                  {[
-                    { label: "Tersedia", value: stats?.tersedia || 0, icon: CheckCircle2, chip: "bg-emerald-500/10 text-emerald-300 ring-emerald-400/20" },
-                    { label: "Dipinjam", value: stats?.dipinjam || 0, icon: Package, chip: "bg-blue-500/10 text-blue-300 ring-blue-400/20" },
-                    { label: "Maintenance", value: stats?.maintenance || 0, icon: AlertCircle, chip: "bg-amber-500/10 text-amber-300 ring-amber-400/20" },
-                    { label: "Rusak", value: stats?.rusak || 0, icon: AlertTriangle, chip: "bg-rose-500/10 text-rose-300 ring-rose-400/20" }
-                  ].map((item) => (
-                    <span key={item.label} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ring-1 lg:gap-2 lg:px-4 lg:py-2 lg:text-sm ${item.chip}`}>
-                      <item.icon className="h-4 w-4 lg:h-4 lg:w-4" />
-                      <span className="hidden sm:inline">{item.label}</span>
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-bold text-white lg:px-2 lg:py-1 lg:text-sm">{item.value}</span>
-                    </span>
-                  ))}
-                </div>
+              {/* Jam & tanggal live */}
+              <div className="mt-6 rounded-xl border border-white/10 bg-white/5 px-4 py-4 text-center backdrop-blur-md lg:rounded-2xl lg:px-5 lg:py-5">
+                <p className="font-mono text-xs font-bold leading-none text-slate-300 lg:text-sm">
+                  {now
+                    ? now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+                    : "Memuat..."}
+                </p>
+                <p className="mt-3 font-mono text-2xl font-bold leading-none tabular-nums text-white lg:text-3xl">
+                  {now
+                    ? now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
+                    : "--:--:--"}
+                </p>
               </div>
             </div>
           </div>
@@ -511,6 +441,108 @@ export default function DashboardPage() {
                       tooltip={({ datum }) => (
                         <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
                           <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                          <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                        </div>
+                      )}
+                      motionConfig="gentle"
+                      legends={[]}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* === Card Distribusi Aksesoris === */}
+        <div className="lg:col-span-1">
+          <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+            {/* Gradient base (Beda Warna untuk Aksesoris) */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950" />
+
+            {/* Ambient glow */}
+            <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+            <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-purple-500/15 blur-3xl" />
+
+            {/* Dot pattern */}
+            <div
+              className="absolute inset-0 opacity-[0.05]"
+              style={{
+                backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                backgroundSize: "22px 22px",
+              }}
+            />
+
+            {/* Garis highlight atas */}
+            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+            <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
+              <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
+                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 p-2 shadow-lg">
+                  <Cpu className="h-5 w-5 text-white" />
+                </div>
+                <span>Distribusi Aksesoris</span>
+              </h2>
+
+              {/* Nivo Pie Chart - Legend & Chart Side by Side */}
+              {mounted && (
+                <div className="flex-1 flex flex-col sm:flex-row gap-6 items-center justify-center" style={{ minHeight: 'auto' }}>
+                  {/* Legend di Kiri (Desktop) / Atas (Mobile) */}
+                  <div className="flex flex-col justify-center flex-shrink-0 w-full sm:w-auto order-2 sm:order-1">
+                    <h3 className="text-sm font-semibold text-white mb-3 text-center sm:text-left">Keterangan</h3>
+                    <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-3 sm:gap-0 sm:space-y-2 text-xs">
+                      {[
+                        { color: "#10b981", label: "Siap Digunakan" },
+                        { color: "#3b82f6", label: "Sedang Dipinjam" },
+                        { color: "#f59e0b", label: "Maintenance" },
+                        { color: "#ef4444", label: "Rusak" }
+                      ].map((item) => (
+                        <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
+                          <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-slate-300 text-[12px]">{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pie Chart di Kanan (Desktop) / Bawah (Mobile) */}
+                  <div className="order-1 sm:order-2 w-full" style={{ height: '200px', minHeight: '200px', flex: '1 1 auto' }}>
+                    <ResponsivePie
+                      data={[
+                        { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                        { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                        { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                        { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                      ].filter(d => d.value > 0)}
+                      margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
+                      innerRadius={0.58}
+                      padAngle={2}
+                      cornerRadius={3}
+                      activeOuterRadiusOffset={8}
+                      colors={(datum) => {
+                        const colorMap = {
+                          "Siap": "#10b981",
+                          "Dipinjam": "#3b82f6",
+                          "Maintenance": "#f59e0b",
+                          "Rusak": "#ef4444"
+                        };
+                        return colorMap[datum.id] || "#999999";
+                      }}
+                      borderColor="rgba(255, 255, 255, 0.12)"
+                      borderWidth={1.5}
+                      enableArcLabels={true}
+                      arcLabelsSkipAngle={12}
+                      arcLabelsTextColor="#ffffff"
+                      arcLabelsRadiusOffset={0.48}
+                      arcLabel={(datum) => {
+                        const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
+                        const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                        return `${percentage}%`;
+                      }}
+                      enableArcLinkLabels={false}
+                      tooltip={({ datum }) => (
+                        <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                          <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
                           <p className="text-sm font-bold text-white">{datum.value} unit</p>
                         </div>
                       )}

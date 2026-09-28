@@ -163,6 +163,14 @@ export async function getDashboardStats() {
   const dipinjamAksesoris = aksesoris
     .reduce((sum, a) => sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlahUnit) || 0)), 0);
 
+  const aksesorisRusak = aksesoris
+    .filter(a => a.kondisi === "Rusak")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+
+  const aksesorisMaintenance = aksesoris
+    .filter(a => a.kondisi === "Maintenance")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+
   const dipinjam = dipinjamAset + dipinjamAksesoris;
 
   // ── Total Nilai Aset: harga sebenarnya dari semua aset (hargaAset × jumlahTotal) ──
@@ -229,6 +237,10 @@ export async function getDashboardStats() {
     maintenance,
     rusak,
     dipinjam,
+    aksesorisTersedia: totalAksesoris,
+    aksesorisDipinjam: dipinjamAksesoris,
+    aksesorisMaintenance,
+    aksesorisRusak,
     activities,
     lowStockAssets,
     activeLoans,
