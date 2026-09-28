@@ -623,7 +623,7 @@ export default function DashboardPage() {
               </h2>
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="relative w-full sm:w-auto">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 z-10 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Cari..."
@@ -636,7 +636,7 @@ export default function DashboardPage() {
             </div>
 
             {filteredLoans && filteredLoans.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 max-h-96 overflow-y-auto custom-scrollbar">
               {filteredLoans.map((loan) => (
                 <div
                   key={loan.id}
@@ -650,8 +650,13 @@ export default function DashboardPage() {
                     <div>
                       <p className="font-semibold text-white group-hover:text-blue-300 transition-colors">{loan.namaPeminjam}</p>
                       <p className="text-xs text-slate-400 font-mono">{loan.kodePinjam}</p>
+                      {loan.createdAt && (
+                        <p className="text-xs text-slate-400 font-medium mt-1">
+                          {formatActivityDate(loan.createdAt).datePart} · {formatActivityDate(loan.createdAt).timePart}
+                        </p>
+                      )}
                     </div>
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm ${
+                    <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm ${
                       loan.status === 'Menunggu Persetujuan' ? 'bg-amber-500/20 text-amber-200' :
                       loan.status === 'Sedang Dipinjam' ? 'bg-blue-500/20 text-blue-200' :
                       'bg-violet-500/20 text-violet-200'
@@ -659,7 +664,7 @@ export default function DashboardPage() {
                       {loan.status}
                     </span>
                   </div>
-                  <div className="relative z-10 flex items-center gap-2 text-sm text-slate-300 group-hover:text-white transition-colors">
+                  <div className="relative z-10 flex items-center gap-2 text-sm text-slate-300 group-hover:text-white transition-colors lg:absolute lg:bottom-5 lg:right-6">
                     <Package className="h-4 w-4 text-blue-400" />
                     <span className="font-medium">{loan.totalItems || 0} Alat</span>
                   </div>
@@ -707,7 +712,7 @@ export default function DashboardPage() {
                 Aktivitas Terbaru
               </h2>
               <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 z-10 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Cari..."
@@ -734,9 +739,9 @@ export default function DashboardPage() {
                   }`} />
 
                   <div className="relative z-10 flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-semibold text-white">{activity.createdBy}</span>
-                      <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full backdrop-blur-sm ${
+                    <div className="flex items-center gap-2 mb-2 lg:block">
+                      <span className="text-sm font-semibold text-white mb-1 lg:mb-2 block">{activity.createdBy}</span>
+                      <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm lg:absolute lg:top-0 lg:right-0 ${
                         activity.action === 'Peminjaman' ? 'bg-amber-500/20 text-amber-200' :
                         activity.action === 'Pengembalian' ? 'bg-blue-500/20 text-blue-200' :
                         'bg-emerald-500/20 text-emerald-200'
