@@ -314,11 +314,19 @@ const peminjamanController = {
       // PERMISSION CHECK: Only owner or admin/super admin
       const isOwner = checkData.user_id === req.user?.userId;
       const isAdmin = ["super admin", "admin"].includes(req.user?.role);
-      
+
       if (!isOwner && !isAdmin) {
-        return res.status(403).json({ 
-          success: false, 
-          message: "Akses ditolak. Anda hanya dapat menghapus data yang Anda buat sendiri." 
+        return res.status(403).json({
+          success: false,
+          message: "Akses ditolak. Anda hanya dapat menghapus data yang Anda buat sendiri."
+        });
+      }
+
+      // Cek status peminjaman — hanya boleh hapus jika sudah 'Peminjaman Selesai'
+      if (checkData.status !== 'Peminjaman Selesai') {
+        return res.status(400).json({
+          success: false,
+          message: `Peminjaman tidak dapat dihapus karena statusnya masih "${checkData.status}". Hanya peminjaman dengan status "Peminjaman Selesai" yang dapat dihapus.`
         });
       }
 

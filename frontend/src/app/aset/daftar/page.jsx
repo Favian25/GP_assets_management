@@ -290,6 +290,7 @@ export default function DaftarAsetPage() {
   const [showDetail, setShowDetail] = useState(null);
   const [showEdit, setShowEdit] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [deleteBlockedAlert, setDeleteBlockedAlert] = useState(null); // { message, item, activePeminjaman }
   const [lightboxImg, setLightboxImg] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
@@ -460,9 +461,18 @@ export default function DaftarAsetPage() {
   };
   const handleDelete = async () => {
     if (!showDeleteConfirm) return;
-    try { setSubmitting(true); await deleteAsset(showDeleteConfirm.id); showToast("Aset berhasil dihapus!"); setShowDeleteConfirm(null); await fetchAssets(); }
-    catch (err) { showToast(err.response?.data?.message || "Gagal menghapus aset", "error"); }
-    finally { setSubmitting(false); }
+    try {
+      setSubmitting(true);
+      await deleteAsset(showDeleteConfirm.id);
+      showToast("Aset berhasil dihapus!");
+      setShowDeleteConfirm(null);
+      await fetchAssets();
+    } catch (err) {
+      const data = err.response?.data;
+      const item = showDeleteConfirm;
+      setShowDeleteConfirm(null);
+      setDeleteBlockedAlert({ message: data?.message || "Gagal menghapus aset", item, activePeminjaman: data?.activePeminjaman || [] });
+    } finally { setSubmitting(false); }
   };
   const openEdit = (item) => {
     setEditFormData({
@@ -911,6 +921,57 @@ export default function DaftarAsetPage() {
                 <div className="flex gap-3">
                   <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
                   <button onClick={handleDelete} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Hapus Aset"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Alert Popup: Delete Aset Diblokir */}
+          {deleteBlockedAlert && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setDeleteBlockedAlert(null)}>
+              <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                  <div className="flex flex-col items-center text-center mb-5">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+                      <AlertTriangle className="h-7 w-7 text-amber-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">Tidak Dapat Dihapus</h3>
+                    <p className="text-sm text-slate-500">{deleteBlockedAlert.message}</p>
+                  </div>
+                  {deleteBlockedAlert.activePeminjaman?.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-amber-200 bg-amber-100">
+                        <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Peminjaman Aktif ({deleteBlockedAlert.activePeminjaman.length})</p>
+                      </div>
+                      <div className="divide-y divide-amber-100">
+                        {deleteBlockedAlert.activePeminjaman.map((p, i) => (
+                          <div key={i} className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                            <div>
+                              <p className="text-xs text-amber-600 font-medium">Kode Peminjaman</p>
+                              <p className="text-sm font-semibold text-slate-800">{p.kode_pinjam}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-amber-600 font-medium">Tanggal Pinjam</p>
+                              <p className="text-sm font-semibold text-slate-800">
+                                {p.tanggal_peminjaman ? new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(p.tanggal_peminjaman)) : "-"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-amber-600 font-medium">Keperluan</p>
+                              <p className="text-sm font-semibold text-slate-800">{p.alasan_peminjaman || "-"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-amber-600 font-medium">Total Aset</p>
+                              <p className="text-sm font-semibold text-slate-800">{p.total_aset} item</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-center border-t border-slate-100 px-6 py-4 shrink-0">
+                  <button onClick={() => setDeleteBlockedAlert(null)} className="cursor-pointer rounded-lg bg-amber-500 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-600">OK</button>
                 </div>
               </div>
             </div>

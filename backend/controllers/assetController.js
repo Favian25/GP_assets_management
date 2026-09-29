@@ -261,19 +261,21 @@ const assetController = {
 
       // Cek apakah aset sedang dipinjam (peminjaman aktif)
       const [activeLoans] = await connection.query(
-        `SELECT p.kode_pinjam, p.nama_peminjam, p.status 
+        `SELECT DISTINCT p.kode_pinjam, p.tanggal_peminjaman, p.alasan_peminjaman, p.status,
+                (SELECT COUNT(*) FROM peminjaman_items pi2 WHERE pi2.peminjaman_id = p.id) AS total_aset
          FROM peminjaman_items pi
          JOIN peminjaman p ON pi.peminjaman_id = p.id
-         WHERE pi.asset_id = ? AND p.status NOT IN ('Peminjaman Selesai')`,
+         WHERE pi.asset_id = ? AND p.status NOT IN ('Peminjaman Selesai')
+         ORDER BY p.created_at DESC`,
         [id]
       );
 
       if (activeLoans.length > 0) {
         await connection.rollback();
-        const loanInfo = activeLoans.map(l => `${l.kode_pinjam} (${l.nama_peminjam})`).join(', ');
         return res.status(409).json({
           success: false,
-          message: `Aset tidak dapat dihapus karena sedang dipinjam: ${loanInfo}. Selesaikan peminjaman terlebih dahulu.`,
+          message: 'Aset tidak dapat dihapus karena masih terdapat dalam peminjaman yang belum selesai.',
+          activePeminjaman: activeLoans
         });
       }
 

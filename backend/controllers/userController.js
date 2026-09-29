@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 const User = require('../models/userModel');
+const db = require('../config/db');
 const { optimizeImage } = require('../utils/imageOptimizer');
 
 const userController = {
@@ -266,6 +267,25 @@ const userController = {
       // Admin hanya bisa hapus supervisor & user
       if (callerRole === 'admin' && !['supervisor', 'user', 'guest'].includes(user.role)) {
         return res.status(403).json({ success: false, message: 'Admin hanya bisa menghapus Supervisor dan User' });
+      }
+
+      // Cek peminjaman aktif (status selain 'Peminjaman Selesai')
+      const [activePeminjaman] = await db.query(
+        `SELECT p.kode_pinjam, p.tanggal_peminjaman, p.alasan_peminjaman, p.status,
+                COUNT(pi.id) AS total_aset
+         FROM peminjaman p
+         LEFT JOIN peminjaman_items pi ON pi.peminjaman_id = p.id
+         WHERE p.user_id = ? AND p.status != 'Peminjaman Selesai'
+         GROUP BY p.id
+         ORDER BY p.created_at DESC`,
+        [id]
+      );
+      if (activePeminjaman.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'User tidak dapat dihapus karena masih memiliki peminjaman yang belum selesai.',
+          activePeminjaman
+        });
       }
 
       await User.delete(id);

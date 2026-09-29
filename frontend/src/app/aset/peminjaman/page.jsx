@@ -162,6 +162,7 @@ export default function PeminjamanAsetPage() {
   const [toast, setToast] = useState(null);
   const [showDetail, setShowDetail] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [deleteBlockedAlert, setDeleteBlockedAlert] = useState(null); // { message, item }
   const [showApproveConfirm, setShowApproveConfirm] = useState(null);
   const [approveYangMenyerahkan, setApproveYangMenyerahkan] = useState("");
   const [yangMenyerahkanSearch, setYangMenyerahkanSearch] = useState("");
@@ -381,9 +382,17 @@ export default function PeminjamanAsetPage() {
   // Actions
   const handleDelete = async () => {
     if (!showDeleteConfirm) return;
-    try { setSubmitting(true); await deletePeminjaman(showDeleteConfirm.id); showToast("Peminjaman berhasil dihapus!"); setShowDeleteConfirm(null); fetchData(); }
-    catch (err) { showToast(err.response?.data?.message || "Gagal menghapus data", "error"); }
-    finally { setSubmitting(false); }
+    try {
+      setSubmitting(true);
+      await deletePeminjaman(showDeleteConfirm.id);
+      showToast("Peminjaman berhasil dihapus!");
+      setShowDeleteConfirm(null);
+      fetchData();
+    } catch (err) {
+      const item = showDeleteConfirm;
+      setShowDeleteConfirm(null);
+      setDeleteBlockedAlert({ message: err.response?.data?.message || "Gagal menghapus data", item });
+    } finally { setSubmitting(false); }
   };
 
   const handleApprove = async () => {
@@ -898,6 +907,55 @@ export default function PeminjamanAsetPage() {
                 <div className="flex items-center justify-center gap-3">
                   <button onClick={() => setShowDeleteConfirm(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
                   <button onClick={handleDelete} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Hapus"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Alert Popup: Delete Peminjaman Diblokir */}
+          {deleteBlockedAlert && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setDeleteBlockedAlert(null)}>
+              <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-amber-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                  <div className="flex flex-col items-center text-center mb-5">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+                      <AlertTriangle className="h-7 w-7 text-amber-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">Tidak Dapat Dihapus</h3>
+                    <p className="text-sm text-slate-500">{deleteBlockedAlert.message}</p>
+                  </div>
+                  {deleteBlockedAlert.item && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-amber-200 bg-amber-100">
+                        <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Detail Peminjaman</p>
+                      </div>
+                      <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                        <div>
+                          <p className="text-xs text-amber-600 font-medium">Kode Peminjaman</p>
+                          <p className="text-sm font-semibold text-slate-800">{deleteBlockedAlert.item.kodePinjam}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-amber-600 font-medium">Tanggal Pinjam</p>
+                          <p className="text-sm font-semibold text-slate-800">
+                            {deleteBlockedAlert.item.tanggalPeminjaman
+                              ? new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(deleteBlockedAlert.item.tanggalPeminjaman))
+                              : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-amber-600 font-medium">Keperluan</p>
+                          <p className="text-sm font-semibold text-slate-800">{deleteBlockedAlert.item.alasanPeminjaman || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-amber-600 font-medium">Total Aset</p>
+                          <p className="text-sm font-semibold text-slate-800">{deleteBlockedAlert.item.totalItems || 0} item</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-center border-t border-slate-100 px-6 py-4 shrink-0">
+                  <button onClick={() => setDeleteBlockedAlert(null)} className="cursor-pointer rounded-lg bg-amber-500 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-600">OK</button>
                 </div>
               </div>
             </div>
