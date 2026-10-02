@@ -645,7 +645,7 @@ export default function AksesorisPage() {
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.kategori}</td>
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.merek}</td>
                   <td className="w-[140px] px-3 py-3 text-center border-r border-slate-200 align-middle">
-                    <span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase transition-all shadow-sm whitespace-nowrap ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span>
+                    <span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer block w-full rounded-full border py-0.5 text-[10px] sm:text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span>
                   </td>
                   <td className="w-[100px] px-3 py-3 align-middle text-center">
                     <div className="flex items-center justify-center gap-1">
