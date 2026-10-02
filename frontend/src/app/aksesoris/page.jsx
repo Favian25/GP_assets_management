@@ -463,8 +463,13 @@ export default function AksesorisPage() {
             }} 
             hint="Harga pembelian per unit"
           />
+<<<<<<< HEAD
           <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aksesoris" />
           <SelectField label="Jenis Aset" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Aset" hint="Departemen pemilik aksesoris" />
+=======
+          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} />
+          <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" />
+>>>>>>> 23549a1 (done)
         </div>
       </div>
       <hr className="border-slate-200" />
