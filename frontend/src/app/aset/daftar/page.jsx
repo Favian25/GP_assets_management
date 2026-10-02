@@ -36,7 +36,7 @@ const jenisAsetOptions = ["Galeria Studio", "Galeria Production"];
 // Helper components (outside to prevent re-mount)
 // =====================================================
 
-function InputField({ label, required, value, onChange, placeholder, type = "text", className = "", maxLength }) {
+function InputField({ label, required, value, onChange, placeholder, type = "text", className = "", maxLength, hint }) {
   const isDate = type === 'date' || type === 'datetime-local';
 
   return (
@@ -44,6 +44,7 @@ function InputField({ label, required, value, onChange, placeholder, type = "tex
       <label className="mb-1.5 block text-sm font-medium text-slate-700">
         {label} {required && <span className="text-rose-500">*</span>}
       </label>
+      {hint && <p className="mb-1.5 text-xs text-slate-400 italic">↳ {hint}</p>}
       <div className="relative">
         {isDate && !value && (
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">
@@ -67,10 +68,11 @@ function InputField({ label, required, value, onChange, placeholder, type = "tex
   );
 }
 
-function SelectField({ label, value, onChange, options, placeholder = "Pilih...", className = "" }) {
+function SelectField({ label, value, onChange, options, placeholder = "Pilih...", className = "", hint }) {
   return (
     <div className={className}>
-      <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+      {label && <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>}
+      {hint && <p className="mb-1.5 text-xs text-slate-400 italic">↳ {hint}</p>}
       <select value={value} onChange={onChange}
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
         <option value="">{placeholder}</option>
@@ -80,10 +82,11 @@ function SelectField({ label, value, onChange, options, placeholder = "Pilih..."
   );
 }
 
-function TextAreaField({ label, value, onChange, placeholder, rows = 2, className = "" }) {
+function TextAreaField({ label, value, onChange, placeholder, rows = 2, className = "", hint }) {
   return (
     <div className={className}>
       <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+      {hint && <p className="mb-1.5 text-xs text-slate-400 italic">↳ {hint}</p>}
       <textarea rows={rows} placeholder={placeholder} value={value} onChange={onChange}
         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
     </div>
@@ -167,7 +170,7 @@ function SortIcon({ columnKey, sortConfig }) {
   );
 }
 
-function PengelolaAutocomplete({ value, onChange, allUsers, className = "" }) {
+function PengelolaAutocomplete({ value, onChange, allUsers, className = "", hint }) {
   const [search, setSearch] = useState(value);
   const [showDropdown, setShowDropdown] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -229,6 +232,7 @@ function PengelolaAutocomplete({ value, onChange, allUsers, className = "" }) {
   return (
     <div ref={containerRef} className={className}>
       <label className="mb-1.5 block text-sm font-medium text-slate-700">Pengelola</label>
+      {hint && <p className="mb-1.5 text-xs text-slate-400 italic">↳ {hint}</p>}
       <div className="relative">
         <input
           type="text"
@@ -549,22 +553,22 @@ export default function DaftarAsetPage() {
               <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm font-mono font-semibold text-slate-700">{data.kodeAset}</div>
             </div>
           )}
-          <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: e.target.value}))} />
-          <PengelolaAutocomplete value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} allUsers={usersList} className={isEdit ? "sm:col-span-2" : ""} />
+          <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: e.target.value}))} hint="Nama lengkap aset, contoh: &quot;Sony A7III Body Only&quot;" />
+          <PengelolaAutocomplete value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} allUsers={usersList} className={isEdit ? "sm:col-span-2" : ""} hint="Pilih pegawai yang bertanggung jawab atas aset ini" />
           
           <div className="flex gap-1.5 items-end">
-             <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriList} placeholder="Pilih Kategori" className="flex-1" />
+             <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriList} placeholder="Pilih Kategori" className="flex-1" hint="Jenis/klasifikasi aset" />
              <button type="button" onClick={() => setShowKatModal(true)} title="Tambah Kategori Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><Plus className="h-4 w-4" /></button>
           </div>
           
           <div className="flex gap-1.5 items-end">
-             <SelectField label="Merek" value={data.merek} onChange={(e) => setData(d => ({...d, merek: e.target.value}))} options={merekList} placeholder="Pilih Merek" className="flex-1" />
+             <SelectField label="Merek" value={data.merek} onChange={(e) => setData(d => ({...d, merek: e.target.value}))} options={merekList} placeholder="Pilih Merek" className="flex-1" hint="Brand/produsen aset" />
              <button type="button" onClick={() => setShowMerekModal(true)} title="Tambah Merek Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><Plus className="h-4 w-4" /></button>
           </div>
 
-          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} />
-          <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" />
-          <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} />
+          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} hint="Tipe/model spesifik dari aset" />
+          <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aset" />
+          <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} hint="Jumlah unit aset yang tersedia" />
           <InputField 
             label="Harga Aset (Rp)" 
             placeholder="Harga Aset" 
@@ -574,10 +578,11 @@ export default function DaftarAsetPage() {
               const rawValue = e.target.value.replace(/\D/g, "");
               setData(d => ({ ...d, hargaAset: rawValue }));
             }} 
+            hint="Harga pembelian per unit"
           />
-          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} />
-          <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} className="sm:col-span-2" />
-          <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: e.target.value}))} rows={3} className="sm:col-span-2" />
+          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aset" />
+          <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} className="sm:col-span-2" hint="Nomor seri unik di badan aset" />
+          <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: e.target.value}))} rows={3} className="sm:col-span-2" hint="Detail teknis seperti resolusi, kapasitas, dll" />
 
         </div>
       </div>
@@ -588,10 +593,10 @@ export default function DaftarAsetPage() {
           Lokasi Aset
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <InputField label="Lokasi Aset" placeholder="Masukkan lokasi aset" value={data.lokasiAset} onChange={(e) => setData(d => ({...d, lokasiAset: e.target.value}))} />
-          <SelectField label="Kondisi Aset" value={data.kondisi} onChange={(e) => setData(d => ({...d, kondisi: e.target.value}))} options={kondisiOptions} placeholder="Pilih Kondisi" />
+          <InputField label="Lokasi Aset" placeholder="Masukkan lokasi aset" value={data.lokasiAset} onChange={(e) => setData(d => ({...d, lokasiAset: e.target.value}))} hint="Tempat penyimpanan aset saat ini" />
+          <SelectField label="Kondisi Aset" value={data.kondisi} onChange={(e) => setData(d => ({...d, kondisi: e.target.value}))} options={kondisiOptions} placeholder="Pilih Kondisi" hint="Status fisik aset saat ini" />
           <ImageUploadField onFileChange={onImageChange} previewUrl={imgPreview} onClear={onImageClear} />
-          <TextAreaField label="Keterangan" placeholder="Keterangan tambahan" value={data.keterangan} onChange={(e) => setData(d => ({...d, keterangan: e.target.value}))} className="sm:col-span-2" />
+          <TextAreaField label="Keterangan" placeholder="Keterangan tambahan" value={data.keterangan} onChange={(e) => setData(d => ({...d, keterangan: e.target.value}))} className="sm:col-span-2" hint="Informasi tambahan mengenai aset" />
         </div>
       </div>
     </div>

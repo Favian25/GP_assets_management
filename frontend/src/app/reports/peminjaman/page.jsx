@@ -385,8 +385,8 @@ export default function PeminjamanReportPage() {
                           {new Date(item.tanggalPengembalian).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                         </div>
                       ) : (
-                        <span className="inline-block px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 text-xs font-semibold rounded-md">
-                          Belum Dikembalikan
+                        <span className="text-sm font-semibold text-slate-400">
+                          -
                         </span>
                       )}
                     </td>

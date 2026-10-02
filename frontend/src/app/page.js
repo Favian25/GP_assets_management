@@ -739,9 +739,9 @@ export default function DashboardPage() {
                   }`} />
 
                   <div className="relative z-10 flex-1">
-                    <div className="flex items-center gap-2 mb-2 lg:block">
-                      <span className="text-sm font-semibold text-white mb-1 lg:mb-2 block">{activity.createdBy}</span>
-                      <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm lg:absolute lg:top-0 lg:right-0 ${
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-sm font-semibold text-white">{activity.createdBy}</span>
+                      <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm ${
                         activity.action === 'Peminjaman' ? 'bg-amber-500/20 text-amber-200' :
                         activity.action === 'Pengembalian' ? 'bg-blue-500/20 text-blue-200' :
                         'bg-emerald-500/20 text-emerald-200'

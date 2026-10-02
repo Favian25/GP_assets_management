@@ -383,7 +383,7 @@ export default function KelolaPegawaiPage() {
           {/* Modal Tambah Pegawai */}
           {showModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowModal(false)}>
-              <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-primary flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+              <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border-t-4 border-t-primary flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
                   <h2 className="text-lg font-bold text-slate-800">Tambah Pegawai Baru</h2>
                   <button type="button" onClick={() => setShowModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
@@ -391,6 +391,7 @@ export default function KelolaPegawaiPage() {
                 <form onSubmit={handleCreate} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama lengkap pegawai sesuai KTP</p>
                     <input
                       type="text"
                       value={formData.namaLengkap}
@@ -405,6 +406,7 @@ export default function KelolaPegawaiPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Email aktif pegawai untuk keperluan komunikasi</p>
                       <input
                         type="email"
                         value={formData.email}
@@ -415,6 +417,7 @@ export default function KelolaPegawaiPage() {
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nomor WhatsApp aktif</p>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -428,6 +431,7 @@ export default function KelolaPegawaiPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Tempat Lahir</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Kota tempat lahir pegawai</p>
                       <input
                         type="text"
                         value={formData.tempatLahir}
@@ -438,6 +442,7 @@ export default function KelolaPegawaiPage() {
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Lahir</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Tanggal lahir pegawai</p>
                       <input
                         type="date"
                         value={formData.tanggalLahir}
@@ -448,6 +453,7 @@ export default function KelolaPegawaiPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Alamat</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alamat domisili/tempat tinggal saat ini</p>
                     <textarea
                       value={formData.alamat}
                       onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
@@ -468,7 +474,7 @@ export default function KelolaPegawaiPage() {
           {/* Modal Edit Pegawai */}
           {showEdit && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowEdit(null)}>
-              <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+              <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
                   <h2 className="text-lg font-bold text-slate-800">Edit Pegawai</h2>
                   <button type="button" onClick={() => setShowEdit(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
@@ -476,6 +482,7 @@ export default function KelolaPegawaiPage() {
                 <form onSubmit={handleUpdate} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama lengkap pegawai sesuai KTP</p>
                     <input
                       type="text"
                       value={editFormData.namaLengkap}
@@ -490,6 +497,7 @@ export default function KelolaPegawaiPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Email aktif pegawai untuk keperluan komunikasi</p>
                       <input
                         type="email"
                         value={editFormData.email}
@@ -500,6 +508,7 @@ export default function KelolaPegawaiPage() {
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nomor WhatsApp aktif</p>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -513,6 +522,7 @@ export default function KelolaPegawaiPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Tempat Lahir</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Kota tempat lahir pegawai</p>
                       <input
                         type="text"
                         value={editFormData.tempatLahir}
@@ -523,6 +533,7 @@ export default function KelolaPegawaiPage() {
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Lahir</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Tanggal lahir pegawai</p>
                       <input
                         type="date"
                         value={editFormData.tanggalLahir}
@@ -533,6 +544,7 @@ export default function KelolaPegawaiPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Alamat</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alamat domisili/tempat tinggal saat ini</p>
                     <textarea
                       value={editFormData.alamat}
                       onChange={(e) => setEditFormData({ ...editFormData, alamat: e.target.value })}

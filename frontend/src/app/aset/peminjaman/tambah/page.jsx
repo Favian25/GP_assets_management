@@ -424,6 +424,7 @@ export default function TambahPeminjamanPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Nama Peminjam *
                 </label>
+                <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Nama orang yang meminjam alat</p>
                 <input
                   type="text"
                   placeholder="Masukkan nama peminjam"
@@ -440,6 +441,7 @@ export default function TambahPeminjamanPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Tanggal Peminjaman *
                 </label>
+                <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Tanggal alat mulai dipinjam</p>
                 <input
                   type="date"
                   value={tanggalPeminjaman}
@@ -455,6 +457,7 @@ export default function TambahPeminjamanPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Yang Menyerahkan *
                   </label>
+                  <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Penanggung jawab yang menyerahkan alat</p>
                   <input
                     type="text"
                     placeholder="Masukkan nama yang menyerahkan"

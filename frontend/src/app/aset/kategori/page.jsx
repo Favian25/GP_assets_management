@@ -449,6 +449,7 @@ export default function KategoriMerekPage() {
                 <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Tipe Kategori</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Pilih untuk aset utama atau aksesoris</p>
                     <select value={formKat.tipe} onChange={(e) => setFormKat(d => ({ ...d, tipe: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                       <option value="aset">Aset Utama</option>
                       <option value="aksesoris">Aksesoris</option>
@@ -456,10 +457,12 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama jenis aset, contoh: "Kamera", "Lensa"</p>
                     <input type="text" required placeholder="Contoh: Kamera" value={formKat.nama} onChange={(e) => setFormKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Singkat</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Singkatan 2-4 huruf, digunakan di kode aset</p>
                     <input type="text" required placeholder="Contoh: CAM" value={formKat.kode_singkat} onChange={(e) => setFormKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Kode singkat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                 </div>
@@ -482,6 +485,7 @@ export default function KategoriMerekPage() {
                 <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Tipe Merek</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Pilih untuk aset utama atau aksesoris</p>
                     <select value={formMerek.tipe} onChange={(e) => setFormMerek(d => ({ ...d, tipe: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                       <option value="aset">Aset Utama</option>
                       <option value="aksesoris">Aksesoris</option>
@@ -489,6 +493,7 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama produsen/brand, contoh: "Sony", "Canon"</p>
                     <input type="text" required placeholder="Contoh: Sony" value={formMerek.nama} onChange={(e) => setFormMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                 </div>
@@ -515,10 +520,12 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama jenis aset, contoh: "Kamera", "Lensa"</p>
                     <input type="text" required value={showEditKat.nama} onChange={(e) => setShowEditKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Singkat</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Singkatan 2-4 huruf, digunakan di kode aset</p>
                     <input type="text" required value={showEditKat.kode_singkat} onChange={(e) => setShowEditKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Kode singkat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                 </div>
@@ -545,6 +552,7 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama produsen/brand, contoh: "Sony", "Canon"</p>
                     <input type="text" required value={showEditMerek.nama} onChange={(e) => setShowEditMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                 </div>

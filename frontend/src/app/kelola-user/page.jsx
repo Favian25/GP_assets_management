@@ -11,18 +11,18 @@ import {
   Eye, EyeOff, Search, Plus, Pencil, Trash2, X, Check, 
   ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, 
   Shield, User, Mail, Lock, AlertTriangle, ChevronUp, ChevronDown,
-  Users, ClipboardList
+  Users, ClipboardList, Ban, UserCheck
 } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 
 const getRoleBadge = (role) => {
   const s = {
-    "super admin": "bg-violet-50 text-violet-700 border-violet-200",
-    "admin": "bg-blue-50 text-blue-700 border-blue-200",
-    "supervisor": "bg-amber-50 text-amber-700 border-amber-200",
-    "user": "bg-emerald-50 text-emerald-700 border-emerald-200",
-    "guest": "bg-orange-50 text-orange-700 border-orange-200",
+    "super admin": "bg-violet-50 text-violet-700 border-violet-500",
+    "admin": "bg-blue-50 text-blue-700 border-blue-500",
+    "supervisor": "bg-amber-50 text-amber-700 border-amber-500",
+    "user": "bg-emerald-50 text-emerald-700 border-emerald-500",
+    "guest": "bg-orange-50 text-orange-700 border-orange-500",
   };
   return s[role] || "bg-slate-100 text-slate-600 border-slate-200";
 };
@@ -601,15 +601,15 @@ export default function KelolaUserPage() {
                     {user.role !== "super admin" && (
                       <>
                         {isGuestUser(user) ? (
-                          <span className="inline-block w-[85px] rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 shadow-sm text-center">👤 Guest</span>
+                          <span className="block w-full rounded-full border border-blue-500 bg-blue-50 py-0.5 text-[10px] sm:text-xs text-center font-semibold tracking-wide uppercase text-blue-700 shadow-sm transition-all">👤 Guest</span>
                         ) : (
-                          <span className="inline-block w-[85px] rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 shadow-sm text-center">👨 Regular</span>
+                          <span className="block w-full rounded-full border border-slate-500 bg-slate-50 py-0.5 text-[10px] sm:text-xs text-center font-semibold tracking-wide uppercase text-slate-700 shadow-sm transition-all">👨 Regular</span>
                         )}
                       </>
                     )}
                   </td>
                   <td className="px-3 py-3 text-center border-r border-slate-200 align-middle">
-                    <span className={`inline-block w-[85px] rounded-full border px-2.5 py-0.5 font-semibold capitalize shadow-sm text-[10px] tracking-wide text-center ${getRoleBadge(user.role)}`}>{user.role}</span>
+                    <span className={`block w-full rounded-full border py-0.5 text-[10px] sm:text-xs text-center font-semibold tracking-wide uppercase shadow-sm transition-all ${getRoleBadge(user.role)}`}>{user.role}</span>
                   </td>
                   <td className="px-3 py-3 text-slate-500 text-xs text-center border-r border-slate-200 align-middle">{formatDate(user.createdAt)}</td>
                   <td className="px-3 py-3 align-middle text-center">
@@ -642,9 +642,9 @@ export default function KelolaUserPage() {
                           </button>
                           {/* Toggle Active/Inactive */}
                           <button onClick={() => handleToggleActive(user)} disabled={submitting}
-                            className={`cursor-pointer rounded-lg p-1 transition-colors ${user.isActive ? "bg-green-100 text-green-600 hover:bg-green-600 hover:text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white"}`}
+                            className={`cursor-pointer rounded-lg p-1 transition-colors ${user.isActive ? "bg-rose-100 text-rose-600 hover:bg-rose-600 hover:text-white" : "bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white"}`}
                             title={user.isActive ? "Nonaktifkan User" : "Aktifkan User"}>
-                            {user.isActive ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                            {user.isActive ? <Ban className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
                           </button>
                           {/* Delete */}
                           <button onClick={() => setShowDeleteConfirm(user)}
@@ -670,7 +670,7 @@ export default function KelolaUserPage() {
           {/* Modal Tambah User */}
           {showAddModal && (
             <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowAddModal(false)}>
-              <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-primary flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+              <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl border-t-4 border-t-primary flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
                   <h2 className="text-lg font-bold text-slate-800">Tambah User Baru</h2>
                   <button type="button" onClick={() => setShowAddModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
@@ -700,6 +700,7 @@ export default function KelolaUserPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="relative">
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama user atau pilih pegawai yang sudah ada</p>
                       <input
                         type="text"
                         value={newUser.namaLengkap}
@@ -747,6 +748,7 @@ export default function KelolaUserPage() {
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-rose-500">*</span></label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Email untuk login sistem</p>
                       <input type="email" value={newUser.email} onChange={(e) => setNewUser(p => ({...p, email: e.target.value}))}
                         placeholder={newUser.pegawaiId === null ? "email@example.com" : "Otomatis terisi dari data pegawai"}
                         disabled={newUser.pegawaiId !== null}
@@ -756,6 +758,7 @@ export default function KelolaUserPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Password <span className="text-rose-500">*</span></label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Password untuk login sistem</p>
                     <div className="relative">
                       <input type={showNewPw ? "text" : "password"} value={newUser.password} onChange={(e) => setNewUser(p => ({...p, password: e.target.value}))} placeholder="Masukkan password"
                         className="w-full rounded-lg border border-slate-200 pl-3 pr-10 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
@@ -766,6 +769,7 @@ export default function KelolaUserPage() {
 
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Hak akses user dalam sistem</p>
                     <select
                       value={newUser.role}
                       onChange={(e) => setNewUser(p => ({...p, role: e.target.value}))}
@@ -783,11 +787,13 @@ export default function KelolaUserPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
+                          <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nomor WhatsApp aktif guest</p>
                           <input type="text" inputMode="numeric" value={newUser.nomorHp} onChange={(e) => setNewUser(p => ({...p, nomorHp: e.target.value.replace(/\D/g, '')}))} placeholder="Contoh: 081234567890"
                             className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                         </div>
                         <div>
                           <label className="mb-1.5 block text-sm font-medium text-slate-700">Keterangan</label>
+                          <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alasan/status guest (misal: Magang, Freelance)</p>
                           <input type="text" value={newUser.keterangan} onChange={(e) => setNewUser(p => ({...p, keterangan: e.target.value}))} placeholder="Contoh: Magang 3 bulan"
                             className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                         </div>
@@ -817,7 +823,7 @@ export default function KelolaUserPage() {
           {/* Modal Edit User */}
           {showEditModal && (
             <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowEditModal(null)}>
-              <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+              <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
                   <h2 className="text-lg font-bold text-slate-800">Edit User</h2>
                   <button type="button" onClick={() => setShowEditModal(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
@@ -826,12 +832,14 @@ export default function KelolaUserPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama user atau pilih pegawai yang sudah ada</p>
                       <input type="text" value={editForm.namaLengkap} onChange={(e) => setEditForm(p => ({...p, namaLengkap: e.target.value}))} placeholder="Nama lengkap"
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
                         onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-rose-500">*</span></label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Email untuk login sistem</p>
                       <input type="email" value={editForm.email} onChange={(e) => setEditForm(p => ({...p, email: e.target.value}))} placeholder="email@example.com"
                         readOnly={!editForm.isGuest}
                         className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors ${
@@ -845,6 +853,7 @@ export default function KelolaUserPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Password Baru</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Password untuk login sistem</p>
                     <div className="relative">
                       <input type={showEditPw ? "text" : "password"} value={editForm.password} onChange={(e) => setEditForm(p => ({...p, password: e.target.value}))} placeholder="Kosongkan jika tidak ingin ubah"
                         className="w-full rounded-lg border border-slate-200 pl-3 pr-10 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
@@ -857,11 +866,13 @@ export default function KelolaUserPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
+                        <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nomor WhatsApp aktif guest</p>
                         <input type="text" inputMode="numeric" value={editForm.nomorHp} onChange={(e) => setEditForm(p => ({...p, nomorHp: e.target.value.replace(/\D/g, '')}))} placeholder="Contoh: 081234567890"
                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                       </div>
                       <div>
                         <label className="mb-1.5 block text-sm font-medium text-slate-700">Keterangan</label>
+                        <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alasan/status guest (misal: Magang, Freelance)</p>
                         <input type="text" value={editForm.keterangan} onChange={(e) => setEditForm(p => ({...p, keterangan: e.target.value}))} placeholder="Contoh: Magang 3 bulan"
                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                       </div>
@@ -870,6 +881,7 @@ export default function KelolaUserPage() {
 
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Hak akses user dalam sistem</p>
                     <select value={editForm.role} onChange={(e) => setEditForm(p => ({...p, role: e.target.value}))}
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                       {getRoleOptions().map(r => (<option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>))}
@@ -1026,7 +1038,7 @@ export default function KelolaUserPage() {
           {/* Modal Tambah Pegawai Baru (inline dari form Tambah User) */}
           {showAddPegawaiModal && (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowAddPegawaiModal(false)}>
-              <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl border-t-4 border-t-primary flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
+              <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl border-t-4 border-t-primary flex flex-col max-h-[90vh] animate-modal-in" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-white rounded-t-2xl">
                   <h2 className="text-lg font-bold text-slate-800">Tambah Pegawai Baru</h2>
                   <button type="button" onClick={() => setShowAddPegawaiModal(false)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"><X className="h-5 w-5" /></button>
@@ -1034,6 +1046,7 @@ export default function KelolaUserPage() {
                 <form onSubmit={handleCreatePegawaiInline} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama lengkap pegawai sesuai KTP</p>
                     <input
                       type="text"
                       value={newPegawaiForm.namaLengkap}
@@ -1049,6 +1062,7 @@ export default function KelolaUserPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Email aktif pegawai untuk keperluan komunikasi</p>
                       <input
                         type="email"
                         value={newPegawaiForm.email}
@@ -1059,6 +1073,7 @@ export default function KelolaUserPage() {
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nomor HP</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nomor WhatsApp aktif</p>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -1072,6 +1087,7 @@ export default function KelolaUserPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Tempat Lahir</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Kota tempat lahir pegawai</p>
                       <input
                         type="text"
                         value={newPegawaiForm.tempatLahir}
@@ -1082,6 +1098,7 @@ export default function KelolaUserPage() {
                     </div>
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Lahir</label>
+                      <p className="mb-1.5 text-xs text-slate-400 italic">↳ Tanggal lahir pegawai</p>
                       <input
                         type="date"
                         value={newPegawaiForm.tanggalLahir}
@@ -1092,6 +1109,7 @@ export default function KelolaUserPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Alamat</label>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alamat domisili/tempat tinggal saat ini</p>
                     <textarea
                       value={newPegawaiForm.alamat}
                       onChange={(e) => setNewPegawaiForm(p => ({ ...p, alamat: e.target.value }))}
