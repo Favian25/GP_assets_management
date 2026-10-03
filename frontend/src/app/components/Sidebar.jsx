@@ -200,8 +200,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
                   <span className="text-[13px] whitespace-nowrap">Peminjaman Alat</span>
                 </Link>
 
-                {/* Riwayat - Hidden for super admin, admin, supervisor */}
-                {!["super admin", "admin", "supervisor"].includes(userRole) && (
+                {/* Riwayat - Hidden for super admin, supervisor */}
+                {!["super admin", "supervisor"].includes(userRole) && (
                   <Link
                     href="/riwayat"
                     className={`flex items-center h-10 rounded-lg transition-all duration-300 ${
