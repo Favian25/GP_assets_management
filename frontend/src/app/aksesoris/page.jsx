@@ -843,7 +843,7 @@ export default function AksesorisPage() {
                   <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
                   <div className="space-y-4">
                     <InputField label="Nama Kategori" required placeholder="Contoh: Kamera" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({...d, nama: e.target.value}))} />
-                    <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => setNewKatData(d => ({...d, kode_singkat: e.target.value.toUpperCase()}))} />
+                    <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => setNewKatData(d => ({...d, kode_singkat: e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase()}))} />
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
