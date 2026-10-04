@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { getAllCategories, createCategory, deleteCategory, updateCategory } from "../../lib/categoryService";
 import { getAllBrands, createBrand, deleteBrand, updateBrand } from "../../lib/brandService";
-import { Plus, Trash2, X, Check, Tag, Bookmark, AlertTriangle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Info, ChevronUp, ChevronDown } from "lucide-react";
+import { getAllAssets } from "../../lib/assetService";
+import { getAllAksesoris } from "../../lib/aksesorisService";
+import { Plus, Trash2, X, Check, Tag, Bookmark, AlertTriangle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Info, ChevronUp, ChevronDown, List } from "lucide-react";
 
 export default function KategoriMerekPage() {
   const [categories, setCategories] = useState([]);
@@ -20,11 +22,16 @@ export default function KategoriMerekPage() {
   
   const [showDeleteKat, setShowDeleteKat] = useState(null);
   const [showDeleteMerek, setShowDeleteMerek] = useState(null);
+
+  const [showItems, setShowItems] = useState(null);
+  const [relatedItems, setRelatedItems] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
   
   const [formKat, setFormKat] = useState({ nama: "", kode_singkat: "", tipe: "aset" });
   const [formMerek, setFormMerek] = useState({ nama: "", tipe: "aset" });
   
   const [search, setSearch] = useState("");
+  const [filterTipe, setFilterTipe] = useState("semua");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState({ key: "nama", direction: "asc" });
@@ -114,11 +121,13 @@ export default function KategoriMerekPage() {
 
   const getFilteredData = () => {
     const data = activeTab === "kategori" ? categories : brands;
-    let filtered = data.filter(item => 
-      (item.nama || "").toLowerCase().includes(search.toLowerCase()) ||
-      (item.tipe || "").toLowerCase().includes(search.toLowerCase()) ||
-      (item.kode_singkat || "").toLowerCase().includes(search.toLowerCase())
-    );
+    let filtered = data.filter(item => {
+      const matchSearch = (item.nama || "").toLowerCase().includes(search.toLowerCase()) ||
+                          (item.tipe || "").toLowerCase().includes(search.toLowerCase()) ||
+                          (item.kode_singkat || "").toLowerCase().includes(search.toLowerCase());
+      const matchTipe = filterTipe === "semua" || item.tipe === filterTipe;
+      return matchSearch && matchTipe;
+    });
     if (sortConfig.key) {
       filtered.sort((a, b) => {
         const aVal = (a[sortConfig.key] || "").toString().toLowerCase();
@@ -176,6 +185,33 @@ export default function KategoriMerekPage() {
       </div>
     </div>
   );
+
+  const handleViewItems = async (item, type) => {
+    setShowItems({ type, item });
+    setLoadingItems(true);
+    try {
+      const [assets, aksesoris] = await Promise.all([
+        getAllAssets(),
+        getAllAksesoris()
+      ]);
+      
+      let filtered = [];
+      if (type === "kategori") {
+        const fAssets = (assets || []).filter(a => a.kategori === item.nama).map(a => ({...a, source: 'Aset Utama'}));
+        const fAksesoris = (aksesoris || []).filter(a => a.kategori === item.nama).map(a => ({...a, source: 'Aksesoris'}));
+        filtered = [...fAssets, ...fAksesoris];
+      } else {
+        const fAssets = (assets || []).filter(a => a.merek === item.nama).map(a => ({...a, source: 'Aset Utama'}));
+        const fAksesoris = (aksesoris || []).filter(a => a.merek === item.nama).map(a => ({...a, source: 'Aksesoris'}));
+        filtered = [...fAssets, ...fAksesoris];
+      }
+      setRelatedItems(filtered);
+    } catch (err) {
+      showToast("Gagal memuat data item", "error");
+    } finally {
+      setLoadingItems(false);
+    }
+  };
 
   const handleCreateKat = async (e) => {
     e.preventDefault();
@@ -304,15 +340,26 @@ export default function KategoriMerekPage() {
         
         {/* Toolbar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder={`Cari ${activeTab}...`} 
-              value={search} 
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" 
-            />
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder={`Cari ${activeTab}...`} 
+                value={search} 
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" 
+              />
+            </div>
+            <select
+              value={filterTipe}
+              onChange={(e) => { setFilterTipe(e.target.value); setCurrentPage(1); }}
+              className="w-full sm:w-44 rounded-lg border-2 border-slate-200 py-2 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer transition-colors hover:border-slate-300 bg-white"
+            >
+              <option value="semua">Semua Tipe</option>
+              <option value="aset">Aset Utama</option>
+              <option value="aksesoris">Aksesoris</option>
+            </select>
           </div>
           <button 
             onClick={() => {
@@ -375,6 +422,7 @@ export default function KategoriMerekPage() {
                     </td>
                     <td className="w-28 px-4 py-3 text-center align-middle">
                       <div className="flex items-center justify-center gap-1.5">
+                        <button onClick={() => handleViewItems(item, "kategori")} className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-all hover:bg-blue-600 hover:text-white" title="Lihat Item"><List className="h-3.5 w-3.5" /></button>
                         <button onClick={() => setShowEditKat(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-all hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                         <button onClick={() => setShowDeleteKat(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-all hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
@@ -420,6 +468,7 @@ export default function KategoriMerekPage() {
                     </td>
                     <td className="w-28 px-4 py-3 text-center align-middle">
                       <div className="flex items-center justify-center gap-1.5">
+                        <button onClick={() => handleViewItems(item, "merek")} className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-all hover:bg-blue-600 hover:text-white" title="Lihat Item"><List className="h-3.5 w-3.5" /></button>
                         <button onClick={() => setShowEditMerek(item)} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-all hover:bg-amber-600 hover:text-white" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                         <button onClick={() => setShowDeleteMerek(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-all hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
@@ -593,6 +642,53 @@ export default function KategoriMerekPage() {
                 <div className="flex items-center justify-center gap-3 border-t border-slate-100 pt-4">
                   <button onClick={() => setShowDeleteMerek(null)} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
                   <button onClick={handleDeleteMerek} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60">{submitting ? "Menghapus..." : "Ya, Hapus"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Modal Lihat Item */}
+          {showItems && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowItems(null)}>
+              <div className="w-full max-w-2xl flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg font-bold text-blue-800">
+                    Item pada {showItems.type === "kategori" ? "Kategori" : "Merek"}: {showItems.item?.nama}
+                  </h2>
+                  <button type="button" onClick={() => setShowItems(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                  {loadingItems ? (
+                    <div className="flex justify-center items-center py-10">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                    </div>
+                  ) : relatedItems.length > 0 ? (
+                    <div className="space-y-3">
+                      {relatedItems.map((relItem, idx) => (
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition-all gap-3">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-700">{relItem.namaAset || relItem.namaAksesoris || "Tanpa Nama"}</span>
+                            <span className="text-xs text-slate-500 font-mono mt-0.5">{relItem.kodeAset || relItem.kodeAksesoris || "-"}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-sm ${relItem.source === 'Aset Utama' ? 'bg-emerald-50 text-emerald-700 border-emerald-500' : 'bg-purple-50 text-purple-700 border-purple-500'}`}>
+                              {relItem.source}
+                            </span>
+                            <span className="text-xs font-semibold px-2 py-1 bg-slate-200 rounded-md text-slate-600">
+                              Stok: {relItem.jumlahTotal || relItem.jumlahUnit || 0}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 mb-3"><Tag className="h-6 w-6 text-slate-400" /></div>
+                      <p className="text-slate-500 font-medium">Tidak ada data item yang terkait.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+                  <button type="button" onClick={() => setShowItems(null)} className="cursor-pointer rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-600">Tutup</button>
                 </div>
               </div>
             </div>

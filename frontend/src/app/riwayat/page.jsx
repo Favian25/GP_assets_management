@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { getMyPeminjamanHistory } from "../lib/peminjamanService";
 import { getUserContext } from "../lib/authService";
-import { History, Eye, Package, Clock, CheckCircle2, AlertCircle, RotateCcw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Check } from "lucide-react";
+import { History, Eye, Package, Clock, CheckCircle2, AlertCircle, RotateCcw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Check, FileText } from "lucide-react";
 
 const getStatusBadge = (status) => {
   const s = {
@@ -308,11 +308,10 @@ export default function RiwayatPage() {
                   <td className="px-3 py-3 align-middle text-center">
                     <div className="flex items-center justify-center gap-1">
                       <button
-                        onClick={() => router.push(`/aset/peminjaman/edit/${item.id}`)}
-                        className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white"
-                        title="Detail"
+                        onClick={() => router.push(`/riwayat/${item.id}`)}
+                        className="cursor-pointer rounded-lg bg-blue-50 border border-blue-500 px-3 py-1 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-600 hover:text-white hover:border-blue-600 flex items-center gap-1.5"
                       >
-                        <Eye className="h-3.5 w-3.5" />
+                        <FileText className="h-3.5 w-3.5" /> Detail
                       </button>
                     </div>
                   </td>
@@ -329,7 +328,6 @@ export default function RiwayatPage() {
             </tbody>
           </table>
         </div>
-        
         <div className="border-t border-slate-200">
           <Pagination />
         </div>
