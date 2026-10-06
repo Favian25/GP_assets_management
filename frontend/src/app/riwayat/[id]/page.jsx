@@ -251,7 +251,7 @@ export default function RiwayatDetailPage() {
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm table-fixed">
+          <table className="w-full min-w-[600px] text-left text-sm table-fixed">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-5 py-4 font-bold text-slate-700 text-xs w-16 text-center border-r border-slate-200 uppercase tracking-wider">No</th>

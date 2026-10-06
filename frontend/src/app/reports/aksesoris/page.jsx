@@ -38,7 +38,7 @@ export default function AksesorisReportPage() {
 
   useEffect(() => {
     fetchData();
-    
+
     // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
@@ -63,9 +63,9 @@ export default function AksesorisReportPage() {
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
-      if (prev.key === key) { 
-        if (prev.direction === "asc") return { key, direction: "desc" }; 
-        if (prev.direction === "desc") return { key: null, direction: null }; 
+      if (prev.key === key) {
+        if (prev.direction === "asc") return { key, direction: "desc" };
+        if (prev.direction === "desc") return { key: null, direction: null };
       }
       return { key, direction: "asc" };
     });
@@ -86,8 +86,8 @@ export default function AksesorisReportPage() {
     let result = [...aksesoris];
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(a => 
-        a.namaAksesoris?.toLowerCase().includes(s) || 
+      result = result.filter(a =>
+        a.namaAksesoris?.toLowerCase().includes(s) ||
         a.kodeAksesoris?.toLowerCase().includes(s) ||
         a.merek?.toLowerCase().includes(s)
       );
@@ -175,12 +175,12 @@ export default function AksesorisReportPage() {
   };
 
   const getKondisiBadge = (kondisi) => {
-    const s = { 
-      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500", 
-      "Rusak": "bg-red-50 text-red-700 border-red-500", 
+    const s = {
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500",
+      "Rusak": "bg-red-50 text-red-700 border-red-500",
       "Rusak Berat": "bg-rose-900 text-white border-rose-900",
-      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500", 
-      "Dijual": "bg-slate-100 text-slate-600 border-slate-500" 
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500",
+      "Dijual": "bg-slate-100 text-slate-600 border-slate-500"
     };
     return `inline-block w-[180px] text-center ${s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200"}`;
   };
@@ -190,7 +190,7 @@ export default function AksesorisReportPage() {
       <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500 text-nowrap">Menampilkan {filteredData.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredData.length)} dari <span className="font-semibold text-slate-700">{filteredData.length}</span> data</p>
         <div className="flex items-center gap-2">
-          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
+          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
             className="cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-primary-hover shadow-sm transition-colors hover:bg-primary-hover">
             {ROWS_OPTIONS.map(opt => <option key={opt} value={opt} className="bg-white text-slate-700">{opt}</option>)}
           </select>
@@ -220,11 +220,11 @@ export default function AksesorisReportPage() {
             disabled={exporting || loading || filteredData.length === 0}
             className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <Printer className="h-4 w-4" /> 
+            <Printer className="h-4 w-4" />
             <span>Cetak Laporan</span>
             <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showExportMenu ? "rotate-180" : ""}`} />
           </button>
-          
+
           {showExportMenu && (
             <div className="absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-full sm:w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
               <button
@@ -269,7 +269,7 @@ export default function AksesorisReportPage() {
               className="w-full h-10 pl-9 pr-4 py-2 border-2 border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
             />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-nowrap gap-3 w-full lg:w-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-nowrap gap-3 w-full lg:w-auto">
             <div className="relative w-full sm:w-auto sm:flex-1 lg:flex-none">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <select
@@ -325,7 +325,7 @@ export default function AksesorisReportPage() {
                 {getUniqueValues('kondisi').map(k => <option key={k} value={k}>{k}</option>)}
               </select>
             </div>
-            <button 
+            <button
               onClick={resetFilters}
               className="flex items-center justify-center gap-2 h-10 w-full col-span-2 sm:col-span-1 sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 border border-slate-300 rounded-lg hover:bg-slate-300 transition-colors cursor-pointer shrink-0"
               title="Reset Filter"
@@ -382,7 +382,7 @@ export default function AksesorisReportPage() {
                   <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                     <td className="px-5 py-3 text-slate-700 font-semibold text-xs">{item.kodeAksesoris}</td>
                     <td className="px-5 py-3">
-                       <div className="flex flex-col leading-tight">
+                      <div className="flex flex-col leading-tight">
                         <span className="text-slate-700 font-semibold text-sm">{item.namaAksesoris}</span>
                         <span className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{item.merek || "-"}</span>
                       </div>

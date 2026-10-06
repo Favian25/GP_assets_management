@@ -30,6 +30,92 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Response interceptor: auto-logout jika akun dinonaktifkan
+let isDeactivatedModalShown = false; // Cegah duplikasi modal
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error.response &&
+      error.response.status === 403 &&
+      error.response.data?.code === "ACCOUNT_DEACTIVATED"
+    ) {
+      if (typeof window !== "undefined" && !isDeactivatedModalShown) {
+        isDeactivatedModalShown = true;
+
+        // Hapus semua data auth
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("loginAt");
+
+        // Buat overlay modal dengan desain UI yang sesuai project
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+          position: fixed; inset: 0; z-index: 99999;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+          animation: fadeIn 0.3s ease;
+          padding: 16px;
+        `;
+
+        overlay.innerHTML = `
+          <style>
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+          </style>
+          <div style="
+            background: white; border-radius: 16px; padding: 32px;
+            max-width: 400px; width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+          ">
+            <div style="
+              width: 56px; height: 56px; border-radius: 50%;
+              background: #FEE2E2; margin: 0 auto 16px;
+              display: flex; align-items: center; justify-content: center;
+            ">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <h3 style="
+              font-size: 18px; font-weight: 700; color: #1E293B;
+              margin: 0 0 8px;
+            ">Akun Dinonaktifkan</h3>
+            <p style="
+              font-size: 14px; color: #64748B; line-height: 1.6;
+              margin: 0 0 24px;
+            ">
+              Akun Anda telah dinonaktifkan oleh admin. Silakan hubungi admin untuk informasi lebih lanjut.
+            </p>
+            <button id="deactivated-logout-btn" style="
+              width: 100%; padding: 10px 20px;
+              background: #EF4444; color: white;
+              border: none; border-radius: 10px;
+              font-size: 14px; font-weight: 600;
+              cursor: pointer; transition: background 0.2s;
+            " onmouseover="this.style.background='#DC2626'"
+               onmouseout="this.style.background='#EF4444'">
+              Kembali ke Halaman Login
+            </button>
+          </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Redirect saat tombol diklik
+        document.getElementById("deactivated-logout-btn").addEventListener("click", () => {
+          window.location.href = "/login";
+        });
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ============================================================
 // Utility: Mapping field names antara Frontend ↔ Backend
 // Frontend pakai camelCase, Backend pakai snake_case

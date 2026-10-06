@@ -30,7 +30,7 @@ export default function AsetReportPage() {
   const [exporting, setExporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef(null);
-  
+
   // Pagination & Sorting State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -38,7 +38,7 @@ export default function AsetReportPage() {
 
   useEffect(() => {
     fetchData();
-    
+
     // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
@@ -63,9 +63,9 @@ export default function AsetReportPage() {
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
-      if (prev.key === key) { 
-        if (prev.direction === "asc") return { key, direction: "desc" }; 
-        if (prev.direction === "desc") return { key: null, direction: null }; 
+      if (prev.key === key) {
+        if (prev.direction === "asc") return { key, direction: "desc" };
+        if (prev.direction === "desc") return { key: null, direction: null };
       }
       return { key, direction: "asc" };
     });
@@ -86,8 +86,8 @@ export default function AsetReportPage() {
     let result = [...assets];
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(a => 
-        a.namaAset?.toLowerCase().includes(s) || 
+      result = result.filter(a =>
+        a.namaAset?.toLowerCase().includes(s) ||
         a.kodeAset?.toLowerCase().includes(s) ||
         a.merek?.toLowerCase().includes(s) ||
         a.model?.toLowerCase().includes(s)
@@ -177,12 +177,12 @@ export default function AsetReportPage() {
   };
 
   const getKondisiBadge = (kondisi) => {
-    const s = { 
-      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500", 
-      "Rusak": "bg-red-50 text-red-700 border-red-500", 
+    const s = {
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500",
+      "Rusak": "bg-red-50 text-red-700 border-red-500",
       "Rusak Berat": "bg-rose-950 text-rose-100 border-rose-900",
-      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500", 
-      "Dijual": "bg-slate-100 text-slate-600 border-slate-500" 
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500",
+      "Dijual": "bg-slate-100 text-slate-600 border-slate-500"
     };
     return `inline-block w-[180px] text-center ${s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200"}`;
   };
@@ -192,7 +192,7 @@ export default function AsetReportPage() {
       <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500 text-nowrap">Menampilkan {filteredAssets.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredAssets.length)} dari <span className="font-semibold text-slate-700">{filteredAssets.length}</span> data</p>
         <div className="flex items-center gap-2">
-          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
+          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
             className="cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-primary-hover shadow-sm transition-colors hover:bg-primary-hover">
             {ROWS_OPTIONS.map(opt => <option key={opt} value={opt} className="bg-white text-slate-700">{opt}</option>)}
           </select>
@@ -222,11 +222,11 @@ export default function AsetReportPage() {
             disabled={exporting || loading || filteredAssets.length === 0}
             className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
-            <Printer className="h-4 w-4" /> 
+            <Printer className="h-4 w-4" />
             <span>Cetak Laporan</span>
             <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showExportMenu ? "rotate-180" : ""}`} />
           </button>
-          
+
           {showExportMenu && (
             <div className="absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-full sm:w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
               <button
@@ -316,7 +316,7 @@ export default function AsetReportPage() {
                 {getUniqueValues('jenisAset').map(j => <option key={j} value={j}>{j}</option>)}
               </select>
             </div>
-            <div className="relative w-full sm:w-auto sm:flex-1 lg:flex-none">
+            <div className="relative w-full col-span-2 sm:col-span-1 sm:w-auto sm:flex-1 lg:flex-none">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <select
                 value={kondisiFilter}
@@ -327,7 +327,7 @@ export default function AsetReportPage() {
                 {getUniqueValues('kondisi').map(k => <option key={k} value={k}>{k}</option>)}
               </select>
             </div>
-            <button 
+            <button
               onClick={resetFilters}
               className="flex items-center justify-center gap-2 h-10 w-full col-span-2 sm:col-span-1 sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 border border-slate-300 rounded-lg hover:bg-slate-300 transition-colors cursor-pointer shrink-0"
               title="Reset Filter"
@@ -368,7 +368,7 @@ export default function AsetReportPage() {
                 <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Kondisi</th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Stok</th>
                 <th className="px-5 py-3 font-bold text-slate-700">
-                   <button onClick={() => handleSort("lokasiAset")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                  <button onClick={() => handleSort("lokasiAset")} className="flex items-center uppercase tracking-wider cursor-pointer">
                     Lokasi <SortIcon columnKey="lokasiAset" sortConfig={sortConfig} />
                   </button>
                 </th>

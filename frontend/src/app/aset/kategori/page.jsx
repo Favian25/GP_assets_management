@@ -379,7 +379,7 @@ export default function KategoriMerekPage() {
         {/* Table */}
         <div className="overflow-x-auto border-t border-slate-100">
           {activeTab === "kategori" ? (
-            <table className="w-full text-left text-sm table-fixed">
+            <table className="w-full min-w-[800px] text-left text-sm table-fixed">
               <thead>
                 <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                   <th className="w-16 px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">No</th>
@@ -433,7 +433,7 @@ export default function KategoriMerekPage() {
               </tbody>
             </table>
           ) : (
-            <table className="w-full text-left text-sm table-fixed">
+            <table className="w-full min-w-[700px] text-left text-sm table-fixed">
               <thead>
                 <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                   <th className="w-16 px-4 py-3 font-bold text-slate-700 text-center uppercase tracking-wider text-xs border-r border-slate-200">No</th>

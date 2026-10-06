@@ -15,6 +15,7 @@ async function optimizeImage(filePath, destinationDir, filename) {
 
   try {
     await sharp(filePath)
+      .rotate() // Membaca EXIF dan merotasi gambar ke posisi yang benar
       .resize(1200, 1200, {
         fit: 'inside',
         withoutEnlargement: true
