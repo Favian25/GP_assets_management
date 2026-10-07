@@ -446,6 +446,7 @@ export default function TambahPeminjamanPage() {
                   type="date"
                   value={tanggalPeminjaman}
                   onChange={(e) => setTanggalPeminjaman(e.target.value)}
+                  min={userRole !== "super admin" ? new Date().toISOString().split("T")[0] : undefined}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                   required
                 />

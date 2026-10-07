@@ -515,6 +515,7 @@ export default function EditPeminjamanPage() {
                       type="date"
                       value={tanggalPengembalian}
                       onChange={(e) => setTanggalPengembalian(e.target.value)}
+                      min={currentUser?.role !== "super admin" ? new Date().toISOString().split("T")[0] : undefined}
                       className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none bg-slate-50 hover:bg-white focus:bg-white"
                       required
                     />
