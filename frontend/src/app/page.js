@@ -270,13 +270,21 @@ export default function DashboardPage() {
     : currentHour < 18 ? "bg-orange-400/25"
     : "bg-indigo-400/25";
 
-  return (
-      <div className="pt-6 lg:pt-0">
+  const isAdmin = ["super admin", "admin"].includes(userRole?.toLowerCase());
+  const userActiveLoans = stats?.activeLoans?.filter(l => l.namaPeminjam === userName) || [];
+  const userTotalBorrowedItems = userActiveLoans.reduce((sum, loan) => sum + (loan.totalItems || 0), 0);
+  const userPendingLoans = userActiveLoans.filter(l => l.status === 'Menunggu Persetujuan').length;
 
-      {/* Premium Header — Ucapan & Distribusi Grid */}
-      <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:auto-rows-max">
+  return (
+    <div className="pt-6 lg:pt-0">
+
+      {/* ============================================================ */}
+      {/* ROW 1: Header — Greeting Card + Distribusi Inventaris        */}
+      {/* ============================================================ */}
+      <div className={`mb-10 grid grid-cols-1 gap-6 ${isAdmin ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} lg:auto-rows-max`}>
+
         {/* === Card Ucapan === */}
-        <div className="lg:col-span-1">
+        <div className={isAdmin ? 'lg:col-span-1' : 'w-full'}>
           <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
             {/* Gradient base */}
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950" />
@@ -299,308 +307,492 @@ export default function DashboardPage() {
 
             <div className="relative z-10 flex h-full flex-col justify-between p-6 lg:p-7">
               {/* identitas */}
-              <div className="flex items-center gap-4">
-                <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25 lg:h-14 lg:w-14`}>
-                  <GreetingIcon className="h-6 w-6 text-white lg:h-7 lg:w-7" strokeWidth={1.75} />
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${accentBadge} shadow-lg ring-1 ring-white/25 lg:h-14 lg:w-14`}>
+                    <GreetingIcon className="h-6 w-6 text-white lg:h-7 lg:w-7" strokeWidth={1.75} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-blue-300/80 lg:text-sm">
+                      {greetingLabel}
+                    </p>
+                    <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-white lg:text-3xl">
+                      {userName}
+                    </h1>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-blue-300/80 lg:text-sm">
-                    {greetingLabel}
-                  </p>
-                  <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-white lg:text-3xl">
-                    {userName}
-                  </h1>
+                <div className="hidden sm:flex flex-col items-end">
+                  <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-1.5 backdrop-blur-md shadow-sm">
+                    <Clock className="h-3.5 w-3.5 text-blue-400" />
+                    <span className="text-xs font-semibold text-slate-200 tracking-wider font-mono">
+                      {now ? now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '...'} WIB
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Status Cards (Role, Harga Aset, Harga Aksesoris) */}
-              <div className="mt-6 flex flex-col gap-3">
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30">
-                    <User className="h-4 w-4 text-blue-300" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Role</p>
-                    <p className="text-sm font-bold capitalize text-white">{userRole || "User"}</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-                  <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30">
-                      <Package className="h-4 w-4 text-emerald-300" />
+              {/* Status Cards — berbeda per role */}
+              {isAdmin ? (
+                /* Admin: Role + Harga Aset + Harga Aksesoris (vertikal) */
+                <div className="mt-6 flex flex-col gap-3">
+                  <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30">
+                      <User className="h-4 w-4 text-blue-300" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Harga Aset</p>
+                      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Role</p>
+                      <p className="text-sm font-bold capitalize text-white">{userRole || "User"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
+                    <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30">
+                        <Package className="h-4 w-4 text-emerald-300" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Harga Aset</p>
+                        <p className="truncate text-sm font-bold text-white">
+                          {stats?.totalNilaiAset > 0 ? `Rp ${stats.totalNilaiAset.toLocaleString("id-ID")}` : "Rp 0"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-purple-500/20 ring-1 ring-purple-400/30">
+                        <Cpu className="h-4 w-4 text-purple-300" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Harga Aksesoris</p>
+                        <p className="truncate text-sm font-bold text-white">
+                          {stats?.totalNilaiAksesoris > 0 ? `Rp ${stats.totalNilaiAksesoris.toLocaleString("id-ID")}` : "Rp 0"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* User: Role + Total Dipinjam + Menunggu Persetujuan (horizontal) */
+                <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
+                  <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20 ring-1 ring-blue-400/30">
+                      <User className="h-4 w-4 text-blue-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Role</p>
+                      <p className="text-sm font-bold capitalize text-white">{userRole || "User"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-cyan-500/20 ring-1 ring-cyan-400/30">
+                      <Package className="h-4 w-4 text-cyan-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Total Dipinjam</p>
                       <p className="truncate text-sm font-bold text-white">
-                        {["super admin", "admin"].includes(userRole?.toLowerCase()) ? (
-                          stats?.totalNilaiAset > 0 ? `Rp ${stats.totalNilaiAset.toLocaleString("id-ID")}` : "Rp 0"
-                        ) : "-"}
+                        {userTotalBorrowedItems} Alat
                       </p>
                     </div>
                   </div>
 
                   <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md transition-colors duration-300 hover:bg-white/10">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-purple-500/20 ring-1 ring-purple-400/30">
-                      <Cpu className="h-4 w-4 text-purple-300" />
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/20 ring-1 ring-amber-400/30">
+                      <Clock className="h-4 w-4 text-amber-300" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Harga Aksesoris</p>
+                      <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">Menunggu Persetujuan</p>
                       <p className="truncate text-sm font-bold text-white">
-                        {["super admin", "admin"].includes(userRole?.toLowerCase()) ? (
-                          stats?.totalNilaiAksesoris > 0 ? `Rp ${stats.totalNilaiAksesoris.toLocaleString("id-ID")}` : "Rp 0"
-                        ) : "-"}
+                        {userPendingLoans} Request
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* === Card Ringkasan Distribusi Inventaris === */}
-        <div className="lg:col-span-2">
-          <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
-            {/* Gradient base */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-cyan-950 to-indigo-950" />
+        {/* === Card Ringkasan Distribusi Inventaris (Admin: di ROW 1) === */}
+        {isAdmin && (
+          <div className="lg:col-span-2">
+            <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-cyan-950 to-indigo-950" />
+              <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+              <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl" />
+              <div
+                className="absolute inset-0 opacity-[0.05]"
+                style={{
+                  backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                  backgroundSize: "22px 22px",
+                }}
+              />
+              <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-            {/* Ambient glow */}
-            <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
-            <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl" />
-
-            {/* Dot pattern */}
-            <div
-              className="absolute inset-0 opacity-[0.05]"
-              style={{
-                backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-                backgroundSize: "22px 22px",
-              }}
-            />
-
-            {/* Garis highlight atas */}
-            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-
-            <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
-              <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
-                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-2 shadow-lg">
-                  <PieChart className="h-5 w-5 text-white" />
-                </div>
-                <span>Ringkasan Distribusi Inventaris</span>
-              </h2>
-
-              {/* Nivo Pie Chart - Aset, Aksesoris & Legend */}
-              {mounted && (
-                <>
-                  {/* === Mobile: Carousel (tampil 1 chart + tombol navigasi) === */}
-                  <div className="sm:hidden">
-                    <div className="flex items-center justify-between mb-3">
-                      <button
-                        onClick={() => setChartSlide(chartSlide === 0 ? 1 : 0)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md transition-colors hover:bg-white/10 hover:text-white"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <h3 className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>
-                        {chartSlide === 0 ? 'Distribusi Aset' : 'Distribusi Aksesoris'}
-                      </h3>
-                      <button
-                        onClick={() => setChartSlide(chartSlide === 0 ? 1 : 0)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md transition-colors hover:bg-white/10 hover:text-white"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    {/* Dot indicators */}
-                    <div className="flex justify-center gap-2 mb-3">
-                      {[0, 1].map((i) => (
-                        <button key={i} onClick={() => setChartSlide(i)} className={`h-2 rounded-full transition-all duration-300 ${chartSlide === i ? 'w-6 bg-white' : 'w-2 bg-white/30'}`} />
-                      ))}
-                    </div>
-
-                    <div style={{ height: '220px', width: '100%' }}>
-                      <ResponsivePie
-                        data={chartSlide === 0
-                          ? [
-                              { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
-                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
-                              { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
-                              { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
-                            ].filter(d => d.value > 0)
-                          : [
-                              { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
-                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
-                              { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
-                              { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
-                            ].filter(d => d.value > 0)
-                        }
-                        margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                        innerRadius={0.55}
-                        padAngle={2}
-                        cornerRadius={3}
-                        activeOuterRadiusOffset={5}
-                        colors={{ datum: 'data.color' }}
-                        borderColor="rgba(255, 255, 255, 0.12)"
-                        borderWidth={1.5}
-                        enableArcLabels={true}
-                        arcLabelsSkipAngle={15}
-                        arcLabelsTextColor="#ffffff"
-                        arcLabel={(datum) => {
-                          const total = chartSlide === 0
-                            ? (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0)
-                            : (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
-                          const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                          return `${percentage}%`;
-                        }}
-                        enableArcLinkLabels={false}
-                        tooltip={({ datum }) => (
-                          <div className={`bg-slate-950/95 border ${chartSlide === 0 ? 'border-cyan-400/30' : 'border-indigo-400/30'} rounded-xl px-3 py-2 backdrop-blur-md shadow-lg`}>
-                            <p className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>{datum.label}</p>
-                            <p className="text-sm font-bold text-white">{datum.value} unit</p>
-                          </div>
-                        )}
-                        motionConfig="gentle"
-                        legends={[]}
-                      />
-                    </div>
-
-                    {/* Legend (Mobile) */}
-                    <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-white/10 pt-4">
-                      {[
-                        { color: "#10b981", label: "Siap Digunakan" },
-                        { color: "#3b82f6", label: "Sedang Dipinjam" },
-                        { color: "#f59e0b", label: "Maintenance" },
-                        { color: "#ef4444", label: "Rusak" }
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
-                          <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-slate-300 text-xs font-medium">{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
+              <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
+                <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
+                  <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-2 shadow-lg">
+                    <PieChart className="h-5 w-5 text-white" />
                   </div>
+                  <span>Ringkasan Distribusi Inventaris</span>
+                </h2>
 
-                  {/* === Tablet & Desktop: Horizontal Layout === */}
-                  <div className="hidden sm:flex flex-1 sm:flex-row gap-6 items-center justify-center">
-                    {/* Pie Chart Aset */}
-                    <div className="w-full sm:w-1/3 flex flex-col items-center">
-                      <h3 className="text-sm font-semibold text-cyan-300 mb-2">Distribusi Aset</h3>
-                      <div style={{ height: '210px', width: '100%' }}>
+                {mounted && (
+                  <>
+                    <div className="sm:hidden">
+                      <div className="flex items-center justify-between mb-3">
+                        <button onClick={() => setChartSlide(chartSlide === 0 ? 1 : 0)} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md transition-colors hover:bg-white/10 hover:text-white">
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <h3 className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>
+                          {chartSlide === 0 ? 'Distribusi Aset' : 'Distribusi Aksesoris'}
+                        </h3>
+                        <button onClick={() => setChartSlide(chartSlide === 0 ? 1 : 0)} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md transition-colors hover:bg-white/10 hover:text-white">
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex justify-center gap-2 mb-3">
+                        {[0, 1].map((i) => (
+                          <button key={i} onClick={() => setChartSlide(i)} className={`h-2 rounded-full transition-all duration-300 ${chartSlide === i ? 'w-6 bg-white' : 'w-2 bg-white/30'}`} />
+                        ))}
+                      </div>
+                      <div style={{ height: '220px', width: '100%' }}>
                         <ResponsivePie
-                          data={[
-                            { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
-                            { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
-                            { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
-                            { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
-                          ].filter(d => d.value > 0)}
+                          data={chartSlide === 0
+                            ? [
+                                { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
+                                { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                                { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                              ].filter(d => d.value > 0)
+                            : [
+                                { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                                { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                                { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                              ].filter(d => d.value > 0)
+                          }
                           margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                          innerRadius={0.55}
-                          padAngle={2}
-                          cornerRadius={3}
-                          activeOuterRadiusOffset={5}
-                          colors={{ datum: 'data.color' }}
-                          borderColor="rgba(255, 255, 255, 0.12)"
-                          borderWidth={1.5}
-                          enableArcLabels={true}
-                          arcLabelsSkipAngle={15}
-                          arcLabelsTextColor="#ffffff"
+                          innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
+                          colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                          enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
                           arcLabel={(datum) => {
-                            const total = (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+                            const total = chartSlide === 0
+                              ? (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0)
+                              : (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
                             const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
                             return `${percentage}%`;
                           }}
                           enableArcLinkLabels={false}
                           tooltip={({ datum }) => (
-                            <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                              <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                            <div className={`bg-slate-950/95 border ${chartSlide === 0 ? 'border-cyan-400/30' : 'border-indigo-400/30'} rounded-xl px-3 py-2 backdrop-blur-md shadow-lg`}>
+                              <p className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>{datum.label}</p>
                               <p className="text-sm font-bold text-white">{datum.value} unit</p>
                             </div>
                           )}
-                          motionConfig="gentle"
-                          legends={[]}
+                          motionConfig="gentle" legends={[]}
                         />
                       </div>
-                    </div>
-
-                    {/* Pie Chart Aksesoris */}
-                    <div className="w-full sm:w-1/3 flex flex-col items-center">
-                      <h3 className="text-sm font-semibold text-indigo-300 mb-2">Distribusi Aksesoris</h3>
-                      <div style={{ height: '210px', width: '100%' }}>
-                        <ResponsivePie
-                          data={[
-                            { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
-                            { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
-                            { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
-                            { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
-                          ].filter(d => d.value > 0)}
-                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                          innerRadius={0.55}
-                          padAngle={2}
-                          cornerRadius={3}
-                          activeOuterRadiusOffset={8}
-                          colors={{ datum: 'data.color' }}
-                          borderColor="rgba(255, 255, 255, 0.12)"
-                          borderWidth={1.5}
-                          enableArcLabels={true}
-                          arcLabelsSkipAngle={15}
-                          arcLabelsTextColor="#ffffff"
-                          arcLabel={(datum) => {
-                            const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
-                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                            return `${percentage}%`;
-                          }}
-                          enableArcLinkLabels={false}
-                          tooltip={({ datum }) => (
-                            <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                              <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
-                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
-                            </div>
-                          )}
-                          motionConfig="gentle"
-                          legends={[]}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Legend Keterangan */}
-                    <div className="w-full sm:w-1/3 flex flex-col justify-center items-center sm:items-start pl-0 sm:pl-6 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0">
-                      <h3 className="text-sm font-semibold text-white mb-4">Keterangan Kondisi</h3>
-                      <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-4 sm:gap-3 text-sm">
+                      <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-white/10 pt-4">
                         {[
                           { color: "#10b981", label: "Siap Digunakan" },
                           { color: "#3b82f6", label: "Sedang Dipinjam" },
                           { color: "#f59e0b", label: "Maintenance" },
                           { color: "#ef4444", label: "Rusak" }
                         ].map((item) => (
-                          <div key={item.label} className="flex items-center gap-3 whitespace-nowrap">
-                            <div className="flex-shrink-0 w-3 h-3 rounded-full shadow-md" style={{ backgroundColor: item.color }} />
-                            <span className="text-slate-200 font-medium">{item.label}</span>
+                          <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
+                            <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="text-slate-300 text-xs font-medium">{item.label}</span>
                           </div>
                         ))}
                       </div>
                     </div>
-                  </div>
-                </>
-              )}
+
+                    <div className="hidden sm:flex flex-1 sm:flex-row gap-6 items-center justify-center">
+                      <div className="w-full sm:w-1/3 flex flex-col items-center">
+                        <h3 className="text-sm font-semibold text-cyan-300 mb-2">Distribusi Aset</h3>
+                        <div style={{ height: '210px', width: '100%' }}>
+                          <ResponsivePie
+                            data={[
+                              { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
+                              { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                              { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                            ].filter(d => d.value > 0)}
+                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
+                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                            arcLabel={(datum) => {
+                              const total = (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                              return `${percentage}%`;
+                            }}
+                            enableArcLinkLabels={false}
+                            tooltip={({ datum }) => (
+                              <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                                <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                              </div>
+                            )}
+                            motionConfig="gentle" legends={[]}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="w-full sm:w-1/3 flex flex-col items-center">
+                        <h3 className="text-sm font-semibold text-indigo-300 mb-2">Distribusi Aksesoris</h3>
+                        <div style={{ height: '210px', width: '100%' }}>
+                          <ResponsivePie
+                            data={[
+                              { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                              { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                              { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                            ].filter(d => d.value > 0)}
+                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={8}
+                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                            arcLabel={(datum) => {
+                              const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
+                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                              return `${percentage}%`;
+                            }}
+                            enableArcLinkLabels={false}
+                            tooltip={({ datum }) => (
+                              <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                                <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
+                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                              </div>
+                            )}
+                            motionConfig="gentle" legends={[]}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="w-full sm:w-1/3 flex flex-col justify-center items-center sm:items-start pl-0 sm:pl-6 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0">
+                        <h3 className="text-sm font-semibold text-white mb-4">Keterangan Kondisi</h3>
+                        <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-4 sm:gap-3 text-sm">
+                          {[
+                            { color: "#10b981", label: "Siap Digunakan" },
+                            { color: "#3b82f6", label: "Sedang Dipinjam" },
+                            { color: "#f59e0b", label: "Maintenance" },
+                            { color: "#ef4444", label: "Rusak" }
+                          ].map((item) => (
+                            <div key={item.label} className="flex items-center gap-3 whitespace-nowrap">
+                              <div className="flex-shrink-0 w-3 h-3 rounded-full shadow-md" style={{ backgroundColor: item.color }} />
+                              <span className="text-slate-200 font-medium">{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
 
-      {/* Dashboard Cards Grid */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* ============================================================ */}
+      {/* ROW 2: Dashboard Cards Grid                                  */}
+      {/* Admin:  Peminjaman (50%) | Aktivitas (50%)                   */}
+      {/* User:   Distribusi (col-span-2) | Peminjaman (col-span-1)    */}
+      {/* ============================================================ */}
+      <div className={`mt-8 grid grid-cols-1 gap-8 ${isAdmin ? 'lg:grid-cols-2' : 'lg:grid-cols-5'}`}>
 
-        {/* Peminjaman Aktif - Card Layout */}
-        <div className="group relative overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+        {/* === Card Distribusi Inventaris (User: di ROW 2, kiri 60%) === */}
+        {!isAdmin && (
+          <div className="lg:col-span-3">
+            <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-cyan-950 to-indigo-950" />
+              <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+              <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl" />
+              <div
+                className="absolute inset-0 opacity-[0.05]"
+                style={{
+                  backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                  backgroundSize: "22px 22px",
+                }}
+              />
+              <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+              <div className="relative z-10 flex h-full flex-col p-6 lg:p-7">
+                <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-3">
+                  <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-2 shadow-lg">
+                    <PieChart className="h-5 w-5 text-white" />
+                  </div>
+                  <span>Ringkasan Distribusi Inventaris</span>
+                </h2>
+
+                {mounted && (
+                  <>
+                    <div className="sm:hidden">
+                      <div className="flex items-center justify-between mb-3">
+                        <button onClick={() => setChartSlide(chartSlide === 0 ? 1 : 0)} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md transition-colors hover:bg-white/10 hover:text-white">
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <h3 className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>
+                          {chartSlide === 0 ? 'Distribusi Aset' : 'Distribusi Aksesoris'}
+                        </h3>
+                        <button onClick={() => setChartSlide(chartSlide === 0 ? 1 : 0)} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 backdrop-blur-md transition-colors hover:bg-white/10 hover:text-white">
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex justify-center gap-2 mb-3">
+                        {[0, 1].map((i) => (
+                          <button key={i} onClick={() => setChartSlide(i)} className={`h-2 rounded-full transition-all duration-300 ${chartSlide === i ? 'w-6 bg-white' : 'w-2 bg-white/30'}`} />
+                        ))}
+                      </div>
+                      <div style={{ height: '220px', width: '100%' }}>
+                        <ResponsivePie
+                          data={chartSlide === 0
+                            ? [
+                                { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
+                                { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                                { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                              ].filter(d => d.value > 0)
+                            : [
+                                { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                                { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                                { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                              ].filter(d => d.value > 0)
+                          }
+                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                          innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
+                          colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                          enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                          arcLabel={(datum) => {
+                            const total = chartSlide === 0
+                              ? (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0)
+                              : (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
+                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                            return `${percentage}%`;
+                          }}
+                          enableArcLinkLabels={false}
+                          tooltip={({ datum }) => (
+                            <div className={`bg-slate-950/95 border ${chartSlide === 0 ? 'border-cyan-400/30' : 'border-indigo-400/30'} rounded-xl px-3 py-2 backdrop-blur-md shadow-lg`}>
+                              <p className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>{datum.label}</p>
+                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                            </div>
+                          )}
+                          motionConfig="gentle" legends={[]}
+                        />
+                      </div>
+                      <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-white/10 pt-4">
+                        {[
+                          { color: "#10b981", label: "Siap Digunakan" },
+                          { color: "#3b82f6", label: "Sedang Dipinjam" },
+                          { color: "#f59e0b", label: "Maintenance" },
+                          { color: "#ef4444", label: "Rusak" }
+                        ].map((item) => (
+                          <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
+                            <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="text-slate-300 text-xs font-medium">{item.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="hidden sm:flex flex-1 sm:flex-row gap-6 items-center justify-center">
+                      <div className="w-full sm:w-1/3 flex flex-col items-center">
+                        <h3 className="text-sm font-semibold text-cyan-300 mb-2">Distribusi Aset</h3>
+                        <div style={{ height: '210px', width: '100%' }}>
+                          <ResponsivePie
+                            data={[
+                              { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
+                              { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                              { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                            ].filter(d => d.value > 0)}
+                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
+                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                            arcLabel={(datum) => {
+                              const total = (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                              return `${percentage}%`;
+                            }}
+                            enableArcLinkLabels={false}
+                            tooltip={({ datum }) => (
+                              <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                                <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                              </div>
+                            )}
+                            motionConfig="gentle" legends={[]}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="w-full sm:w-1/3 flex flex-col items-center">
+                        <h3 className="text-sm font-semibold text-indigo-300 mb-2">Distribusi Aksesoris</h3>
+                        <div style={{ height: '210px', width: '100%' }}>
+                          <ResponsivePie
+                            data={[
+                              { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                              { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                              { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                            ].filter(d => d.value > 0)}
+                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={8}
+                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                            arcLabel={(datum) => {
+                              const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
+                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                              return `${percentage}%`;
+                            }}
+                            enableArcLinkLabels={false}
+                            tooltip={({ datum }) => (
+                              <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                                <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
+                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                              </div>
+                            )}
+                            motionConfig="gentle" legends={[]}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="w-full sm:w-1/3 flex flex-col justify-center items-center sm:items-start pl-0 sm:pl-6 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0">
+                        <h3 className="text-sm font-semibold text-white mb-4">Keterangan Kondisi</h3>
+                        <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-4 sm:gap-3 text-sm">
+                          {[
+                            { color: "#10b981", label: "Siap Digunakan" },
+                            { color: "#3b82f6", label: "Sedang Dipinjam" },
+                            { color: "#f59e0b", label: "Maintenance" },
+                            { color: "#ef4444", label: "Rusak" }
+                          ].map((item) => (
+                            <div key={item.label} className="flex items-center gap-3 whitespace-nowrap">
+                              <div className="flex-shrink-0 w-3 h-3 rounded-full shadow-md" style={{ backgroundColor: item.color }} />
+                              <span className="text-slate-200 font-medium">{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === Peminjaman Aktif === */}
+        <div className={`group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30 ${!isAdmin ? 'lg:col-span-2' : ''}`}>
           {/* Gradient base */}
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-cyan-950" />
-
           {/* Ambient glow */}
           <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-blue-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
           <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
-
           {/* Dot pattern */}
           <div
             className="absolute inset-0 opacity-[0.05]"
@@ -609,7 +801,6 @@ export default function DashboardPage() {
               backgroundSize: "22px 22px",
             }}
           />
-
           {/* Garis highlight atas */}
           <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
@@ -636,7 +827,7 @@ export default function DashboardPage() {
             </div>
 
             {filteredLoans && filteredLoans.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 max-h-96 overflow-y-auto custom-scrollbar">
+              <div className={`grid gap-4 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isAdmin ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-1' : 'grid-cols-1'}`}>
               {filteredLoans.map((loan) => (
                 <div
                   key={loan.id}
@@ -682,94 +873,93 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Aktivitas Terbaru - Card Layout */}
-        <div className="group relative overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
-          {/* Gradient base */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-amber-950 to-orange-950" />
+        {/* === Aktivitas Terbaru (Hanya Admin) === */}
+        {isAdmin && (
+          <div className="group relative h-full overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-slate-950/20 ring-1 ring-white/10 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-950/30">
+            {/* Gradient base */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-amber-950 to-orange-950" />
+            {/* Ambient glow */}
+            <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-orange-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+            <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-amber-500/15 blur-3xl" />
+            {/* Dot pattern */}
+            <div
+              className="absolute inset-0 opacity-[0.05]"
+              style={{
+                backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+                backgroundSize: "22px 22px",
+              }}
+            />
+            {/* Garis highlight atas */}
+            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-          {/* Ambient glow */}
-          <div className="absolute -right-24 -top-28 h-72 w-72 rounded-full bg-orange-500/15 blur-3xl transition-transform duration-700 group-hover:scale-125" />
-          <div className="absolute -left-28 bottom-0 h-72 w-72 rounded-full bg-amber-500/15 blur-3xl" />
-
-          {/* Dot pattern */}
-          <div
-            className="absolute inset-0 opacity-[0.05]"
-            style={{
-              backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-              backgroundSize: "22px 22px",
-            }}
-          />
-
-          {/* Garis highlight atas */}
-          <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-
-          <div className="relative z-10 p-6 lg:p-7">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-              <h2 className="text-lg font-bold text-white flex items-center gap-3">
-                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-2 shadow-lg">
-                  <Clock className="h-5 w-5 text-white" />
-                </div>
-                Aktivitas Terbaru
-              </h2>
-              <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 z-10 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Cari..."
-                  value={activitySearch}
-                  onChange={(e) => setActivitySearch(e.target.value)}
-                  className="w-full sm:w-auto rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                />
-              </div>
-            </div>
-
-            {filteredActivities.length > 0 ? (
-              <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar lg:[&::-webkit-scrollbar]:hidden lg:[scrollbar-width:none]">
-              {filteredActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  onClick={() => handleActivityClick(activity)}
-                  className="group relative p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md shadow-md hover:shadow-lg hover:bg-white/10 hover:-translate-x-1 transition-all duration-300 cursor-pointer overflow-hidden"
-                >
-                  {/* Left accent bar */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                    activity.action === 'Peminjaman' ? 'bg-amber-400' :
-                    activity.action === 'Pengembalian' ? 'bg-blue-400' :
-                    'bg-emerald-400'
-                  }`} />
-
-                  <div className="relative z-10 flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-sm font-semibold text-white">{activity.createdBy}</span>
-                      <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm ${
-                        activity.action === 'Peminjaman' ? 'bg-amber-500/20 text-amber-200' :
-                        activity.action === 'Pengembalian' ? 'bg-blue-500/20 text-blue-200' :
-                        'bg-emerald-500/20 text-emerald-200'
-                      }`}>
-                        {activity.action}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-300 group-hover:text-white transition-colors flex items-center gap-2 mb-2">
-                      <Package className="h-4 w-4 text-slate-400" />
-                      <span className="truncate">{activity.item}</span>
-                    </p>
-                    <p className="text-xs text-slate-400 font-medium">
-                      {formatActivityDate(activity.date).datePart} · {formatActivityDate(activity.date).timePart}
-                    </p>
+            <div className="relative z-10 p-6 lg:p-7">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                <h2 className="text-lg font-bold text-white flex items-center gap-3">
+                  <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-2 shadow-lg">
+                    <Clock className="h-5 w-5 text-white" />
                   </div>
+                  Aktivitas Terbaru
+                </h2>
+                <div className="relative w-full sm:w-auto">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 z-10 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Cari..."
+                    value={activitySearch}
+                    onChange={(e) => setActivitySearch(e.target.value)}
+                    className="w-full sm:w-auto rounded-xl border border-white/10 bg-white/5 py-2 pl-10 pr-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
-              <div className="p-3 rounded-full bg-orange-500/20 mb-3">
-                <Clock className="h-8 w-8 text-orange-300" />
               </div>
-              <p className="text-sm text-slate-300 font-medium">Tidak ada aktivitas</p>
+
+              {filteredActivities.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar lg:[&::-webkit-scrollbar]:hidden lg:[scrollbar-width:none]">
+                {filteredActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    onClick={() => handleActivityClick(activity)}
+                    className="group relative p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md shadow-md hover:shadow-lg hover:bg-white/10 hover:-translate-x-1 transition-all duration-300 cursor-pointer overflow-hidden"
+                  >
+                    {/* Left accent bar */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                      activity.action === 'Peminjaman' ? 'bg-amber-400' :
+                      activity.action === 'Pengembalian' ? 'bg-blue-400' :
+                      'bg-emerald-400'
+                    }`} />
+
+                    <div className="relative z-10 flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="text-sm font-semibold text-white">{activity.createdBy}</span>
+                        <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-sm ${
+                          activity.action === 'Peminjaman' ? 'bg-amber-500/20 text-amber-200' :
+                          activity.action === 'Pengembalian' ? 'bg-blue-500/20 text-blue-200' :
+                          'bg-emerald-500/20 text-emerald-200'
+                        }`}>
+                          {activity.action}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-300 group-hover:text-white transition-colors flex items-center gap-2 mb-2">
+                        <Package className="h-4 w-4 text-slate-400" />
+                        <span className="truncate">{activity.item}</span>
+                      </p>
+                      <p className="text-xs text-slate-400 font-medium">
+                        {formatActivityDate(activity.date).datePart} · {formatActivityDate(activity.date).timePart}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+                <div className="p-3 rounded-full bg-orange-500/20 mb-3">
+                  <Clock className="h-8 w-8 text-orange-300" />
+                </div>
+                <p className="text-sm text-slate-300 font-medium">Tidak ada aktivitas</p>
+              </div>
+              )}
             </div>
-            )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Toast Portal */}
