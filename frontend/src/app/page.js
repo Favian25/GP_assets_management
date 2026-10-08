@@ -132,7 +132,7 @@ export default function DashboardPage() {
   };
 
   const handleActivityClick = (activity) => {
-    const isAdmin = ["super admin", "admin"].includes(userRole);
+    const isAdmin = ["super admin", "admin", "supervisor"].includes(userRole?.toLowerCase());
     if (activity.type === 'asset') {
       if (!isAdmin) {
         showToast("Akses Dibatasi: Anda tidak memiliki izin untuk melihat daftar aset.", "error");
@@ -270,7 +270,7 @@ export default function DashboardPage() {
     : currentHour < 18 ? "bg-orange-400/25"
     : "bg-indigo-400/25";
 
-  const isAdmin = ["super admin", "admin"].includes(userRole?.toLowerCase());
+  const isAdmin = ["super admin", "admin", "supervisor"].includes(userRole?.toLowerCase());
   const userActiveLoans = stats?.activeLoans?.filter(l => l.namaPeminjam === userName) || [];
   const userTotalBorrowedItems = userActiveLoans.reduce((sum, loan) => sum + (loan.totalItems || 0), 0);
   const userPendingLoans = userActiveLoans.filter(l => l.status === 'Menunggu Persetujuan').length;
@@ -321,14 +321,16 @@ export default function DashboardPage() {
                     </h1>
                   </div>
                 </div>
-                <div className="hidden sm:flex flex-col items-end">
-                  <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-1.5 backdrop-blur-md shadow-sm">
-                    <Clock className="h-3.5 w-3.5 text-blue-400" />
-                    <span className="text-xs font-semibold text-slate-200 tracking-wider font-mono">
-                      {now ? now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '...'} WIB
-                    </span>
+                {userRole === "user" && (
+                  <div className="hidden sm:flex flex-col items-end">
+                    <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-1.5 backdrop-blur-md shadow-sm">
+                      <Clock className="h-3.5 w-3.5 text-blue-400" />
+                      <span className="text-xs font-semibold text-slate-200 tracking-wider font-mono">
+                        {now ? now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '...'} WIB
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Status Cards — berbeda per role */}
