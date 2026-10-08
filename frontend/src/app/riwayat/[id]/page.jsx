@@ -15,11 +15,11 @@ function ImageCarouselInner({ images, title, backendUrl, onImageClick }) {
   if (!images || images.length === 0) return null;
 
   const getVisibleImages = () => {
-    if (images.length <= 3) return images.map((path, idx) => ({ path, originalIndex: idx }));
     const visible = [];
-    for (let i = 0; i < 3; i++) {
+    const count = Math.min(images.length, 3);
+    for (let i = 0; i < count; i++) {
       const idx = (startIndex + i) % images.length;
-      visible.push({ path: images[idx], originalIndex: idx });
+      visible.push({ path: images[idx], originalIndex: idx, isThird: i === 2 });
     }
     return visible;
   };
@@ -33,27 +33,30 @@ function ImageCarouselInner({ images, title, backendUrl, onImageClick }) {
     <div className="mt-6 border-t border-slate-100 pt-4">
       <span className="text-xs font-bold text-slate-500 block mb-3 uppercase tracking-wider">{title}</span>
       <div className="flex items-center gap-2">
-        {images.length > 3 && (
-          <button type="button" onClick={prev} className="p-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm">
+        {images.length > 2 && (
+          <button type="button" onClick={prev} className={`p-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm ${images.length === 3 ? 'md:hidden' : ''}`}>
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
-        <div className="grid grid-cols-3 gap-2 flex-1">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 flex-1">
           {visibleImages.map((img, i) => (
-            <div key={`${startIndex}-${i}`} className="relative h-24 rounded-lg overflow-hidden border border-slate-200 group cursor-zoom-in shadow-sm hover:border-blue-500/50 transition-colors" 
+            <div key={`${startIndex}-${i}`} className={`relative h-32 md:h-40 rounded-lg overflow-hidden border border-slate-200 group cursor-zoom-in shadow-sm hover:border-blue-500/50 transition-colors ${img.isThird ? 'hidden md:block' : ''}`} 
               onClick={() => onImageClick(images, img.originalIndex)}>
-              <Image src={`${backendUrl}${img.path}`} alt={title} fill className="object-cover group-hover:scale-110 transition-transform duration-300" sizes="120px" unoptimized />
+              <Image src={`${backendUrl}${img.path}`} alt={title} fill className="object-cover group-hover:scale-110 transition-transform duration-300" sizes="(max-width: 768px) 50vw, 33vw" unoptimized />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                 <Search className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
           ))}
-          {images.length < 3 && [...Array(3 - images.length)].map((_, i) => (
-             <div key={`empty-${i}`} className="h-24 rounded-lg bg-slate-50 border border-dashed border-slate-200" />
-          ))}
+          {images.length < 3 && [...Array(3 - images.length)].map((_, i) => {
+            const isThird = (images.length + i) === 2;
+            return (
+              <div key={`empty-${i}`} className={`h-32 md:h-40 rounded-lg bg-slate-50 border border-dashed border-slate-200 ${isThird ? 'hidden md:block' : ''}`} />
+            );
+          })}
         </div>
-        {images.length > 3 && (
-          <button type="button" onClick={next} className="p-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm">
+        {images.length > 2 && (
+          <button type="button" onClick={next} className={`p-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm ${images.length === 3 ? 'md:hidden' : ''}`}>
             <ChevronRight className="h-5 w-5" />
           </button>
         )}
@@ -282,37 +285,62 @@ export default function RiwayatDetailPage() {
 
       {/* Lightbox for Images */}
       {lightboxData && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxData(null)}>
+        <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center p-4" onClick={() => setLightboxData(null)}>
           <button type="button" onClick={() => setLightboxData(null)} className="absolute top-4 right-4 text-white hover:text-slate-300 transition-colors z-[110] cursor-pointer">
             <X className="w-8 h-8" />
           </button>
           
-          <div className="relative w-full max-w-5xl aspect-video flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
             {lightboxData.images.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length })); }}
-                  className="absolute left-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 transition-colors z-[110] cursor-pointer"
-                >
-                  <ChevronLeft className="w-8 h-8" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length })); }}
-                  className="absolute right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 transition-colors z-[110] cursor-pointer"
-                >
-                  <ChevronRight className="w-8 h-8" />
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length })); }}
+                className="hidden md:flex absolute left-4 p-3 rounded-full bg-black/50 text-white hover:bg-black/75 transition-colors z-[110] cursor-pointer"
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </button>
             )}
+            
             <img 
               src={`${BACKEND_URL}${lightboxData.images[lightboxData.index]}`} 
               alt="Bukti Preview" 
               className="max-h-full max-w-full object-contain"
             />
+
+            {lightboxData.images.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length })); }}
+                className="hidden md:flex absolute right-4 p-3 rounded-full bg-black/50 text-white hover:bg-black/75 transition-colors z-[110] cursor-pointer"
+              >
+                <ChevronRight className="w-8 h-8" />
+              </button>
+            )}
           </div>
-          <div className="absolute bottom-4 left-0 right-0 text-center text-white text-sm font-medium">
+
+          {lightboxData.images.length > 1 && (
+            <div className="md:hidden flex items-center justify-center gap-6 mt-6 w-full" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length })); }}
+                className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <div className="text-white text-sm font-medium">
+                {lightboxData.index + 1} / {lightboxData.images.length}
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxData(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length })); }}
+                className="p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+          )}
+
+          <div className="hidden md:block absolute bottom-4 left-0 right-0 text-center text-white text-sm font-medium pointer-events-none">
             Gambar {lightboxData.index + 1} dari {lightboxData.images.length}
           </div>
         </div>,
