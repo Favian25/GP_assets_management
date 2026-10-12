@@ -7,7 +7,16 @@ import Image from "next/image";
 import { getPeminjamanById } from "../../lib/peminjamanService";
 import { FileText, Clock, Package, ChevronLeft, ChevronRight, Search, CheckCircle2, AlertCircle, RotateCcw, X } from "lucide-react";
 
-const BACKEND_URL = typeof window !== "undefined" ? `http://${window.location.hostname}:5000` : "http://localhost:5000";
+const getBackendURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
+  }
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return "http://localhost:5000";
+};
+const BACKEND_URL = getBackendURL();
 
 function ImageCarouselInner({ images, title, backendUrl, onImageClick }) {
   const [startIndex, setStartIndex] = useState(0);

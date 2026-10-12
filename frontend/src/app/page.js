@@ -274,6 +274,8 @@ export default function DashboardPage() {
   const userActiveLoans = stats?.activeLoans?.filter(l => l.namaPeminjam === userName) || [];
   const userTotalBorrowedItems = userActiveLoans.reduce((sum, loan) => sum + (loan.totalItems || 0), 0);
   const userPendingLoans = userActiveLoans.filter(l => l.status === 'Menunggu Persetujuan').length;
+  const totalAsetDistribution = (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
+  const totalAksesorisDistribution = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
 
   return (
     <div className="pt-6 lg:pt-0">
@@ -459,41 +461,53 @@ export default function DashboardPage() {
                         ))}
                       </div>
                       <div style={{ height: '220px', width: '100%' }}>
-                        <ResponsivePie
-                          data={chartSlide === 0
-                            ? [
-                                { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
-                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
-                                { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
-                                { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
-                              ].filter(d => d.value > 0)
-                            : [
-                                { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
-                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
-                                { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
-                                { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
-                              ].filter(d => d.value > 0)
-                          }
-                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                          innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
-                          colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
-                          enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
-                          arcLabel={(datum) => {
-                            const total = chartSlide === 0
-                              ? (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0)
-                              : (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
-                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                            return `${percentage}%`;
-                          }}
-                          enableArcLinkLabels={false}
-                          tooltip={({ datum }) => (
-                            <div className={`bg-slate-950/95 border ${chartSlide === 0 ? 'border-cyan-400/30' : 'border-indigo-400/30'} rounded-xl px-3 py-2 backdrop-blur-md shadow-lg`}>
-                              <p className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>{datum.label}</p>
-                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                        {(chartSlide === 0 ? totalAsetDistribution : totalAksesorisDistribution) > 0 ? (
+                          <ResponsivePie
+                            data={chartSlide === 0
+                              ? [
+                                  { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                                  { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
+                                  { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                                  { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                                ].filter(d => d.value > 0)
+                              : [
+                                  { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                                  { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                                  { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                                  { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                                ].filter(d => d.value > 0)
+                            }
+                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
+                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                            arcLabel={(datum) => {
+                              const total = chartSlide === 0 ? totalAsetDistribution : totalAksesorisDistribution;
+                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                              return `${percentage}%`;
+                            }}
+                            enableArcLinkLabels={false}
+                            tooltip={({ datum }) => (
+                              <div className={`bg-slate-950/95 border ${chartSlide === 0 ? 'border-cyan-400/30' : 'border-indigo-400/30'} rounded-xl px-3 py-2 backdrop-blur-md shadow-lg`}>
+                                <p className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>{datum.label}</p>
+                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                              </div>
+                            )}
+                            motionConfig="gentle" legends={[]}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md px-4 text-center">
+                            <div className={`p-3 rounded-full ${chartSlide === 0 ? 'bg-cyan-500/20 text-cyan-300' : 'bg-indigo-500/20 text-indigo-300'} mb-2`}>
+                              {chartSlide === 0 ? <Package className="h-7 w-7" /> : <Cpu className="h-7 w-7" />}
                             </div>
-                          )}
-                          motionConfig="gentle" legends={[]}
-                        />
+                            <p className="text-sm font-semibold text-white">
+                              {chartSlide === 0 ? 'Belum Ada Data Aset' : 'Belum Ada Data Aksesoris'}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {chartSlide === 0 ? 'Data akan muncul setelah aset ditambahkan' : 'Data akan muncul setelah aksesoris ditambahkan'}
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-white/10 pt-4">
                         {[
@@ -514,62 +528,80 @@ export default function DashboardPage() {
                       <div className="w-full sm:w-1/3 flex flex-col items-center">
                         <h3 className="text-sm font-semibold text-cyan-300 mb-2">Distribusi Aset</h3>
                         <div style={{ height: '210px', width: '100%' }}>
-                          <ResponsivePie
-                            data={[
-                              { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
-                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
-                              { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
-                              { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
-                            ].filter(d => d.value > 0)}
-                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
-                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
-                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
-                            arcLabel={(datum) => {
-                              const total = (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
-                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                              return `${percentage}%`;
-                            }}
-                            enableArcLinkLabels={false}
-                            tooltip={({ datum }) => (
-                              <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                                <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
-                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                          {totalAsetDistribution > 0 ? (
+                            <ResponsivePie
+                              data={[
+                                { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
+                                { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                                { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                              ].filter(d => d.value > 0)}
+                              margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                              innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
+                              colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                              enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                              arcLabel={(datum) => {
+                                const percentage = totalAsetDistribution > 0 ? Math.round((datum.value / totalAsetDistribution) * 100) : 0;
+                                return `${percentage}%`;
+                              }}
+                              enableArcLinkLabels={false}
+                              tooltip={({ datum }) => (
+                                <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                                  <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                                  <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                                </div>
+                              )}
+                              motionConfig="gentle" legends={[]}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md px-3 text-center">
+                              <div className="p-3 rounded-full bg-cyan-500/20 text-cyan-300 mb-2">
+                                <Package className="h-6 w-6" />
                               </div>
-                            )}
-                            motionConfig="gentle" legends={[]}
-                          />
+                              <p className="text-xs font-semibold text-white">Belum Ada Data Aset</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">Data aset masih kosong</p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       <div className="w-full sm:w-1/3 flex flex-col items-center">
                         <h3 className="text-sm font-semibold text-indigo-300 mb-2">Distribusi Aksesoris</h3>
                         <div style={{ height: '210px', width: '100%' }}>
-                          <ResponsivePie
-                            data={[
-                              { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
-                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
-                              { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
-                              { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
-                            ].filter(d => d.value > 0)}
-                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={8}
-                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
-                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
-                            arcLabel={(datum) => {
-                              const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
-                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                              return `${percentage}%`;
-                            }}
-                            enableArcLinkLabels={false}
-                            tooltip={({ datum }) => (
-                              <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                                <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
-                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                          {totalAksesorisDistribution > 0 ? (
+                            <ResponsivePie
+                              data={[
+                                { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                                { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                                { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                              ].filter(d => d.value > 0)}
+                              margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                              innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={8}
+                              colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                              enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                              arcLabel={(datum) => {
+                                const percentage = totalAksesorisDistribution > 0 ? Math.round((datum.value / totalAksesorisDistribution) * 100) : 0;
+                                return `${percentage}%`;
+                              }}
+                              enableArcLinkLabels={false}
+                              tooltip={({ datum }) => (
+                                <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                                  <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
+                                  <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                                </div>
+                              )}
+                              motionConfig="gentle" legends={[]}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md px-3 text-center">
+                              <div className="p-3 rounded-full bg-indigo-500/20 text-indigo-300 mb-2">
+                                <Cpu className="h-6 w-6" />
                               </div>
-                            )}
-                            motionConfig="gentle" legends={[]}
-                          />
+                              <p className="text-xs font-semibold text-white">Belum Ada Data Aksesoris</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">Data aksesoris masih kosong</p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -650,41 +682,53 @@ export default function DashboardPage() {
                         ))}
                       </div>
                       <div style={{ height: '220px', width: '100%' }}>
-                        <ResponsivePie
-                          data={chartSlide === 0
-                            ? [
-                                { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
-                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
-                                { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
-                                { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
-                              ].filter(d => d.value > 0)
-                            : [
-                                { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
-                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
-                                { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
-                                { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
-                              ].filter(d => d.value > 0)
-                          }
-                          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                          innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
-                          colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
-                          enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
-                          arcLabel={(datum) => {
-                            const total = chartSlide === 0
-                              ? (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0)
-                              : (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
-                            const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                            return `${percentage}%`;
-                          }}
-                          enableArcLinkLabels={false}
-                          tooltip={({ datum }) => (
-                            <div className={`bg-slate-950/95 border ${chartSlide === 0 ? 'border-cyan-400/30' : 'border-indigo-400/30'} rounded-xl px-3 py-2 backdrop-blur-md shadow-lg`}>
-                              <p className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>{datum.label}</p>
-                              <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                        {(chartSlide === 0 ? totalAsetDistribution : totalAksesorisDistribution) > 0 ? (
+                          <ResponsivePie
+                            data={chartSlide === 0
+                              ? [
+                                  { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                                  { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
+                                  { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                                  { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                                ].filter(d => d.value > 0)
+                              : [
+                                  { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                                  { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                                  { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                                  { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                                ].filter(d => d.value > 0)
+                            }
+                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
+                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                            arcLabel={(datum) => {
+                              const total = chartSlide === 0 ? totalAsetDistribution : totalAksesorisDistribution;
+                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
+                              return `${percentage}%`;
+                            }}
+                            enableArcLinkLabels={false}
+                            tooltip={({ datum }) => (
+                              <div className={`bg-slate-950/95 border ${chartSlide === 0 ? 'border-cyan-400/30' : 'border-indigo-400/30'} rounded-xl px-3 py-2 backdrop-blur-md shadow-lg`}>
+                                <p className={`text-sm font-semibold ${chartSlide === 0 ? 'text-cyan-300' : 'text-indigo-300'}`}>{datum.label}</p>
+                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                              </div>
+                            )}
+                            motionConfig="gentle" legends={[]}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md px-4 text-center">
+                            <div className={`p-3 rounded-full ${chartSlide === 0 ? 'bg-cyan-500/20 text-cyan-300' : 'bg-indigo-500/20 text-indigo-300'} mb-2`}>
+                              {chartSlide === 0 ? <Package className="h-7 w-7" /> : <Cpu className="h-7 w-7" />}
                             </div>
-                          )}
-                          motionConfig="gentle" legends={[]}
-                        />
+                            <p className="text-sm font-semibold text-white">
+                              {chartSlide === 0 ? 'Belum Ada Data Aset' : 'Belum Ada Data Aksesoris'}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {chartSlide === 0 ? 'Data akan muncul setelah aset ditambahkan' : 'Data akan muncul setelah aksesoris ditambahkan'}
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-white/10 pt-4">
                         {[
@@ -705,62 +749,80 @@ export default function DashboardPage() {
                       <div className="w-full sm:w-1/3 flex flex-col items-center">
                         <h3 className="text-sm font-semibold text-cyan-300 mb-2">Distribusi Aset</h3>
                         <div style={{ height: '210px', width: '100%' }}>
-                          <ResponsivePie
-                            data={[
-                              { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
-                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
-                              { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
-                              { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
-                            ].filter(d => d.value > 0)}
-                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
-                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
-                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
-                            arcLabel={(datum) => {
-                              const total = (stats?.tersedia || 0) + (stats?.asetDipinjam || 0) + (stats?.maintenance || 0) + (stats?.rusak || 0);
-                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                              return `${percentage}%`;
-                            }}
-                            enableArcLinkLabels={false}
-                            tooltip={({ datum }) => (
-                              <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                                <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
-                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                          {totalAsetDistribution > 0 ? (
+                            <ResponsivePie
+                              data={[
+                                { id: "Siap", label: "Siap Digunakan", value: stats?.tersedia || 0, color: "#10b981" },
+                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.asetDipinjam || 0, color: "#3b82f6" },
+                                { id: "Maintenance", label: "Maintenance", value: stats?.maintenance || 0, color: "#f59e0b" },
+                                { id: "Rusak", label: "Rusak", value: stats?.rusak || 0, color: "#ef4444" }
+                              ].filter(d => d.value > 0)}
+                              margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                              innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={5}
+                              colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                              enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                              arcLabel={(datum) => {
+                                const percentage = totalAsetDistribution > 0 ? Math.round((datum.value / totalAsetDistribution) * 100) : 0;
+                                return `${percentage}%`;
+                              }}
+                              enableArcLinkLabels={false}
+                              tooltip={({ datum }) => (
+                                <div className="bg-slate-950/95 border border-cyan-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                                  <p className="text-sm font-semibold text-cyan-300">{datum.label}</p>
+                                  <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                                </div>
+                              )}
+                              motionConfig="gentle" legends={[]}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md px-3 text-center">
+                              <div className="p-3 rounded-full bg-cyan-500/20 text-cyan-300 mb-2">
+                                <Package className="h-6 w-6" />
                               </div>
-                            )}
-                            motionConfig="gentle" legends={[]}
-                          />
+                              <p className="text-xs font-semibold text-white">Belum Ada Data Aset</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">Data aset masih kosong</p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       <div className="w-full sm:w-1/3 flex flex-col items-center">
                         <h3 className="text-sm font-semibold text-indigo-300 mb-2">Distribusi Aksesoris</h3>
                         <div style={{ height: '210px', width: '100%' }}>
-                          <ResponsivePie
-                            data={[
-                              { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
-                              { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
-                              { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
-                              { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
-                            ].filter(d => d.value > 0)}
-                            margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                            innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={8}
-                            colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
-                            enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
-                            arcLabel={(datum) => {
-                              const total = (stats?.aksesorisTersedia || 0) + (stats?.aksesorisDipinjam || 0) + (stats?.aksesorisMaintenance || 0) + (stats?.aksesorisRusak || 0);
-                              const percentage = total > 0 ? Math.round((datum.value / total) * 100) : 0;
-                              return `${percentage}%`;
-                            }}
-                            enableArcLinkLabels={false}
-                            tooltip={({ datum }) => (
-                              <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
-                                <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
-                                <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                          {totalAksesorisDistribution > 0 ? (
+                            <ResponsivePie
+                              data={[
+                                { id: "Siap", label: "Siap Digunakan", value: stats?.aksesorisTersedia || 0, color: "#10b981" },
+                                { id: "Dipinjam", label: "Sedang Dipinjam", value: stats?.aksesorisDipinjam || 0, color: "#3b82f6" },
+                                { id: "Maintenance", label: "Maintenance", value: stats?.aksesorisMaintenance || 0, color: "#f59e0b" },
+                                { id: "Rusak", label: "Rusak", value: stats?.aksesorisRusak || 0, color: "#ef4444" }
+                              ].filter(d => d.value > 0)}
+                              margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                              innerRadius={0.55} padAngle={2} cornerRadius={3} activeOuterRadiusOffset={8}
+                              colors={{ datum: 'data.color' }} borderColor="rgba(255, 255, 255, 0.12)" borderWidth={1.5}
+                              enableArcLabels={true} arcLabelsSkipAngle={15} arcLabelsTextColor="#ffffff"
+                              arcLabel={(datum) => {
+                                const percentage = totalAksesorisDistribution > 0 ? Math.round((datum.value / totalAksesorisDistribution) * 100) : 0;
+                                return `${percentage}%`;
+                              }}
+                              enableArcLinkLabels={false}
+                              tooltip={({ datum }) => (
+                                <div className="bg-slate-950/95 border border-indigo-400/30 rounded-xl px-3 py-2 backdrop-blur-md shadow-lg">
+                                  <p className="text-sm font-semibold text-indigo-300">{datum.label}</p>
+                                  <p className="text-sm font-bold text-white">{datum.value} unit</p>
+                                </div>
+                              )}
+                              motionConfig="gentle" legends={[]}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md px-3 text-center">
+                              <div className="p-3 rounded-full bg-indigo-500/20 text-indigo-300 mb-2">
+                                <Cpu className="h-6 w-6" />
                               </div>
-                            )}
-                            motionConfig="gentle" legends={[]}
-                          />
+                              <p className="text-xs font-semibold text-white">Belum Ada Data Aksesoris</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">Data aksesoris masih kosong</p>
+                            </div>
+                          )}
                         </div>
                       </div>
 

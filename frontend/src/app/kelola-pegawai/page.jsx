@@ -11,7 +11,16 @@ import {
   ChevronUp, ChevronDown, Users
 } from "lucide-react";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const getBackendURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
+  }
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return "http://localhost:5000";
+};
+const BACKEND_URL = getBackendURL();
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 
 // Format tanggal: "23 Sep 2026"

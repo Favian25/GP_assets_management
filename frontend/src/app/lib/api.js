@@ -10,21 +10,22 @@ const api = axios.create({
 
 // Interceptor: construct full URL & inject JWT token
 api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    // Construct full URL dynamically
-    const baseHost = window.location.hostname;
-    const basePort = "5000";
-    config.url = `http://${baseHost}:${basePort}/api${config.url}`;
+  const baseURL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined"
+    ? `http://${window.location.hostname}:5000/api`
+    : "http://localhost:5000/api");
 
+  // Pastikan URL memiliki prefix baseURL jika belum berupa absolute URL
+  if (!config.url.startsWith("http://") && !config.url.startsWith("https://")) {
+    const cleanPath = config.url.startsWith("/") ? config.url : `/${config.url}`;
+    const cleanBase = baseURL.replace(/\/$/, "");
+    config.url = `${cleanBase}${cleanPath}`;
+  }
+
+  if (typeof window !== "undefined") {
     // Inject token
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    }
-  } else {
-    // Server side fallback
-    if (!config.url.startsWith("http")) {
-      config.url = `http://localhost:5000/api${config.url}`;
     }
   }
   return config;

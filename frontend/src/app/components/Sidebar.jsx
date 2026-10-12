@@ -87,13 +87,14 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
             <Link href="/" className="flex items-center justify-center w-full">
               <div className="flex h-8 w-auto items-center justify-center bg-transparent relative">
                 <Image
-                  src="/LOGO%20GALERIA%20KARYA%20MEDIA%20-%20TRANSPARANT%20PUTIH%20%28%20LANDSCAPE%20%29.png"
+                  src="/LOGO GALERIA KARYA MEDIA - TRANSPARANT PUTIH ( LANDSCAPE ).png"
                   alt="Galeria Karya Media Logo"
                   width={110}
                   height={110}
                   className="h-full w-auto object-contain"
                   style={{ width: 'auto' }}
                   priority
+                  unoptimized
                 />
               </div>
             </Link>

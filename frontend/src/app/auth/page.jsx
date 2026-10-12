@@ -45,7 +45,7 @@ export default function AuthPage() {
         {/* Brand Logo & Title */}
         <div className="text-center mb-6">
           <div className="mx-auto flex h-36 w-auto items-center justify-center mb-1 relative">
-            <Image src="/LOGO GALERIA KARYA MEDIA - TRANSPARANT WARNA.png" alt="Galeria Karya Media Logo" width={340} height={144} className="h-full w-auto object-contain" style={{ width: 'auto' }} priority />
+            <Image src="/LOGO GALERIA KARYA MEDIA - TRANSPARANT WARNA.png" alt="Galeria Karya Media Logo" width={340} height={144} className="h-full w-auto object-contain" style={{ width: 'auto' }} priority unoptimized />
           </div>
           <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">Asset Management</p>
         </div>

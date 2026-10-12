@@ -216,9 +216,9 @@ export default function PeminjamanAsetPage() {
   // Fetch user list untuk Yang Menyerahkan autocomplete
   const fetchUserList = async () => {
     try {
-      const baseURL = typeof window !== "undefined"
+      const baseURL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined"
         ? `http://${window.location.hostname}:5000/api`
-        : "http://localhost:5000/api";
+        : "http://localhost:5000/api");
       const response = await fetch(`${baseURL}/users`, {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
