@@ -101,7 +101,7 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
   const handleDrop = (e) => {
     handleDrag(e); setDragging(false);
     const file = e.dataTransfer?.files?.[0];
-    if (file && ["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
+    if (file && ["image/jpeg", "image/jpg", "image/png", "image/heic", "image/heif", "image/webp"].includes(file.type)) {
       onFileChange({ target: { files: [file] } });
     }
   };
@@ -127,7 +127,7 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
             <input
               ref={cameraRef}
               type="file"
-              accept="image/jpeg,image/jpg,image/png"
+              accept="image/*"
               capture="environment"
               onChange={onFileChange}
               className="hidden"
@@ -141,7 +141,7 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
             <input
               ref={galeriRef}
               type="file"
-              accept="image/jpeg,image/jpg,image/png"
+              accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/webp"
               onChange={onFileChange}
               className="hidden"
             />
@@ -151,7 +151,7 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
               <span className="text-sm font-semibold text-slate-700">Pilih Galeri</span>
             </button>
           </div>
-          <p className="mt-3 text-xs text-slate-400">Seret gambar ke sini atau klik tombol · PNG, JPG, JPEG</p>
+          <p className="mt-3 text-xs text-slate-400">Seret gambar ke sini atau klik tombol · PNG, JPG, JPEG, WebP, HEIC</p>
         </div>
       </div>
     </div>

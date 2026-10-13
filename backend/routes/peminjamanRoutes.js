@@ -18,11 +18,13 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-  if (allowedTypes.includes(file.mimetype)) {
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/heic", "image/heif", "image/webp"];
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp"];
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error("Format file tidak didukung. Hanya JPG, JPEG, dan PNG."));
+    cb(new Error("Format file tidak didukung. Hanya JPG, JPEG, PNG, HEIC, dan WebP."));
   }
 };
 
