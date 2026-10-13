@@ -333,8 +333,8 @@ export default function KelolaUserPage() {
     else setSortOrder("");
   };
 
-  // Helper: check if user is guest (pegawai_id is null)
-  const isGuestUser = (user) => user.pegawaiId === null || user.pegawaiId === undefined;
+  // Helper: check if user is guest (pegawai_id is null dan bukan super admin)
+  const isGuestUser = (user) => user.role !== "super admin" && (user.pegawaiId === null || user.pegawaiId === undefined);
 
   // Filter & Sort
   const processedUsers = useMemo(() => {
@@ -418,12 +418,13 @@ export default function KelolaUserPage() {
     );
   }
 
-  // Calculate generic stats
-  const totalManagedUsers = users.length;
-  const countAdmin = users.filter(u => u.role === "admin").length;
-  const countSupervisor = users.filter(u => u.role === "supervisor").length;
-  const countUser = users.filter(u => u.role === "user").length;
-  const countGuest = users.filter(u => isGuestUser(u)).length;
+  // Calculate generic stats (eksklusif akun selain super admin agar super admin tidak terhitung di stat card manapun)
+  const managedUsers = users.filter(u => u.role !== "super admin");
+  const totalManagedUsers = managedUsers.length;
+  const countAdmin = managedUsers.filter(u => u.role === "admin").length;
+  const countSupervisor = managedUsers.filter(u => u.role === "supervisor").length;
+  const countUser = managedUsers.filter(u => u.role === "user").length;
+  const countGuest = managedUsers.filter(u => isGuestUser(u)).length;
 
   return (
     <div>
@@ -512,7 +513,6 @@ export default function KelolaUserPage() {
               title="Filter by Role"
             >
               <option value="">Semua Role</option>
-              <option value="super admin">⭐ Super Admin</option>
               <option value="admin">🛡️ Admin</option>
               <option value="supervisor">📊 Supervisor</option>
               <option value="user">👥 User</option>

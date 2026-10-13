@@ -164,13 +164,13 @@ const userController = {
         return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
       }
 
+      if (user.role === 'super admin') {
+        return res.status(403).json({ success: false, message: 'Tidak bisa mengubah role Super Admin' });
+      }
+
       // Guest user (pegawai_id = null) tidak bisa ubah role
       if (user.pegawai_id === null) {
         return res.status(403).json({ success: false, message: 'Guest user tidak bisa mengubah role' });
-      }
-
-      if (user.role === 'super admin') {
-        return res.status(403).json({ success: false, message: 'Tidak bisa mengubah role Super Admin' });
       }
 
       // Admin hanya bisa ubah supervisor & user (bukan admin)
