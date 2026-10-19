@@ -6,6 +6,7 @@ import { getAllCategories, createCategory, deleteCategory, updateCategory } from
 import { getAllBrands, createBrand, deleteBrand, updateBrand } from "../../lib/brandService";
 import { getAllAssets } from "../../lib/assetService";
 import { getAllAksesoris } from "../../lib/aksesorisService";
+import { toUpperCaseText } from "../../lib/stringUtils";
 import { Plus, Trash2, X, Check, Tag, Bookmark, AlertTriangle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Info, ChevronUp, ChevronDown, List } from "lucide-react";
 
 export default function KategoriMerekPage() {
@@ -215,10 +216,25 @@ export default function KategoriMerekPage() {
 
   const handleCreateKat = async (e) => {
     e.preventDefault();
-    if (!formKat.nama || !formKat.kode_singkat) { showToast("Nama dan Kode Singkat wajib diisi", "error"); return; }
+    const namaUpper = toUpperCaseText(formKat.nama.trim());
+    const kodeUpper = toUpperCaseText(formKat.kode_singkat.trim());
+    if (!namaUpper || !kodeUpper) { showToast("Nama dan Kode Singkat wajib diisi", "error"); return; }
+    
+    // Cek duplikasi
+    const isNamaExist = categories.find(c => (c.tipe === formKat.tipe || !c.tipe) && (c.nama || "").trim().toUpperCase() === namaUpper);
+    if (isNamaExist) {
+      showToast(`Kategori "${namaUpper}" sudah ada dalam daftar kategori!`, "error");
+      return;
+    }
+    const isKodeExist = categories.find(c => (c.tipe === formKat.tipe || !c.tipe) && (c.kode_singkat || "").trim().toUpperCase() === kodeUpper);
+    if (isKodeExist) {
+      showToast(`Kode singkat "${kodeUpper}" sudah digunakan oleh kategori "${isKodeExist.nama}"!`, "error");
+      return;
+    }
+
     try { 
       setSubmitting(true); 
-      await createCategory(formKat.nama, formKat.kode_singkat, formKat.tipe); 
+      await createCategory(namaUpper, kodeUpper, formKat.tipe); 
       showToast(`Kategori berhasil ditambahkan!`); 
       setShowModalKat(false); 
       setFormKat({ nama: "", kode_singkat: "", tipe: "aset" }); 
@@ -229,10 +245,25 @@ export default function KategoriMerekPage() {
 
   const handleUpdateKat = async (e) => {
     e.preventDefault();
-    if (!showEditKat.nama || !showEditKat.kode_singkat) { showToast("Nama dan Kode Singkat wajib diisi", "error"); return; }
+    const namaUpper = toUpperCaseText(showEditKat.nama.trim());
+    const kodeUpper = toUpperCaseText(showEditKat.kode_singkat.trim());
+    if (!namaUpper || !kodeUpper) { showToast("Nama dan Kode Singkat wajib diisi", "error"); return; }
+    
+    // Cek duplikasi kecuali id sendiri
+    const isNamaExist = categories.find(c => c.id !== showEditKat.id && (c.tipe === showEditKat.tipe || !c.tipe) && (c.nama || "").trim().toUpperCase() === namaUpper);
+    if (isNamaExist) {
+      showToast(`Kategori "${namaUpper}" sudah ada dalam daftar kategori!`, "error");
+      return;
+    }
+    const isKodeExist = categories.find(c => c.id !== showEditKat.id && (c.tipe === showEditKat.tipe || !c.tipe) && (c.kode_singkat || "").trim().toUpperCase() === kodeUpper);
+    if (isKodeExist) {
+      showToast(`Kode singkat "${kodeUpper}" sudah digunakan oleh kategori "${isKodeExist.nama}"!`, "error");
+      return;
+    }
+
     try {
       setSubmitting(true);
-      await updateCategory(showEditKat.id, showEditKat.nama, showEditKat.kode_singkat);
+      await updateCategory(showEditKat.id, namaUpper, kodeUpper);
       showToast("Kategori berhasil diperbarui!");
       setShowEditKat(null);
       await fetchData();
@@ -249,10 +280,19 @@ export default function KategoriMerekPage() {
 
   const handleCreateMerek = async (e) => {
     e.preventDefault();
-    if (!formMerek.nama) { showToast("Nama Merek wajib diisi", "error"); return; }
+    const namaUpper = toUpperCaseText(formMerek.nama.trim());
+    if (!namaUpper) { showToast("Nama Merek wajib diisi", "error"); return; }
+
+    // Cek duplikasi
+    const isNamaExist = brands.find(b => (b.tipe === formMerek.tipe || !b.tipe) && (b.nama || "").trim().toUpperCase() === namaUpper);
+    if (isNamaExist) {
+      showToast(`Merek "${namaUpper}" sudah ada dalam daftar merek!`, "error");
+      return;
+    }
+
     try { 
       setSubmitting(true); 
-      await createBrand(formMerek.nama, formMerek.tipe); 
+      await createBrand(namaUpper, formMerek.tipe); 
       showToast(`Merek berhasil ditambahkan!`); 
       setShowModalMerek(false); 
       setFormMerek({ nama: "", tipe: "aset" }); 
@@ -263,10 +303,19 @@ export default function KategoriMerekPage() {
 
   const handleUpdateMerek = async (e) => {
     e.preventDefault();
-    if (!showEditMerek.nama) { showToast("Nama merek wajib diisi", "error"); return; }
+    const namaUpper = toUpperCaseText(showEditMerek.nama.trim());
+    if (!namaUpper) { showToast("Nama merek wajib diisi", "error"); return; }
+
+    // Cek duplikasi kecuali id sendiri
+    const isNamaExist = brands.find(b => b.id !== showEditMerek.id && (b.tipe === showEditMerek.tipe || !b.tipe) && (b.nama || "").trim().toUpperCase() === namaUpper);
+    if (isNamaExist) {
+      showToast(`Merek "${namaUpper}" sudah ada dalam daftar merek!`, "error");
+      return;
+    }
+
     try {
       setSubmitting(true);
-      await updateBrand(showEditMerek.id, showEditMerek.nama);
+      await updateBrand(showEditMerek.id, namaUpper);
       showToast("Merek berhasil diperbarui!");
       setShowEditMerek(null);
       await fetchData();
@@ -288,6 +337,27 @@ export default function KategoriMerekPage() {
   if (error) {
     return <div className="p-8 text-rose-500 bg-rose-50 rounded-xl">{error}</div>;
   }
+
+  // Duplicate checks for Modal UI
+  const existingKatNama = formKat.nama.trim()
+    ? categories.find(c => (c.tipe === formKat.tipe || !c.tipe) && (c.nama || "").trim().toUpperCase() === formKat.nama.trim().toUpperCase())
+    : null;
+  const existingKatKode = formKat.kode_singkat.trim()
+    ? categories.find(c => (c.tipe === formKat.tipe || !c.tipe) && (c.kode_singkat || "").trim().toUpperCase() === formKat.kode_singkat.trim().toUpperCase())
+    : null;
+  const existingMerek = formMerek.nama.trim()
+    ? brands.find(b => (b.tipe === formMerek.tipe || !b.tipe) && (b.nama || "").trim().toUpperCase() === formMerek.nama.trim().toUpperCase())
+    : null;
+
+  const editKatNamaExist = showEditKat?.nama?.trim()
+    ? categories.find(c => c.id !== showEditKat.id && (c.tipe === showEditKat.tipe || !c.tipe) && (c.nama || "").trim().toUpperCase() === showEditKat.nama.trim().toUpperCase())
+    : null;
+  const editKatKodeExist = showEditKat?.kode_singkat?.trim()
+    ? categories.find(c => c.id !== showEditKat.id && (c.tipe === showEditKat.tipe || !c.tipe) && (c.kode_singkat || "").trim().toUpperCase() === showEditKat.kode_singkat.trim().toUpperCase())
+    : null;
+  const editMerekExist = showEditMerek?.nama?.trim()
+    ? brands.find(b => b.id !== showEditMerek.id && (b.tipe === showEditMerek.tipe || !b.tipe) && (b.nama || "").trim().toUpperCase() === showEditMerek.nama.trim().toUpperCase())
+    : null;
 
   return (
     <div>
@@ -507,17 +577,31 @@ export default function KategoriMerekPage() {
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama jenis aset, contoh: "Kamera", "Lensa"</p>
-                    <input type="text" required placeholder="Contoh: Kamera" value={formKat.nama} onChange={(e) => setFormKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                    <input type="text" required placeholder="Contoh: KAMERA" value={formKat.nama} onChange={(e) => setFormKat(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Singkat</label>
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Singkatan 2-4 huruf, digunakan di kode aset</p>
-                    <input type="text" required placeholder="Contoh: CAM" value={formKat.kode_singkat} onChange={(e) => setFormKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Kode singkat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                    <input type="text" required placeholder="Contoh: CAM" value={formKat.kode_singkat} onChange={(e) => setFormKat(d => ({ ...d, kode_singkat: toUpperCaseText(e.target.value) }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Kode singkat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
+
+                  {(existingKatNama || existingKatKode) && (
+                    <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 animate-in fade-in">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">Data sudah ada di daftar!</p>
+                        <p className="text-amber-700 mt-0.5">
+                          {existingKatNama 
+                            ? `Kategori "${existingKatNama.nama}" (${existingKatNama.kode_singkat}) sudah terdaftar.`
+                            : `Kode singkat "${existingKatKode.kode_singkat}" sudah digunakan oleh kategori "${existingKatKode.nama}".`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
                   <button type="button" onClick={() => setShowModalKat(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
+                  <button type="submit" disabled={submitting || Boolean(existingKatNama || existingKatKode)} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? "Menyimpan..." : "Simpan"}</button>
                 </div>
               </form>
             </div>
@@ -543,12 +627,24 @@ export default function KategoriMerekPage() {
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama produsen/brand, contoh: "Sony", "Canon"</p>
-                    <input type="text" required placeholder="Contoh: Sony" value={formMerek.nama} onChange={(e) => setFormMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                    <input type="text" required placeholder="Contoh: SONY" value={formMerek.nama} onChange={(e) => setFormMerek(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
+
+                  {existingMerek && (
+                    <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 animate-in fade-in">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">Merek sudah terdaftar!</p>
+                        <p className="text-amber-700 mt-0.5">
+                          Merek <span className="font-bold underline">{existingMerek.nama}</span> sudah ada di daftar ({existingMerek.tipe === 'aset' ? 'Aset Utama' : 'Aksesoris'}).
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
                   <button type="button" onClick={() => setShowModalMerek(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan"}</button>
+                  <button type="submit" disabled={submitting || Boolean(existingMerek)} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? "Menyimpan..." : "Simpan"}</button>
                 </div>
               </form>
             </div>
@@ -570,17 +666,31 @@ export default function KategoriMerekPage() {
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama jenis aset, contoh: "Kamera", "Lensa"</p>
-                    <input type="text" required value={showEditKat.nama} onChange={(e) => setShowEditKat(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                    <input type="text" required value={showEditKat.nama} onChange={(e) => setShowEditKat(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Kode Singkat</label>
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Singkatan 2-4 huruf, digunakan di kode aset</p>
-                    <input type="text" required value={showEditKat.kode_singkat} onChange={(e) => setShowEditKat(d => ({ ...d, kode_singkat: e.target.value.toUpperCase() }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Kode singkat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                    <input type="text" required value={showEditKat.kode_singkat} onChange={(e) => setShowEditKat(d => ({ ...d, kode_singkat: toUpperCaseText(e.target.value) }))} className="w-full font-mono rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Kode singkat wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
+
+                  {(editKatNamaExist || editKatKodeExist) && (
+                    <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 animate-in fade-in">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">Data sudah ada di daftar!</p>
+                        <p className="text-amber-700 mt-0.5">
+                          {editKatNamaExist 
+                            ? `Kategori "${editKatNamaExist.nama}" sudah terdaftar.`
+                            : `Kode singkat "${editKatKodeExist.kode_singkat}" sudah dipakai oleh "${editKatKodeExist.nama}".`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
                   <button type="button" onClick={() => setShowEditKat(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
+                  <button type="submit" disabled={submitting || Boolean(editKatNamaExist || editKatKodeExist)} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
                 </div>
               </form>
             </div>
@@ -602,12 +712,24 @@ export default function KategoriMerekPage() {
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama produsen/brand, contoh: "Sony", "Canon"</p>
-                    <input type="text" required value={showEditMerek.nama} onChange={(e) => setShowEditMerek(d => ({ ...d, nama: e.target.value }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
+                    <input type="text" required value={showEditMerek.nama} onChange={(e) => setShowEditMerek(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
+
+                  {editMerekExist && (
+                    <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 animate-in fade-in">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">Merek sudah terdaftar!</p>
+                        <p className="text-amber-700 mt-0.5">
+                          Merek <span className="font-bold underline">{editMerekExist.nama}</span> sudah digunakan.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
                   <button type="button" onClick={() => setShowEditMerek(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
+                  <button type="submit" disabled={submitting || Boolean(editMerekExist)} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? "Menyimpan..." : "Simpan Perubahan"}</button>
                 </div>
               </form>
             </div>

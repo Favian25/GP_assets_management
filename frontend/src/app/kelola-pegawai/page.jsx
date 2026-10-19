@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { getAllPegawai, createPegawai, updatePegawai, deletePegawai } from "../lib/pegawaiService";
 import { getUserContext } from "../lib/authService";
+import { toCapitalEachWord, toSentenceCase } from "../lib/stringUtils";
 import { 
   Search, Plus, Pencil, Trash2, X, AlertTriangle, 
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Check,
@@ -160,7 +161,14 @@ export default function KelolaPegawaiPage() {
     }
     try {
       setSubmitting(true);
-      await createPegawai(formData);
+      const payload = {
+        ...formData,
+        namaLengkap: toCapitalEachWord(formData.namaLengkap.trim()),
+        tempatLahir: formData.tempatLahir ? toCapitalEachWord(formData.tempatLahir.trim()) : "",
+        alamat: formData.alamat ? toSentenceCase(formData.alamat.trim()) : "",
+        email: formData.email.trim(),
+      };
+      await createPegawai(payload);
       showToast("Pegawai berhasil ditambahkan!");
       setFormData(emptyForm);
       setShowModal(false);
@@ -192,7 +200,14 @@ export default function KelolaPegawaiPage() {
     }
     try {
       setSubmitting(true);
-      await updatePegawai(showEdit.id, editFormData);
+      const payload = {
+        ...editFormData,
+        namaLengkap: toCapitalEachWord(editFormData.namaLengkap.trim()),
+        tempatLahir: editFormData.tempatLahir ? toCapitalEachWord(editFormData.tempatLahir.trim()) : "",
+        alamat: editFormData.alamat ? toSentenceCase(editFormData.alamat.trim()) : "",
+        email: editFormData.email.trim(),
+      };
+      await updatePegawai(showEdit.id, payload);
       showToast("Data pegawai berhasil diperbarui!");
       setShowEdit(null);
       fetchPegawai();
@@ -404,7 +419,7 @@ export default function KelolaPegawaiPage() {
                     <input
                       type="text"
                       value={formData.namaLengkap}
-                      onChange={(e) => setFormData({ ...formData, namaLengkap: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, namaLengkap: toCapitalEachWord(e.target.value) })}
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Masukkan nama lengkap"
                       required
@@ -444,7 +459,7 @@ export default function KelolaPegawaiPage() {
                       <input
                         type="text"
                         value={formData.tempatLahir}
-                        onChange={(e) => setFormData({ ...formData, tempatLahir: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, tempatLahir: toCapitalEachWord(e.target.value) })}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="Kota lahir"
                       />
@@ -465,7 +480,7 @@ export default function KelolaPegawaiPage() {
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alamat domisili/tempat tinggal saat ini</p>
                     <textarea
                       value={formData.alamat}
-                      onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, alamat: toSentenceCase(e.target.value) })}
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Alamat lengkap"
                       rows="3"
@@ -495,7 +510,7 @@ export default function KelolaPegawaiPage() {
                     <input
                       type="text"
                       value={editFormData.namaLengkap}
-                      onChange={(e) => setEditFormData({ ...editFormData, namaLengkap: e.target.value })}
+                      onChange={(e) => setEditFormData({ ...editFormData, namaLengkap: toCapitalEachWord(e.target.value) })}
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Nama lengkap"
                       required
@@ -535,7 +550,7 @@ export default function KelolaPegawaiPage() {
                       <input
                         type="text"
                         value={editFormData.tempatLahir}
-                        onChange={(e) => setEditFormData({ ...editFormData, tempatLahir: e.target.value })}
+                        onChange={(e) => setEditFormData({ ...editFormData, tempatLahir: toCapitalEachWord(e.target.value) })}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="Kota lahir"
                       />
@@ -556,7 +571,7 @@ export default function KelolaPegawaiPage() {
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alamat domisili/tempat tinggal saat ini</p>
                     <textarea
                       value={editFormData.alamat}
-                      onChange={(e) => setEditFormData({ ...editFormData, alamat: e.target.value })}
+                      onChange={(e) => setEditFormData({ ...editFormData, alamat: toSentenceCase(e.target.value) })}
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Alamat lengkap"
                       rows="3"

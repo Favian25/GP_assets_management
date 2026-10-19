@@ -8,6 +8,7 @@ import { getAllPeminjaman, deletePeminjaman, searchPeminjaman, approvePeminjaman
 import { getAllAssets } from "../../lib/assetService";
 import { getAllAksesoris } from "../../lib/aksesorisService";
 import { getUserContext } from "../../lib/authService";
+import { toCapitalEachWord } from "../../lib/stringUtils";
 import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, X, AlertTriangle, ChevronUp, ChevronDown, FileText, ArrowLeftRight, PackagePlus } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
@@ -428,10 +429,10 @@ export default function PeminjamanAsetPage() {
     try {
       setSubmitting(true);
       const approveYang = showApproveConfirm.status === 'Menunggu Persetujuan'
-        ? (yangMenyerahkanChoice === 'saya' ? userName : approveYangMenyerahkan)
+        ? toCapitalEachWord(yangMenyerahkanChoice === 'saya' ? userName : approveYangMenyerahkan)
         : null;
       const approvePenerima = showApproveConfirm.status === 'Menunggu Verifikasi'
-        ? (penerimaAsetChoice === 'saya' ? userName : approvePenerimaAset)
+        ? toCapitalEachWord(penerimaAsetChoice === 'saya' ? userName : approvePenerimaAset)
         : null;
       await approvePeminjaman(showApproveConfirm.id, userName, approveYang, approvePenerima);
 

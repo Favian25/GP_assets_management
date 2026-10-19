@@ -470,8 +470,8 @@ export default function EditPeminjamanPage() {
                           {item.tipe === "asset" ? "Alat" : "Aksesoris"}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 truncate">{item.namaAset}</p>
-                          <p className="text-xs text-slate-500 truncate">{item.kodeAset} • {item.kategori} • {item.merek}</p>
+                          <p className="font-semibold text-slate-900 truncate">{item.namaAset || item.nama_aset}</p>
+                          <p className="text-xs text-slate-500 truncate">{(item.kodeAset || item.kode_aset || "-")} • {(item.kategori || "-")} • {(item.merek || "-")}</p>
                         </div>
                       </div>
                       
@@ -487,14 +487,14 @@ export default function EditPeminjamanPage() {
               </div>
 
               {/* Total Value */}
-              {items.some((it) => it.hargaUnit > 0) && (
+              {items.some((it) => (it.hargaUnit || it.harga_unit) > 0) && (
                 <div className="mt-5 pt-5 border-t border-slate-100 flex justify-between items-center bg-emerald-50/50 p-4 rounded-lg border border-emerald-100/50">
                   <p className="text-sm font-semibold text-slate-600">Total Nilai Alat</p>
                   <p className="text-xl font-bold text-emerald-600">
                     Rp{" "}
                     {items
-                      .reduce((sum, item) => sum + (item.hargaUnit * item.jumlah || 0), 0)
-                      .toLocaleString()}
+                      .reduce((sum, item) => sum + ((item.hargaUnit || item.harga_unit || 0) * item.jumlah || 0), 0)
+                      .toLocaleString("id-ID")}
                   </p>
                 </div>
               )}

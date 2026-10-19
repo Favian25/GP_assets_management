@@ -9,6 +9,7 @@ import { getAllCategories, createCategory } from "../../lib/categoryService";
 import { getAllBrands, createBrand } from "../../lib/brandService";
 import { getUserContext } from "../../lib/authService";
 import { getAllUsers } from "../../lib/userService";
+import { toSentenceCase, toUpperCaseText } from "../../lib/stringUtils";
 import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Package, Camera } from "lucide-react";
 
 const getBackendURL = () => {
@@ -309,6 +310,7 @@ export default function DaftarAsetPage() {
   const [toast, setToast] = useState(null);
   const [userRole, setUserRole] = useState("user");
   const [kategoriList, setKategoriList] = useState([]);
+  const [rawCategories, setRawCategories] = useState([]);
   const [merekList, setMerekList] = useState([]);
   const [usersList, setUsersList] = useState([]);
 
@@ -349,9 +351,10 @@ export default function DaftarAsetPage() {
       const cats = await getAllCategories();
       const brds = await getAllBrands();
       const users = await getAllUsers();
-      setKategoriList(cats.map(c => c.nama));
-      setMerekList(brds.map(b => b.nama));
-      setUsersList(users);
+      setRawCategories(cats || []);
+      setKategoriList((cats || []).map(c => c.nama));
+      setMerekList((brds || []).map(b => b.nama));
+      setUsersList(users || []);
     } catch (err) {
       console.error("Failed to load dependencies", err);
     }
@@ -429,33 +432,161 @@ export default function DaftarAsetPage() {
   // CRUD Modals
   const handleCreateKat = async (e) => {
     e.preventDefault();
-    if (!newKatData.nama || !newKatData.kode_singkat) return;
-    try { setSubmitting(true); await createCategory(newKatData.nama, newKatData.kode_singkat); showToast("Kategori ditambahkan!"); setShowKatModal(false); setNewKatData({nama:"",kode_singkat:""}); await fetchDependencies(); }
-    catch { showToast("Gagal menambahkan kategori", "error"); }
-    finally { setSubmitting(false); }
+    const namaFormatted = toUpperCaseText(newKatData.nama.trim());
+    const kodeFormatted = toUpperCaseText(newKatData.kode_singkat.trim());
+
+    if (!namaFormatted || !kodeFormatted) {
+      showToast("Nama dan Kode Singkat wajib diisi", "error");
+      return;
+    }
+
+    // Pengecekan apakah kategori sudah ada di dropdown
+    const existingKat = rawCategories.find(c => (c.nama || "").trim().toUpperCase() === namaFormatted);
+    if (existingKat) {
+      showToast(`Kategori "${namaFormatted}" sudah ada di pilihan dropdown!`, "error");
+      return;
+    }
+
+    const existingKode = rawCategories.find(c => (c.kode_singkat || "").trim().toUpperCase() === kodeFormatted);
+    if (existingKode) {
+      showToast(`Kode singkat "${kodeFormatted}" sudah digunakan oleh kategori "${existingKode.nama}"!`, "error");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await createCategory(namaFormatted, kodeFormatted);
+      showToast("Kategori berhasil ditambahkan!");
+      setShowKatModal(false);
+      setNewKatData({ nama: "", kode_singkat: "" });
+      await fetchDependencies();
+      // Auto-select kategori baru ke form aktif
+      if (showEdit) {
+        setEditFormData(d => ({ ...d, kategori: namaFormatted }));
+      } else {
+        setFormData(d => ({ ...d, kategori: namaFormatted }));
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal menambahkan kategori", "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
   const handleCreateMerek = async (e) => {
     e.preventDefault();
-    if (!newMerekData.nama) return;
-    try { setSubmitting(true); await createBrand(newMerekData.nama); showToast("Merek ditambahkan!"); setShowMerekModal(false); setNewMerekData({nama:""}); await fetchDependencies(); }
-    catch { showToast("Gagal menambahkan merek", "error"); }
-    finally { setSubmitting(false); }
+    const namaFormatted = toUpperCaseText(newMerekData.nama.trim());
+
+    if (!namaFormatted) {
+      showToast("Nama Merek wajib diisi", "error");
+      return;
+    }
+
+    // Pengecekan apakah merek sudah ada di dropdown
+    const exists = merekList.some(m => (m || "").trim().toUpperCase() === namaFormatted);
+    if (exists) {
+      showToast(`Merek "${namaFormatted}" sudah ada di pilihan dropdown!`, "error");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await createBrand(namaFormatted);
+      showToast("Merek berhasil ditambahkan!");
+      setShowMerekModal(false);
+      setNewMerekData({ nama: "" });
+      await fetchDependencies();
+      // Auto-select merek baru ke form aktif
+      if (showEdit) {
+        setEditFormData(d => ({ ...d, merek: namaFormatted }));
+      } else {
+        setFormData(d => ({ ...d, merek: namaFormatted }));
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal menambahkan merek", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const applyExistingMerek = (merekNama) => {
+    if (showEdit) {
+      setEditFormData(d => ({ ...d, merek: merekNama }));
+    } else {
+      setFormData(d => ({ ...d, merek: merekNama }));
+    }
+    setShowMerekModal(false);
+    setNewMerekData({ nama: "" });
+    showToast(`Merek "${merekNama}" dipilih dari dropdown.`, "info");
+  };
+
+  const applyExistingKat = (katNama) => {
+    if (showEdit) {
+      setEditFormData(d => ({ ...d, kategori: katNama }));
+    } else {
+      setFormData(d => ({ ...d, kategori: katNama }));
+    }
+    setShowKatModal(false);
+    setNewKatData({ nama: "", kode_singkat: "" });
+    showToast(`Kategori "${katNama}" dipilih dari dropdown.`, "info");
   };
 
   // CRUD
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!formData.namaAset) { showToast("Nama Aset wajib diisi", "error"); return; }
-    try { setSubmitting(true); await createAsset({ ...formData, kodeAset: undefined }, imageFile); showToast("Aset berhasil ditambahkan!"); setShowModal(false); setFormData(emptyForm); setImageFile(null); setImagePreview(null); await fetchAssets(); }
-    catch (err) { showToast(err.response?.data?.message || "Gagal menambahkan aset", "error"); }
-    finally { setSubmitting(false); }
+    const formattedData = {
+      ...formData,
+      namaAset: toUpperCaseText(formData.namaAset),
+      model: toUpperCaseText(formData.model),
+      noSN: toUpperCaseText(formData.noSN),
+      lokasiAset: toUpperCaseText(formData.lokasiAset),
+      spesifikasi: toSentenceCase(formData.spesifikasi),
+      keterangan: toSentenceCase(formData.keterangan),
+      kodeAset: undefined,
+    };
+    try {
+      setSubmitting(true);
+      await createAsset(formattedData, imageFile);
+      showToast("Aset berhasil ditambahkan!");
+      setShowModal(false);
+      setFormData(emptyForm);
+      setImageFile(null);
+      setImagePreview(null);
+      await fetchAssets();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal menambahkan aset", "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editFormData.namaAset) { showToast("Nama Aset wajib diisi", "error"); return; }
-    try { setSubmitting(true); await updateAsset(showEdit.id, editFormData, editImageFile); showToast("Aset berhasil diperbarui!"); setShowEdit(null); setEditFormData(emptyForm); setEditImageFile(null); setEditImagePreview(null); await fetchAssets(); }
-    catch (err) { showToast(err.response?.data?.message || "Gagal memperbarui aset", "error"); }
-    finally { setSubmitting(false); }
+    const formattedData = {
+      ...editFormData,
+      namaAset: toUpperCaseText(editFormData.namaAset),
+      model: toUpperCaseText(editFormData.model),
+      noSN: toUpperCaseText(editFormData.noSN),
+      lokasiAset: toUpperCaseText(editFormData.lokasiAset),
+      spesifikasi: toSentenceCase(editFormData.spesifikasi),
+      keterangan: toSentenceCase(editFormData.keterangan),
+    };
+    try {
+      setSubmitting(true);
+      await updateAsset(showEdit.id, formattedData, editImageFile);
+      showToast("Aset berhasil diperbarui!");
+      setShowEdit(null);
+      setEditFormData(emptyForm);
+      setEditImageFile(null);
+      setEditImagePreview(null);
+      await fetchAssets();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal memperbarui aset", "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
   const handleUpdateKondisi = async () => {
     if (!showKondisiModal || !newKondisi) return;
@@ -553,7 +684,7 @@ export default function DaftarAsetPage() {
               <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm font-mono font-semibold text-slate-700">{data.kodeAset}</div>
             </div>
           )}
-          <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: e.target.value}))} hint="Nama lengkap aset, contoh: &quot;Sony A7III Body Only&quot;" />
+          <InputField label="Nama Aset" required placeholder="Masukkan nama aset" value={data.namaAset} onChange={(e) => setData(d => ({...d, namaAset: toUpperCaseText(e.target.value)}))} hint="Nama lengkap aset, contoh: &quot;Sony A7III Body Only&quot;" />
           <PengelolaAutocomplete value={data.pengguna} onChange={(e) => setData(d => ({...d, pengguna: e.target.value}))} allUsers={usersList} className={isEdit ? "sm:col-span-2" : ""} hint="Pilih pegawai yang bertanggung jawab atas aset ini" />
           
           <div className="flex gap-1.5 items-end">
@@ -566,7 +697,7 @@ export default function DaftarAsetPage() {
              <button type="button" onClick={() => setShowMerekModal(true)} title="Tambah Merek Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><Plus className="h-4 w-4" /></button>
           </div>
 
-          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: e.target.value}))} hint="Tipe/model spesifik dari aset" />
+          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: toUpperCaseText(e.target.value)}))} hint="Tipe/model spesifik dari aset" />
           <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aset" />
           <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} hint="Jumlah unit aset yang tersedia" />
           <InputField 
@@ -581,8 +712,8 @@ export default function DaftarAsetPage() {
             hint="Harga pembelian per unit"
           />
           <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aset" />
-          <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: e.target.value}))} className="sm:col-span-2" hint="Nomor seri unik di badan aset" />
-          <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: e.target.value}))} rows={3} className="sm:col-span-2" hint="Detail teknis seperti resolusi, kapasitas, dll" />
+          <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: toUpperCaseText(e.target.value)}))} className="sm:col-span-2" hint="Nomor seri unik di badan aset" />
+          <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: toSentenceCase(e.target.value)}))} rows={3} className="sm:col-span-2" hint="Detail teknis seperti resolusi, kapasitas, dll" />
 
         </div>
       </div>
@@ -593,10 +724,10 @@ export default function DaftarAsetPage() {
           Lokasi Aset
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <InputField label="Lokasi Aset" placeholder="Masukkan lokasi aset" value={data.lokasiAset} onChange={(e) => setData(d => ({...d, lokasiAset: e.target.value}))} hint="Tempat penyimpanan aset saat ini" />
+          <InputField label="Lokasi Aset" placeholder="Masukkan lokasi aset" value={data.lokasiAset} onChange={(e) => setData(d => ({...d, lokasiAset: toUpperCaseText(e.target.value)}))} hint="Tempat penyimpanan aset saat ini" />
           <SelectField label="Kondisi Aset" value={data.kondisi} onChange={(e) => setData(d => ({...d, kondisi: e.target.value}))} options={kondisiOptions} placeholder="Pilih Kondisi" hint="Status fisik aset saat ini" />
           <ImageUploadField onFileChange={onImageChange} previewUrl={imgPreview} onClear={onImageClear} />
-          <TextAreaField label="Keterangan" placeholder="Keterangan tambahan" value={data.keterangan} onChange={(e) => setData(d => ({...d, keterangan: e.target.value}))} className="sm:col-span-2" hint="Informasi tambahan mengenai aset" />
+          <TextAreaField label="Keterangan" placeholder="Keterangan tambahan" value={data.keterangan} onChange={(e) => setData(d => ({...d, keterangan: toSentenceCase(e.target.value)}))} className="sm:col-span-2" hint="Informasi tambahan mengenai aset" />
         </div>
       </div>
     </div>
@@ -983,44 +1114,110 @@ export default function DaftarAsetPage() {
           )}
 
           {/* Modal Kategori */}
-          {showKatModal && (
-            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKatModal(false)}>
-              <form onSubmit={handleCreateKat} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                  <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
-                  <div className="space-y-4">
-                    <InputField label="Nama Kategori" required placeholder="Contoh: Kamera" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({...d, nama: e.target.value}))} />
-                    <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => {
-                      const val = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-                      setNewKatData(d => ({...d, kode_singkat: val}));
-                    }} />
+          {showKatModal && (() => {
+            const inputNama = toUpperCaseText(newKatData.nama.trim());
+            const inputKode = toUpperCaseText(newKatData.kode_singkat.trim());
+            const duplicateKat = inputNama ? rawCategories.find(c => (c.nama || "").trim().toUpperCase() === inputNama) : null;
+            const duplicateKode = inputKode ? rawCategories.find(c => (c.kode_singkat || "").trim().toUpperCase() === inputKode) : null;
+
+            return (
+              <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKatModal(false)}>
+                <form onSubmit={handleCreateKat} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
+                    <div className="space-y-4">
+                      <InputField label="Nama Kategori" required placeholder="Contoh: KAMERA" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({...d, nama: toUpperCaseText(e.target.value)}))} />
+                      <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => {
+                        const val = toUpperCaseText(e.target.value.replace(/[^a-zA-Z0-9]/g, ""));
+                        setNewKatData(d => ({...d, kode_singkat: val}));
+                      }} />
+
+                      {/* Alert jika sudah ada di dropdown */}
+                      {duplicateKat && (
+                        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 animate-in fade-in">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-bold text-amber-800">Kategori sudah ada di dropdown!</p>
+                              <p className="mt-0.5 text-amber-700">Kategori <strong>"{duplicateKat.nama}"</strong> sudah tersedia dalam pilihan dropdown.</p>
+                              <button
+                                type="button"
+                                onClick={() => applyExistingKat(duplicateKat.nama)}
+                                className="mt-2 inline-flex items-center gap-1 cursor-pointer rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 transition-colors"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                Gunakan Kategori Ini
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!duplicateKat && duplicateKode && (
+                        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 animate-in fade-in">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-bold text-amber-800">Kode Singkat sudah digunakan!</p>
+                              <p className="mt-0.5 text-amber-700">Kode <strong>"{duplicateKode.kode_singkat}"</strong> sudah dipakai oleh kategori <strong>"{duplicateKode.nama}"</strong>.</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
-                  <button type="button" onClick={() => setShowKatModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">Simpan</button>
-                </div>
-              </form>
-            </div>
-          )}
+                  <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+                    <button type="button" onClick={() => setShowKatModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                    <button type="submit" disabled={submitting || !!duplicateKat || !!duplicateKode} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed">Simpan</button>
+                  </div>
+                </form>
+              </div>
+            );
+          })()}
 
           {/* Modal Merek */}
-          {showMerekModal && (
-            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowMerekModal(false)}>
-              <form onSubmit={handleCreateMerek} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                  <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Merek Baru</h3>
-                  <div className="space-y-4">
-                    <InputField label="Nama Merek" required placeholder="Contoh: Sony" value={newMerekData.nama} onChange={(e) => setNewMerekData(d => ({...d, nama: e.target.value}))} />
+          {showMerekModal && (() => {
+            const inputNama = toUpperCaseText(newMerekData.nama.trim());
+            const duplicateMerek = inputNama ? merekList.find(m => (m || "").trim().toUpperCase() === inputNama) : null;
+
+            return (
+              <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowMerekModal(false)}>
+                <form onSubmit={handleCreateMerek} className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-emerald-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Merek Baru</h3>
+                    <div className="space-y-4">
+                      <InputField label="Nama Merek" required placeholder="Contoh: SONY" value={newMerekData.nama} onChange={(e) => setNewMerekData(d => ({...d, nama: toUpperCaseText(e.target.value)}))} />
+
+                      {/* Alert jika sudah ada di dropdown */}
+                      {duplicateMerek && (
+                        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 animate-in fade-in">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-bold text-amber-800">Merek sudah ada di dropdown!</p>
+                              <p className="mt-0.5 text-amber-700">Merek <strong>"{duplicateMerek}"</strong> sudah tersedia dalam pilihan dropdown.</p>
+                              <button
+                                type="button"
+                                onClick={() => applyExistingMerek(duplicateMerek)}
+                                className="mt-2 inline-flex items-center gap-1 cursor-pointer rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 transition-colors"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                Gunakan Merek Ini
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
-                  <button type="button" onClick={() => setShowMerekModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-                  <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600">Simpan</button>
-                </div>
-              </form>
-            </div>
-          )}
+                  <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+                    <button type="button" onClick={() => setShowMerekModal(false)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
+                    <button type="submit" disabled={submitting || !!duplicateMerek} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed">Simpan</button>
+                  </div>
+                </form>
+              </div>
+            );
+          })()}
 
           {/* Modal Update Kondisi */}
           {showKondisiModal && (

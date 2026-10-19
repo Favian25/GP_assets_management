@@ -222,7 +222,14 @@ export const getPeminjamanByNamaPeminjam = async (namaPeminjam) => {
 export const getItemsWithPricing = async (id) => {
   try {
     const response = await api.get(`/peminjaman/${id}/items-pricing`);
-    return response.data.data || [];
+    const rawItems = response.data.data || [];
+    return rawItems.map((item) => ({
+      ...item,
+      namaAset: item.nama_aset || item.namaAset || "",
+      kodeAset: item.kode_aset || item.kodeAset || "",
+      hargaUnit: item.harga_unit != null ? Number(item.harga_unit) : (item.hargaUnit || 0),
+      hargaTotal: item.harga_total != null ? Number(item.harga_total) : (item.hargaTotal || 0),
+    }));
   } catch (error) {
     console.error(`Error fetching items with pricing for peminjaman ${id}:`, error);
     throw error;

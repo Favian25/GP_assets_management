@@ -7,6 +7,7 @@ import Image from "next/image";
 import { getAllUsers, createUser, updateUser, updateUserRole, deleteUser } from "../lib/userService";
 import { getUserContext } from "../lib/authService";
 import { getAllPegawai, createPegawai } from "../lib/pegawaiService";
+import { toCapitalEachWord, toSentenceCase } from "../lib/stringUtils";
 import { 
   Eye, EyeOff, Search, Plus, Pencil, Trash2, X, Check, 
   ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, 
@@ -154,7 +155,8 @@ export default function KelolaUserPage() {
 
   // Handle nama lengkap autocomplete (only for regular users)
   const handleNamaLengkapChange = (value) => {
-    setNewUser(p => ({...p, namaLengkap: value}));
+    const formatted = newUser.pegawaiId === null ? toCapitalEachWord(value) : value;
+    setNewUser(p => ({...p, namaLengkap: formatted}));
 
     // Only show autocomplete for regular users (not guests)
     if (newUser.pegawaiId !== null) {
@@ -179,7 +181,7 @@ export default function KelolaUserPage() {
 
   // Buka modal tambah pegawai dengan nama pre-filled dari input
   const openAddPegawaiModal = () => {
-    setNewPegawaiForm({ namaLengkap: newUser.namaLengkap, email: "", nomorHp: "", tempatLahir: "", tanggalLahir: "", alamat: "" });
+    setNewPegawaiForm({ namaLengkap: toCapitalEachWord(newUser.namaLengkap.trim()), email: "", nomorHp: "", tempatLahir: "", tanggalLahir: "", alamat: "" });
     setShowPegawaiDropdown(false);
     setShowAddPegawaiModal(true);
   };
@@ -190,7 +192,14 @@ export default function KelolaUserPage() {
     if (!newPegawaiForm.namaLengkap) return;
     setSubmittingPegawai(true);
     try {
-      const res = await createPegawai(newPegawaiForm);
+      const payload = {
+        ...newPegawaiForm,
+        namaLengkap: toCapitalEachWord(newPegawaiForm.namaLengkap.trim()),
+        tempatLahir: newPegawaiForm.tempatLahir ? toCapitalEachWord(newPegawaiForm.tempatLahir.trim()) : "",
+        alamat: newPegawaiForm.alamat ? toSentenceCase(newPegawaiForm.alamat.trim()) : "",
+        email: newPegawaiForm.email.trim(),
+      };
+      const res = await createPegawai(payload);
       const created = res.data || res;
       // Refresh daftar pegawai
       const updated = await getAllPegawai();
@@ -221,7 +230,13 @@ export default function KelolaUserPage() {
 
     try {
       setSubmitting(true);
-      await createUser(newUser);
+      const payload = {
+        ...newUser,
+        namaLengkap: toCapitalEachWord(newUser.namaLengkap.trim()),
+        email: newUser.email.trim(),
+        keterangan: newUser.keterangan ? toSentenceCase(newUser.keterangan.trim()) : "",
+      };
+      await createUser(payload);
       const userType = newUser.pegawaiId === null ? "👤 Guest" : "👨 Regular";
       showToast(`User ${userType} berhasil ditambahkan!`);
       setShowAddModal(false);
@@ -257,7 +272,13 @@ export default function KelolaUserPage() {
     }
     try {
       setSubmitting(true);
-      await updateUser(showEditModal.id, editForm);
+      const payload = {
+        ...editForm,
+        namaLengkap: toCapitalEachWord(editForm.namaLengkap.trim()),
+        email: editForm.email.trim(),
+        keterangan: editForm.keterangan ? toSentenceCase(editForm.keterangan.trim()) : "",
+      };
+      await updateUser(showEditModal.id, payload);
       showToast("Data user berhasil diperbarui!");
       setShowEditModal(null);
       fetchUsers();
@@ -794,7 +815,7 @@ export default function KelolaUserPage() {
                         <div>
                           <label className="mb-1.5 block text-sm font-medium text-slate-700">Keterangan</label>
                           <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alasan/status guest (misal: Magang, Freelance)</p>
-                          <input type="text" value={newUser.keterangan} onChange={(e) => setNewUser(p => ({...p, keterangan: e.target.value}))} placeholder="Contoh: Magang 3 bulan"
+                          <input type="text" value={newUser.keterangan} onChange={(e) => setNewUser(p => ({...p, keterangan: toSentenceCase(e.target.value)}))} placeholder="Contoh: Magang 3 bulan"
                             className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                         </div>
                       </div>
@@ -833,7 +854,7 @@ export default function KelolaUserPage() {
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span className="text-rose-500">*</span></label>
                       <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama user atau pilih pegawai yang sudah ada</p>
-                      <input type="text" value={editForm.namaLengkap} onChange={(e) => setEditForm(p => ({...p, namaLengkap: e.target.value}))} placeholder="Nama lengkap"
+                      <input type="text" value={editForm.namaLengkap} onChange={(e) => setEditForm(p => ({...p, namaLengkap: toCapitalEachWord(e.target.value)}))} placeholder="Nama lengkap"
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" required
                         onInvalid={(e) => e.target.setCustomValidity("Nama lengkap wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                     </div>
@@ -873,7 +894,7 @@ export default function KelolaUserPage() {
                       <div>
                         <label className="mb-1.5 block text-sm font-medium text-slate-700">Keterangan</label>
                         <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alasan/status guest (misal: Magang, Freelance)</p>
-                        <input type="text" value={editForm.keterangan} onChange={(e) => setEditForm(p => ({...p, keterangan: e.target.value}))} placeholder="Contoh: Magang 3 bulan"
+                        <input type="text" value={editForm.keterangan} onChange={(e) => setEditForm(p => ({...p, keterangan: toSentenceCase(e.target.value)}))} placeholder="Contoh: Magang 3 bulan"
                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                       </div>
                     </div>
@@ -1050,7 +1071,7 @@ export default function KelolaUserPage() {
                     <input
                       type="text"
                       value={newPegawaiForm.namaLengkap}
-                      onChange={(e) => setNewPegawaiForm(p => ({ ...p, namaLengkap: e.target.value }))}
+                      onChange={(e) => setNewPegawaiForm(p => ({ ...p, namaLengkap: toCapitalEachWord(e.target.value) }))}
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Masukkan nama lengkap"
                       required
@@ -1091,7 +1112,7 @@ export default function KelolaUserPage() {
                       <input
                         type="text"
                         value={newPegawaiForm.tempatLahir}
-                        onChange={(e) => setNewPegawaiForm(p => ({ ...p, tempatLahir: e.target.value }))}
+                        onChange={(e) => setNewPegawaiForm(p => ({ ...p, tempatLahir: toCapitalEachWord(e.target.value) }))}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="Kota lahir"
                       />
@@ -1112,7 +1133,7 @@ export default function KelolaUserPage() {
                     <p className="mb-1.5 text-xs text-slate-400 italic">↳ Alamat domisili/tempat tinggal saat ini</p>
                     <textarea
                       value={newPegawaiForm.alamat}
-                      onChange={(e) => setNewPegawaiForm(p => ({ ...p, alamat: e.target.value }))}
+                      onChange={(e) => setNewPegawaiForm(p => ({ ...p, alamat: toSentenceCase(e.target.value) }))}
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Alamat lengkap"
                       rows="3"

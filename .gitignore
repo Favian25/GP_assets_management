@@ -95,3 +95,8 @@ backend/scratch/
 # Additional Logs (root level)
 # ============================
 *.log
+
+# ============================
+# Documentation
+# ============================
+docs/

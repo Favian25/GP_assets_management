@@ -10,6 +10,7 @@ import { getAllAksesoris } from "../../../lib/aksesorisService";
 import { getActivePegawai, getApprovers } from "../../../lib/pegawaiService";
 import api from "../../../lib/api";
 import { getUserContext } from "../../../lib/authService";
+import { toCapitalEachWord, toSentenceCase } from "../../../lib/stringUtils";
 import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, Image as ImageIcon, Search } from "lucide-react";
 
 export default function TambahPeminjamanPage() {
@@ -216,7 +217,7 @@ export default function TambahPeminjamanPage() {
 
   const updateKeperluan = (index, field, value) => {
     const updated = [...keperluanList];
-    updated[index][field] = value;
+    updated[index][field] = field === "keperluan" ? toSentenceCase(value) : value;
     setKeperluanList(updated);
   };
 
@@ -315,13 +316,17 @@ export default function TambahPeminjamanPage() {
       const seconds = String(now.getSeconds()).padStart(2, "0");
       const dateTimeStr = `${tanggalPeminjaman} ${hours}:${minutes}:${seconds}`;
 
+      const formattedKeperluanList = keperluanList
+        .filter((k) => k.keperluan?.trim())
+        .map((k) => ({ ...k, keperluan: toSentenceCase(k.keperluan.trim()) }));
+
       await createPeminjaman(
         {
-          namaPeminjam: namaPeminjam,
-          yangMenyerahkan: yangMenyerahkan || null,
+          namaPeminjam: toCapitalEachWord(namaPeminjam.trim()),
+          yangMenyerahkan: yangMenyerahkan?.trim() ? toCapitalEachWord(yangMenyerahkan.trim()) : null,
           tanggalPeminjaman: dateTimeStr,
-          alasanPeminjaman: keperluanList[0]?.keperluan?.trim() || "",
-          keperluanList: keperluanList.filter((k) => k.keperluan?.trim()),
+          alasanPeminjaman: formattedKeperluanList[0]?.keperluan || "",
+          keperluanList: formattedKeperluanList,
           items: items.map((item) => ({
             [item.tipe === "asset" ? "assetId" : "aksesorisId"]: item.id,
             jumlah: parseInt(item.jumlah) || 0,
@@ -436,7 +441,7 @@ export default function TambahPeminjamanPage() {
                   type="text"
                   placeholder="Masukkan nama peminjam"
                   value={namaPeminjam}
-                  onChange={(e) => setNamaPeminjam(e.target.value)}
+                  onChange={(e) => setNamaPeminjam(toCapitalEachWord(e.target.value))}
                   readOnly={userRole !== "super admin"}
                   className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none ${userRole !== "super admin" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""}`}
                   required
@@ -470,7 +475,7 @@ export default function TambahPeminjamanPage() {
                     type="text"
                     placeholder="Masukkan nama yang menyerahkan"
                     value={yangMenyerahkan}
-                    onChange={(e) => setYangMenyerahkan(e.target.value)}
+                    onChange={(e) => setYangMenyerahkan(toCapitalEachWord(e.target.value))}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                     required
                   />
