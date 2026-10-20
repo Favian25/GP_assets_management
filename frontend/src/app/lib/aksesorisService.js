@@ -116,3 +116,13 @@ export async function searchAksesoris(keyword) {
   });
   return mapAksesorisArrayToFrontend(response.data.data);
 }
+
+/**
+ * POST import massal aksesoris dari data Excel
+ * @param {Array} items - array of aksesoris objects
+ * @returns {Promise<Object>} hasil import
+ */
+export async function importAksesoris(items) {
+  const response = await api.post("/aksesoris/import", { items });
+  return response.data;
+}

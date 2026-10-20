@@ -395,6 +395,147 @@ const assetController = {
       });
     }
   },
+
+  // POST /api/assets/import (Import massal dari Excel)
+  importExcel: async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+      const { items } = req.body;
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Data import tidak boleh kosong",
+        });
+      }
+
+      await connection.beginTransaction();
+
+      const nextNumMap = {};
+      const inserted = [];
+
+      for (const item of items) {
+        const namaAset = (item.namaAset || item.nama_aset || "").trim();
+        if (!namaAset) continue; // Lewati jika nama aset kosong
+
+        const kategori = (item.kategori || "").trim() || null;
+        const merek = (item.merek || "").trim() || null;
+        const model = (item.model || "").trim() || null;
+        let jenisAset = (item.jenisAset || item.jenis_aset || "").trim();
+        if (jenisAset !== "Galeria Studio" && jenisAset !== "Galeria Production") {
+          if (jenisAset.toLowerCase().includes("studio")) jenisAset = "Galeria Studio";
+          else jenisAset = "Galeria Production";
+        }
+
+        // Tentukan kode singkat kategori
+        let kodeSingkat = "GEN";
+        if (kategori) {
+          const [catRows] = await connection.query(
+            "SELECT kode_singkat FROM categories WHERE nama = ? AND tipe = 'aset'",
+            [kategori]
+          );
+          if (catRows[0] && catRows[0].kode_singkat) {
+            kodeSingkat = catRows[0].kode_singkat.toUpperCase().slice(0, 4);
+          } else {
+            kodeSingkat = kategori.replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() || "GEN";
+          }
+        }
+
+        const jenisKode = jenisAset === "Galeria Production" ? "GPRO" : "GS";
+        const prefix = `AST-${jenisKode}-${kodeSingkat}-`;
+
+        // Tentukan nomor urut berikutnya per prefix
+        if (nextNumMap[prefix] === undefined) {
+          const [rows] = await connection.query(
+            "SELECT kode_aset FROM assets WHERE kode_aset LIKE ? ORDER BY id DESC LIMIT 1",
+            [`${prefix}%`]
+          );
+          let currentMax = 0;
+          if (rows[0] && rows[0].kode_aset) {
+            const match = rows[0].kode_aset.match(new RegExp(`AST-${jenisKode}-${kodeSingkat}-(\\d+)`));
+            if (match) currentMax = parseInt(match[1], 10);
+          }
+          nextNumMap[prefix] = currentMax + 1;
+        } else {
+          nextNumMap[prefix] += 1;
+        }
+
+        const kodeAset = `${prefix}${String(nextNumMap[prefix]).padStart(3, "0")}`;
+
+        const rawJumlah = parseInt(item.jumlah, 10);
+        const jumlah = !isNaN(rawJumlah) && rawJumlah > 0 ? rawJumlah : 1;
+        const rawHarga = parseFloat(item.hargaAset || item.harga_aset);
+        const hargaAset = !isNaN(rawHarga) && rawHarga >= 0 ? rawHarga : 0;
+        const kondisi = ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"].includes(item.kondisi)
+          ? item.kondisi
+          : "Siap Digunakan";
+        const lokasiAset = (item.lokasiAset || item.lokasi_aset || "").trim() || null;
+        const pengguna = (item.pengguna || "").trim() || null;
+        const noSn = (item.noSN || item.no_sn || "").trim() || null;
+        const spesifikasi = (item.spesifikasi || "").trim() || null;
+        const keterangan = (item.keterangan || "").trim() || null;
+        const tanggalPembelian = (item.tanggalPembelian || item.tanggal_pembelian || "").trim() || null;
+
+        const [insertRes] = await connection.query(
+          `INSERT INTO assets
+            (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, jenis_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            kodeAset,
+            namaAset,
+            pengguna,
+            kategori,
+            merek,
+            model,
+            noSn,
+            spesifikasi,
+            lokasiAset,
+            jenisAset,
+            kondisi,
+            null,
+            null, // gambar kosong
+            keterangan,
+            jumlah,
+            hargaAset,
+            jumlah,
+            tanggalPembelian,
+            req.user?.userId || req.user?.id || null,
+          ]
+        );
+
+        inserted.push({ id: insertRes.insertId, kodeAset, namaAset });
+      }
+
+      await connection.commit();
+
+      if (inserted.length > 0) {
+        await AuditLog.create({
+          userId: req.user?.userId || req.user?.id,
+          userName: req.user?.nama,
+          action: "CREATE",
+          entityType: "Aset",
+          entityId: inserted[0].id,
+          details: `Import massal ${inserted.length} aset dari file Excel`,
+        });
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Berhasil mengimpor ${inserted.length} data aset`,
+        count: inserted.length,
+        data: inserted,
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error import aset:", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal mengimpor data aset",
+        error: error.message,
+      });
+    } finally {
+      connection.release();
+    }
+  },
 };
 
 module.exports = assetController;

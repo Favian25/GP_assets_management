@@ -37,6 +37,7 @@ const upload = multer({
 router.get("/search", verifyToken, aksesorisController.search);         // GET  /api/aksesoris/search?q=keyword
 router.get("/", verifyToken, aksesorisController.getAll);                // GET  /api/aksesoris
 router.get("/:id", verifyToken, aksesorisController.getById);            // GET  /api/aksesoris/:id
+router.post("/import", verifyToken, requireRole("admin", "super admin"), aksesorisController.importExcel); // POST /api/aksesoris/import
 router.post("/", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), aksesorisController.create);     // POST /api/aksesoris
 router.put("/:id", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), aksesorisController.update);   // PUT  /api/aksesoris/:id
 router.patch("/:id/kondisi", verifyToken, requireRole("admin", "super admin"), aksesorisController.updateKondisi);           // PATCH /api/aksesoris/:id/kondisi

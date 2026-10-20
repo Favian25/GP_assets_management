@@ -388,6 +388,140 @@ const aksesorisController = {
       });
     }
   },
+
+  // POST /api/aksesoris/import (Import massal dari Excel)
+  importExcel: async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+      const { items } = req.body;
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Data import tidak boleh kosong",
+        });
+      }
+
+      await connection.beginTransaction();
+
+      const nextNumMap = {};
+      const inserted = [];
+
+      for (const item of items) {
+        const namaAksesoris = (item.namaAksesoris || item.nama_aksesoris || "").trim();
+        if (!namaAksesoris) continue; // Lewati jika nama aksesoris kosong
+
+        const kategori = (item.kategori || "").trim() || null;
+        const merek = (item.merek || "").trim() || null;
+        const model = (item.model || "").trim() || null;
+        let jenisAset = (item.jenisAset || item.jenis_aset || "").trim();
+        if (jenisAset !== "Galeria Studio" && jenisAset !== "Galeria Production") {
+          if (jenisAset.toLowerCase().includes("studio")) jenisAset = "Galeria Studio";
+          else jenisAset = "Galeria Production";
+        }
+
+        // Tentukan kode singkat kategori
+        let kodeSingkat = "GEN";
+        if (kategori) {
+          const [catRows] = await connection.query(
+            "SELECT kode_singkat FROM categories WHERE nama = ? AND tipe = 'aksesoris'",
+            [kategori]
+          );
+          if (catRows[0] && catRows[0].kode_singkat) {
+            kodeSingkat = catRows[0].kode_singkat.toUpperCase().slice(0, 4);
+          } else {
+            kodeSingkat = kategori.replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() || "GEN";
+          }
+        }
+
+        const jenisKode = jenisAset === "Galeria Production" ? "GPRO" : "GS";
+        const prefix = `ACC-${jenisKode}-${kodeSingkat}-`;
+
+        // Tentukan nomor urut berikutnya per prefix
+        if (nextNumMap[prefix] === undefined) {
+          const [rows] = await connection.query(
+            "SELECT kode_aksesoris FROM aksesoris WHERE kode_aksesoris LIKE ? ORDER BY id DESC LIMIT 1",
+            [`${prefix}%`]
+          );
+          let currentMax = 0;
+          if (rows[0] && rows[0].kode_aksesoris) {
+            const match = rows[0].kode_aksesoris.match(new RegExp(`ACC-${jenisKode}-${kodeSingkat}-(\\d+)`));
+            if (match) currentMax = parseInt(match[1], 10);
+          }
+          nextNumMap[prefix] = currentMax + 1;
+        } else {
+          nextNumMap[prefix] += 1;
+        }
+
+        const kodeAksesoris = `${prefix}${String(nextNumMap[prefix]).padStart(3, "0")}`;
+
+        const rawJumlah = parseInt(item.jumlahUnit || item.jumlah_unit || item.jumlah, 10);
+        const jumlahUnit = !isNaN(rawJumlah) && rawJumlah > 0 ? rawJumlah : 1;
+        const rawHarga = parseFloat(item.hargaAset || item.harga_aset);
+        const hargaAset = !isNaN(rawHarga) && rawHarga >= 0 ? rawHarga : 0;
+        const kondisi = ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"].includes(item.kondisi)
+          ? item.kondisi
+          : "Siap Digunakan";
+        const lokasi = (item.lokasi || "").trim() || null;
+        const keterangan = (item.keterangan || "").trim() || null;
+        const tanggalPembelian = (item.tanggalPembelian || item.tanggal_pembelian || "").trim() || null;
+
+        const [insertRes] = await connection.query(
+          `INSERT INTO aksesoris
+            (kode_aksesoris, nama_aksesoris, kategori, merek, model, jumlah_unit, harga_aset, tanggal_pembelian, jenis_aset, kondisi, lokasi, gambar, keterangan, jumlah_total, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            kodeAksesoris,
+            namaAksesoris,
+            kategori,
+            merek,
+            model,
+            jumlahUnit,
+            hargaAset,
+            tanggalPembelian,
+            jenisAset,
+            kondisi,
+            lokasi,
+            null, // gambar kosong
+            keterangan,
+            jumlahUnit,
+            req.user?.userId || req.user?.id || null,
+          ]
+        );
+
+        inserted.push({ id: insertRes.insertId, kodeAksesoris, namaAksesoris });
+      }
+
+      await connection.commit();
+
+      if (inserted.length > 0) {
+        await AuditLog.create({
+          userId: req.user?.userId || req.user?.id,
+          userName: req.user?.nama,
+          action: "CREATE",
+          entityType: "Aksesoris",
+          entityId: inserted[0].id,
+          details: `Import massal ${inserted.length} aksesoris dari file Excel`,
+        });
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Berhasil mengimpor ${inserted.length} data aksesoris`,
+        count: inserted.length,
+        data: inserted,
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error import aksesoris:", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal mengimpor data aksesoris",
+        error: error.message,
+      });
+    } finally {
+      connection.release();
+    }
+  },
 };
 
 module.exports = aksesorisController;

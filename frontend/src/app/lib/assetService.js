@@ -271,3 +271,13 @@ export async function getDashboardStats() {
     recentAssets: assets.slice(0, 5),
   };
 }
+
+/**
+ * POST import massal aset dari data Excel
+ * @param {Array} items - array of asset objects
+ * @returns {Promise<Object>} hasil import
+ */
+export async function importAssets(items) {
+  const response = await api.post("/assets/import", { items });
+  return response.data;
+}

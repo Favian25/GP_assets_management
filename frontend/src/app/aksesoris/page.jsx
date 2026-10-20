@@ -4,12 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { getAllAksesoris, createAksesoris, updateAksesoris, deleteAksesoris, searchAksesoris, updateAksesorisKondisi } from "../lib/aksesorisService";
+import { getAllAksesoris, createAksesoris, updateAksesoris, deleteAksesoris, searchAksesoris, updateAksesorisKondisi, importAksesoris } from "../lib/aksesorisService";
 import { getAllCategories, createCategory } from "../lib/categoryService";
 import { getAllBrands, createBrand } from "../lib/brandService";
 import { getUserContext } from "../lib/authService";
 import { toSentenceCase, toUpperCaseText } from "../lib/stringUtils";
-import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu, Camera } from "lucide-react";
+import { exportToExcel, downloadAksesorisTemplate, parseExcelFile } from "../lib/exportUtils";
+import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu, Camera, Download, Upload, FileSpreadsheet } from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -212,6 +213,15 @@ export default function AksesorisPage() {
   const [newKondisi, setNewKondisi] = useState("");
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Import Excel States
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importData, setImportData] = useState([]);
+  const [importError, setImportError] = useState("");
+  const [importLoading, setImportLoading] = useState(false);
+  const [importDragging, setImportDragging] = useState(false);
+  const importFileInputRef = useRef(null);
 
   useEffect(() => { 
     setMounted(true);
@@ -490,6 +500,123 @@ export default function AksesorisPage() {
       setDeleteBlockedAlert({ message: data?.message || "Gagal menghapus aksesoris", item, activePeminjaman: data?.activePeminjaman || [] });
     } finally { setSubmitting(false); }
   };
+
+  // Export Excel
+  const handleExportExcel = async () => {
+    const columns = [
+      { header: "Kode Aksesoris", dataKey: "kodeAksesoris" },
+      { header: "Nama Aksesoris", dataKey: "namaAksesoris" },
+      { header: "Jenis Brand", dataKey: "jenisAset" },
+      { header: "Kategori", dataKey: "kategori" },
+      { header: "Merek", dataKey: "merek" },
+      { header: "Model", dataKey: "model" },
+      { header: "Jumlah Unit", dataKey: "jumlahUnit" },
+      { header: "Harga Aset", dataKey: "hargaAset" },
+      { header: "Kondisi", dataKey: "kondisi" },
+      { header: "Lokasi", dataKey: "lokasi" },
+      { header: "Tanggal Pembelian", dataKey: "tanggalPembelian" },
+      { header: "Keterangan", dataKey: "keterangan" },
+    ];
+    const dataToExport = filteredData.length > 0 ? filteredData : assets;
+    try {
+      await exportToExcel(columns, dataToExport, `Data_Aksesoris_Galeria_${new Date().toISOString().split("T")[0]}.xlsx`, "Data_Aksesoris");
+      showToast(`Berhasil mengekspor ${dataToExport.length} data aksesoris`);
+    } catch (err) {
+      console.error("Export error:", err);
+      showToast("Gagal mengekspor data ke Excel", "error");
+    }
+  };
+
+  // Import Excel Handlers
+  const processImportFile = async (file) => {
+    if (!file) return;
+
+    // Pengecekan ekstensi file
+    const ext = file.name ? file.name.split('.').pop().toLowerCase() : "";
+    if (!['xlsx', 'xls'].includes(ext)) {
+      setImportError("Format file tidak didukung. Harap unggah file berekstensi .xlsx atau .xls.");
+      return;
+    }
+
+    setImportError("");
+    try {
+      const rawRows = await parseExcelFile(file);
+      if (!rawRows || rawRows.length === 0) {
+        setImportError("File Excel kosong atau tidak memiliki baris data.");
+        setImportData([]);
+        setImportFile(null);
+        return;
+      }
+
+      const mapped = rawRows.map((r, idx) => {
+        const namaAksesoris = (r["Nama Aksesoris"] || r["nama_aksesoris"] || r["Nama"] || r["nama"] || "").toString().trim();
+        const jenisRaw = (r["Jenis Brand"] || r["jenis_aset"] || r["Brand"] || "").toString().trim();
+        let jenisAset = "Galeria Production";
+        if (jenisRaw.toLowerCase().includes("studio")) jenisAset = "Galeria Studio";
+
+        return {
+          idx: idx + 1,
+          namaAksesoris: toUpperCaseText(namaAksesoris),
+          jenisAset,
+          kategori: (r["Kategori"] || r["kategori"] || "").toString().trim(),
+          merek: (r["Merek"] || r["merek"] || "").toString().trim(),
+          model: (r["Model"] || r["model"] || "").toString().trim(),
+          jumlahUnit: parseInt(r["Jumlah Unit"] || r["Jumlah"] || r["jumlah_unit"] || 1, 10) || 1,
+          hargaAset: parseFloat(r["Harga Aset"] || r["Harga"] || r["harga_aset"] || 0) || 0,
+          tanggalPembelian: (r["Tanggal Pembelian"] || r["tanggal_pembelian"] || "").toString().trim(),
+          lokasi: toUpperCaseText((r["Lokasi"] || r["lokasi"] || "").toString().trim()),
+          kondisi: (r["Kondisi"] || r["kondisi"] || "Siap Digunakan").toString().trim(),
+          keterangan: toSentenceCase((r["Keterangan"] || r["keterangan"] || "").toString().trim()),
+          isValid: Boolean(namaAksesoris),
+        };
+      });
+
+      setImportData(mapped);
+      setImportFile(file);
+    } catch (err) {
+      console.error("Error parse excel:", err);
+      setImportError("Gagal membaca file Excel. Pastikan format file .xlsx atau .xls valid.");
+      setImportData([]);
+      setImportFile(null);
+    } finally {
+      if (importFileInputRef.current) importFileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileImportChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) processImportFile(file);
+  };
+
+  const handleImportDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setImportDragging(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) processImportFile(file);
+  };
+
+  const handleConfirmImport = async () => {
+    const validItems = importData.filter(d => d.isValid);
+    if (validItems.length === 0) {
+      showToast("Tidak ada data yang valid untuk diimpor", "error");
+      return;
+    }
+
+    try {
+      setImportLoading(true);
+      const res = await importAksesoris(validItems);
+      showToast(res.message || `Berhasil mengimpor ${validItems.length} aksesoris!`);
+      setShowImportModal(false);
+      setImportFile(null);
+      setImportData([]);
+      await fetchData();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal mengimpor data aksesoris", "error");
+    } finally {
+      setImportLoading(false);
+    }
+  };
   const openEdit = (item) => {
     setEditFormData({
       kodeAksesoris: item.kodeAksesoris || "", namaAksesoris: item.namaAksesoris || "",
@@ -700,9 +827,9 @@ export default function AksesorisPage() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-            <div className="relative w-full sm:w-72">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 border-b border-slate-300 bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-56">
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
               <input type="text" placeholder="Cari nama aksesoris..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                 className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" />
@@ -710,7 +837,7 @@ export default function AksesorisPage() {
             <select 
               value={kondisiFilter} 
               onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full sm:w-48 rounded-lg border-2 border-slate-200 py-2 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
+              className="w-full sm:w-36 rounded-lg border-2 border-slate-200 py-2 px-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
             >
               <option value="">Semua Kondisi</option>
               {kondisiOptions.map(opt => (
@@ -720,18 +847,47 @@ export default function AksesorisPage() {
             <select
               value={brandFilter}
               onChange={(e) => { setBrandFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full sm:w-48 rounded-lg border-2 border-slate-200 py-2 px-3 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
+              className="w-full sm:w-40 rounded-lg border-2 border-slate-200 py-2 px-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
             >
               <option value="">Semua Brand</option>
               <option value="Galeria studio">Galeria Studio</option>
               <option value="Galeria production">Galeria Production</option>
             </select>
           </div>
-          <button onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
-            className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover">
-            <Plus className="h-4 w-4" />
-            Tambah Aksesoris
-          </button>
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 w-full sm:w-auto shrink-0">
+            {/* Export Excel Button */}
+            <button
+              onClick={handleExportExcel}
+              title="Export data ke file Excel"
+              className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 whitespace-nowrap"
+            >
+              <Download className="h-4 w-4" />
+              Export Excel
+            </button>
+
+            {/* Import Excel Button */}
+            {["super admin", "admin"].includes(userRole) && (
+              <button
+                onClick={() => { setImportFile(null); setImportData([]); setImportError(""); setShowImportModal(true); }}
+                title="Import data massal dari file Excel"
+                className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 whitespace-nowrap"
+              >
+                <Upload className="h-4 w-4" />
+                Import Excel
+              </button>
+            )}
+
+            {/* Tambah Aksesoris Button */}
+            {["super admin", "admin"].includes(userRole) && (
+              <button
+                onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
+                className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover whitespace-nowrap"
+              >
+                <Plus className="h-4 w-4" />
+                Tambah Aksesoris
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Table Controls (Pagination Top) & Table */}
@@ -812,6 +968,210 @@ export default function AksesorisPage() {
                   <button type="submit" disabled={submitting} className="cursor-pointer rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Menyimpan..." : "Simpan Aksesoris"}</button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* Modal Import Excel */}
+          {showImportModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => !importLoading && setShowImportModal(false)}>
+              <div className="max-h-[90vh] w-full max-w-4xl flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-600 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                {/* Modal Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-blue-100 rounded-lg text-blue-700">
+                      <FileSpreadsheet className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-blue-950">Import Data Aksesoris dari Excel</h2>
+                      <p className="text-xs text-blue-700">Unggah file Excel (.xlsx / .xls) untuk menambahkan data aksesoris secara massal</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={importLoading}
+                    onClick={() => setShowImportModal(false)}
+                    className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                  {/* Panduan & Tombol Download Template */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-slate-700">💡 Petunjuk Pengisian Excel:</p>
+                      <ul className="text-xs text-slate-500 list-disc list-inside space-y-0.5">
+                        <li>Kode aksesoris akan dibuat <strong>otomatis</strong> oleh sistem secara berurutan.</li>
+                        <li>Kolom <strong>Nama Aksesoris</strong> wajib diisi. Kategori, merek, dan kolom lainnya jika kosong di Excel akan dikosongkan.</li>
+                        <li>Gambar aksesoris otomatis bernilai kosong dan dapat dilengkapi nanti melalui menu edit.</li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={downloadAksesorisTemplate}
+                      className="cursor-pointer shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 text-xs font-medium rounded-lg shadow-sm transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download Format Excel
+                    </button>
+                  </div>
+
+                  {/* Hidden File Input */}
+                  <input
+                    ref={importFileInputRef}
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleFileImportChange}
+                    className="hidden"
+                  />
+
+                  {/* Upload Box jika belum ada file (Mendukung Click Upload & Drag and Drop) */}
+                  {!importFile ? (
+                    <div
+                      onClick={() => importFileInputRef.current?.click()}
+                      onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setImportDragging(true); }}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setImportDragging(true); }}
+                      onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setImportDragging(false); }}
+                      onDrop={handleImportDrop}
+                      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all group ${
+                        importDragging
+                          ? "border-blue-500 bg-blue-50/70 scale-[1.01] ring-4 ring-blue-100"
+                          : "border-slate-300 hover:border-blue-500 hover:bg-blue-50/30"
+                      }`}
+                    >
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm border transition-all ${
+                        importDragging
+                          ? "bg-blue-600 text-white scale-110 border-blue-600 animate-bounce"
+                          : "bg-blue-50 text-blue-600 border-blue-100 group-hover:scale-110"
+                      }`}>
+                        <Upload className="w-7 h-7" />
+                      </div>
+                      <p className="text-sm font-bold text-slate-800 mb-1">
+                        {importDragging ? "Lepaskan file Excel di sini..." : "Pilih atau Geser (Drag & Drop) File Excel ke Sini"}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Klik untuk mencari file atau seret file (.xlsx / .xls) langsung ke area ini
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* File Info Bar */}
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50/70 border border-blue-200">
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+                          <span className="text-sm font-semibold text-slate-800">{importFile.name}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 font-bold">
+                            {importData.length} baris terdeteksi
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => importFileInputRef.current?.click()}
+                          className="text-xs text-blue-700 hover:underline font-semibold cursor-pointer"
+                        >
+                          Ganti File
+                        </button>
+                      </div>
+
+                      {/* Preview Table */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Tabel Preview Data:</h4>
+                          <span className="text-xs text-slate-500">
+                            Valid: <strong className="text-emerald-600">{importData.filter(d => d.isValid).length}</strong> / Total: {importData.length} baris
+                          </span>
+                        </div>
+                        <div className="border border-slate-200 rounded-xl overflow-hidden max-h-72 overflow-y-auto overflow-x-auto custom-scrollbar">
+                          <table className="w-full text-left text-xs whitespace-nowrap">
+                            <thead className="bg-slate-100 sticky top-0 border-b border-slate-200 text-slate-700 font-bold z-10">
+                              <tr>
+                                <th className="px-3 py-2 text-center w-10">No</th>
+                                <th className="px-3 py-2">Nama Aksesoris</th>
+                                <th className="px-3 py-2">Jenis Brand</th>
+                                <th className="px-3 py-2">Kategori</th>
+                                <th className="px-3 py-2">Merek</th>
+                                <th className="px-3 py-2">Model</th>
+                                <th className="px-3 py-2 text-center">Jumlah</th>
+                                <th className="px-3 py-2 text-right">Harga</th>
+                                <th className="px-3 py-2">Kondisi</th>
+                                <th className="px-3 py-2">Lokasi</th>
+                                <th className="px-3 py-2 text-center">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {importData.map((row, idx) => (
+                                <tr key={idx} className={!row.isValid ? "bg-rose-50" : idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
+                                  <td className="px-3 py-2 text-center text-slate-500 font-mono">{idx + 1}</td>
+                                  <td className="px-3 py-2 font-semibold text-slate-800">{row.namaAksesoris || <span className="text-rose-500 italic">Nama Kosong (Wajib)</span>}</td>
+                                  <td className="px-3 py-2 text-slate-600">{row.jenisAset}</td>
+                                  <td className="px-3 py-2 text-slate-600">{row.kategori || "-"}</td>
+                                  <td className="px-3 py-2 text-slate-600">{row.merek || "-"}</td>
+                                  <td className="px-3 py-2 text-slate-600">{row.model || "-"}</td>
+                                  <td className="px-3 py-2 text-center font-bold text-slate-700">{row.jumlahUnit}</td>
+                                  <td className="px-3 py-2 text-right text-slate-700 font-mono">{formatRupiah(row.hargaAset)}</td>
+                                  <td className="px-3 py-2 text-slate-600">{row.kondisi}</td>
+                                  <td className="px-3 py-2 text-slate-600">{row.lokasi || "-"}</td>
+                                  <td className="px-3 py-2 text-center">
+                                    {row.isValid ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                                        Siap Simpan
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800">
+                                        Nama Wajib
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {importError && (
+                    <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      <span>{importError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+                  <button
+                    type="button"
+                    disabled={importLoading}
+                    onClick={() => setShowImportModal(false)}
+                    className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={importLoading || !importFile || importData.filter(d => d.isValid).length === 0}
+                    onClick={handleConfirmImport}
+                    className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {importLoading ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Mengimpor Data...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Simpan {importData.filter(d => d.isValid).length > 0 ? `${importData.filter(d => d.isValid).length} Aksesoris` : "Data"}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
