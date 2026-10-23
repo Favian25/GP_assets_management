@@ -115,6 +115,113 @@ export const exportToExcel = async (columns, data, filename = "Report.xlsx", she
 };
 
 /**
+ * Export template Excel dengan dropdown data validation untuk mencegah typo pengisian data
+ * @param {Array} columns - Array of column objects { header: 'Name', dataKey: 'key' }
+ * @param {Array} data - Sample data
+ * @param {String} filename - Output filename
+ * @param {String} sheetName - Worksheet name
+ * @param {Object} validations - Map of dataKey -> Array of options (e.g. { jenisAset: ["Galeria Production", "Galeria Studio"] })
+ */
+export const exportTemplateToExcel = async (
+  columns,
+  data,
+  filename = "Template.xlsx",
+  sheetName = "Template",
+  validations = {}
+) => {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Galeria Asset Management";
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet(sheetName, {
+    views: [{ showGridLines: true }],
+  });
+
+  // Table columns definition
+  const tableColumns = columns.map((col) => ({
+    name: col.header,
+    filterButton: true,
+  }));
+
+  // Row data: 2D array [ [valCol1, valCol2, ...], ... ]
+  const rows = data.map((item) => {
+    return columns.map((col) => {
+      const val = item[col.dataKey];
+      if (val === null || val === undefined) return "";
+      return val;
+    });
+  });
+
+  const safeTableName = `Table_${sheetName.replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}`;
+
+  // Add native official Excel table
+  worksheet.addTable({
+    name: safeTableName,
+    ref: "A1",
+    headerRow: true,
+    totalsRow: false,
+    style: {
+      theme: "TableStyleMedium9",
+      showRowStripes: true,
+    },
+    columns: tableColumns,
+    rows: rows.length > 0 ? rows : [columns.map(() => "")],
+  });
+
+  // Apply dropdown data validation to template rows (rows 2 to 500)
+  columns.forEach((col, idx) => {
+    const colNumber = idx + 1;
+    const options = validations[col.dataKey];
+    if (options && options.length > 0) {
+      const formulaeStr = `"${options.join(",")}"`;
+      for (let r = 2; r <= 500; r++) {
+        const cell = worksheet.getCell(r, colNumber);
+        cell.dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [formulaeStr],
+          showErrorMessage: true,
+          errorTitle: "Pilihan Tidak Valid",
+          error: `Pilih salah satu dari: ${options.join(", ")}`,
+        };
+      }
+    }
+  });
+
+  // Auto-fit column widths based on maximum content length
+  columns.forEach((col, idx) => {
+    let maxLen = col.header ? String(col.header).length : 10;
+    data.forEach((item) => {
+      const val = item[col.dataKey];
+      if (val !== null && val !== undefined) {
+        const str = String(val);
+        if (str.length > maxLen) {
+          maxLen = str.length;
+        }
+      }
+    });
+
+    const worksheetColumn = worksheet.getColumn(idx + 1);
+    worksheetColumn.width = Math.min(Math.max(maxLen + 4, 16), 45);
+    worksheetColumn.alignment = { vertical: "middle", horizontal: "left" };
+  });
+
+  // Generate binary buffer & trigger download in browser
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+};
+
+/**
  * Download Template Excel untuk Import Aset
  */
 export const downloadAssetTemplate = async () => {
@@ -173,7 +280,13 @@ export const downloadAssetTemplate = async () => {
     },
   ];
 
-  await exportToExcel(columns, sampleData, "Template_Import_Aset.xlsx", "Template_Aset");
+  const templateValidations = {
+    jenisAset: ["Galeria Production", "Galeria Studio"],
+    tipeHarga: ["Per Unit", "Per Paket"],
+    kondisi: ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"],
+  };
+
+  await exportTemplateToExcel(columns, sampleData, "Template_Import_Aset.xlsx", "Template_Aset", templateValidations);
 };
 
 /**
@@ -226,7 +339,13 @@ export const downloadAksesorisTemplate = async () => {
     },
   ];
 
-  await exportToExcel(columns, sampleData, "Template_Import_Aksesoris.xlsx", "Template_Aksesoris");
+  const templateValidations = {
+    jenisAset: ["Galeria Production", "Galeria Studio"],
+    tipeHarga: ["Per Unit", "Per Paket"],
+    kondisi: ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"],
+  };
+
+  await exportTemplateToExcel(columns, sampleData, "Template_Import_Aksesoris.xlsx", "Template_Aksesoris", templateValidations);
 };
 
 /**

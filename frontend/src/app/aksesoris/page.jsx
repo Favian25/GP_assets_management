@@ -1332,13 +1332,43 @@ export default function AksesorisPage() {
                   <hr className="border-slate-300" />
                   <div>
                     <h4 className="mb-4 text-sm font-bold text-slate-800">Lokasi & Kondisi</h4>
-                    <div className="grid grid-cols-1 gap-4 md:gap-6">
-                      {[["Lokasi", showDetail.lokasi], ["Kondisi", showDetail.kondisi], ["Keterangan", showDetail.keterangan]].map(([l, v]) => (
-                        <div key={l} className="flex flex-col gap-1.5">
-                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{l}</span>
-                          <span className="text-sm font-medium text-slate-800 break-words">{v || "-"}</span>
+                    <div className="grid grid-cols-1 gap-4 md:gap-5">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lokasi</span>
+                        <span className="text-sm font-medium text-slate-800 break-words">{showDetail.lokasi || "-"}</span>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Kondisi</span>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase ${getKondisiBadge(showDetail.kondisi)}`}>
+                            {showDetail.kondisi}
+                          </span>
+                          {["super admin", "admin"].includes(userRole) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const target = showDetail;
+                                setShowDetail(null);
+                                setShowKondisiModal(target);
+                                setNewKondisi(target.kondisi);
+                                setIsSplitKondisi(false);
+                                setJumlahSplit(1);
+                                setKeteranganKondisi("");
+                              }}
+                              className="cursor-pointer inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Ubah Kondisi
+                            </button>
+                          )}
                         </div>
-                      ))}
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Keterangan</span>
+                        <span className="text-sm font-medium text-slate-800 break-words">{showDetail.keterangan || "-"}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
