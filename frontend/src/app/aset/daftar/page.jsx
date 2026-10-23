@@ -29,10 +29,11 @@ const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 const emptyForm = {
   kodeAset: "", namaAset: "", pengguna: "", kategori: "", merek: "", model: "",
   noSN: "", spesifikasi: "", lokasiAset: "", kondisi: "", keterangan: "",
-  jumlah: "", hargaAset: "", tanggalPembelian: "", jenisAset: "",
+  jumlah: "", hargaAset: "", tipeHarga: "Per Unit", tanggalPembelian: "", jenisAset: "",
 };
 
 const jenisAsetOptions = ["Galeria Studio", "Galeria Production"];
+const tipeHargaOptions = ["Per Unit", "Per Paket"];
 
 // =====================================================
 // Helper components (outside to prevent re-mount)
@@ -782,6 +783,7 @@ export default function DaftarAsetPage() {
       { header: "Total Unit", dataKey: "unitTotal" },
       { header: "Unit Rusak", dataKey: "unitRusak" },
       { header: "Harga Aset", dataKey: "hargaAset" },
+      { header: "Tipe Perhitungan Harga", dataKey: "tipeHarga" },
       { header: "Kondisi Utama", dataKey: "kondisi" },
       { header: "Lokasi Aset", dataKey: "lokasiAset" },
       { header: "Pengelola", dataKey: "pengguna" },
@@ -796,6 +798,7 @@ export default function DaftarAsetPage() {
       unitSiap: item.readyUnitsCount !== undefined ? item.readyUnitsCount : (item.jumlah ?? 0),
       unitTotal: item.totalUnitsCount !== undefined ? item.totalUnitsCount : (item.jumlahTotal ?? item.jumlah ?? 0),
       unitRusak: Number(item.rusakUnitsCount || 0) + Number(item.rusakBeratUnitsCount || 0),
+      tipeHarga: item.tipeHarga || "Per Unit",
     }));
     try {
       await exportToExcel(columns, dataToExport, `Data_Aset_Galeria_${new Date().toISOString().split("T")[0]}.xlsx`, "Data_Aset");
@@ -833,6 +836,9 @@ export default function DaftarAsetPage() {
         let jenisAset = "Galeria Production";
         if (jenisRaw.toLowerCase().includes("studio")) jenisAset = "Galeria Studio";
 
+        const tipeHargaRaw = (r["Tipe Perhitungan Harga"] || r["Tipe Harga"] || r["tipe_harga"] || r["Tipe"] || "").toString().trim().toLowerCase();
+        const tipeHarga = (tipeHargaRaw.includes("paket") || tipeHargaRaw.includes("box") || tipeHargaRaw.includes("set")) ? "Per Paket" : "Per Unit";
+
         return {
           idx: idx + 1,
           namaAset: toSentenceCase(namaAset),
@@ -842,6 +848,7 @@ export default function DaftarAsetPage() {
           model: (r["Model"] || r["model"] || "").toString().trim(),
           jumlah: parseInt(r["Jumlah"] || r["jumlah"] || 1, 10) || 1,
           hargaAset: parseFloat(r["Harga Aset"] || r["Harga"] || r["harga_aset"] || 0) || 0,
+          tipeHarga,
           tanggalPembelian: (r["Tanggal Pembelian"] || r["tanggal_pembelian"] || "").toString().trim(),
           lokasiAset: toUpperCaseText((r["Lokasi Aset"] || r["Lokasi"] || r["lokasi_aset"] || "").toString().trim()),
           kondisi: (r["Kondisi"] || r["kondisi"] || "Siap Digunakan").toString().trim(),
@@ -906,6 +913,7 @@ export default function DaftarAsetPage() {
       noSN: item.noSN || "", spesifikasi: item.spesifikasi || "", lokasiAset: item.lokasiAset || "",
       kondisi: item.kondisi || "", keterangan: item.keterangan || "",
       jumlah: item.jumlah || "", hargaAset: item.hargaAset || "",
+      tipeHarga: item.tipeHarga || "Per Unit",
       tanggalPembelian: item.tanggalPembelian ? item.tanggalPembelian.split('T')[0] : "",
       jenisAset: item.jenisAset || "",
     });
@@ -990,17 +998,31 @@ export default function DaftarAsetPage() {
           <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: toUpperCaseText(e.target.value)}))} hint="Tipe/model spesifik dari aset" />
           <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aset" />
           <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} hint="Jumlah unit aset yang tersedia" />
-          <InputField 
-            label="Harga Aset (Rp)" 
-            placeholder="Harga Aset" 
-            type="text" 
-            value={data.hargaAset ? Number(data.hargaAset).toLocaleString("id-ID") : ""} 
-            onChange={(e) => {
-              const rawValue = e.target.value.replace(/\D/g, "");
-              setData(d => ({ ...d, hargaAset: rawValue }));
-            }} 
-            hint="Harga pembelian per unit"
-          />
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <InputField 
+              label="Harga Aset (Rp)" 
+              placeholder="Harga Aset" 
+              type="text" 
+              value={data.hargaAset ? Number(data.hargaAset).toLocaleString("id-ID") : ""} 
+              onChange={(e) => {
+                const rawValue = e.target.value.replace(/\D/g, "");
+                setData(d => ({ ...d, hargaAset: rawValue }));
+              }} 
+              hint={data.tipeHarga === "Per Paket" ? "Harga total 1 paket keseluruhan (isi semua unit)" : "Harga pembelian untuk setiap 1 unit"}
+            />
+            <SelectField 
+              label="Tipe Perhitungan Harga" 
+              value={data.tipeHarga || "Per Unit"} 
+              onChange={(e) => setData(d => ({ ...d, tipeHarga: e.target.value }))} 
+              options={tipeHargaOptions} 
+              placeholder="Pilih Tipe Harga" 
+              hint={
+                data.tipeHarga === "Per Paket" 
+                  ? `Paket: Total aset = Rp ${Number(data.hargaAset || 0).toLocaleString("id-ID")}. Saat dipinjam dihitung ~ Rp ${Math.round((Number(data.hargaAset) || 0) / (Number(data.jumlah) || 1)).toLocaleString("id-ID")}/unit.`
+                  : `Unit: Total nilai aset = Rp ${((Number(data.hargaAset) || 0) * (Number(data.jumlah) || 1)).toLocaleString("id-ID")}.`
+              }
+            />
+          </div>
           <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aset" />
           <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: toUpperCaseText(e.target.value)}))} className="sm:col-span-2" hint="Nomor seri unik di badan aset" />
           <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: toSentenceCase(e.target.value)}))} rows={3} className="sm:col-span-2" hint="Detail teknis seperti resolusi, kapasitas, dll" />
@@ -1104,7 +1126,13 @@ export default function DaftarAsetPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-xs text-slate-600 font-medium">Total Harga Aset</p>
-              <p className="text-2xl font-bold text-slate-800">{formatRupiah(filteredData.reduce((sum, item) => sum + (parseInt(item.hargaAset) || 0), 0))}</p>
+              <p className="text-2xl font-bold text-slate-800">
+                {formatRupiah(filteredData.reduce((sum, item) => {
+                  const harga = parseInt(item.hargaAset) || 0;
+                  const total = parseInt(item.totalUnitsCount ?? item.jumlahTotal ?? item.jumlah) || 1;
+                  return sum + (item.tipeHarga === "Per Paket" ? harga : harga * total);
+                }, 0))}
+              </p>
             </div>
             <div className="text-xs text-slate-500">
               {brandFilter ? `Filter: ${brandFilter === "Galeria studio" ? "Galeria Studio" : "Galeria Production"}` : "Semua Brand"} • {filteredData.length} aset
@@ -1238,7 +1266,12 @@ export default function DaftarAsetPage() {
                   </td>
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.kategori}</td>
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.model}</td>
-                  <td className="w-[130px] px-3 py-3 text-right text-xs font-semibold text-slate-700 border-r border-slate-200 align-middle">{formatRupiah(item.hargaAset)}</td>
+                  <td className="w-[130px] px-3 py-3 text-right text-xs font-semibold text-slate-700 border-r border-slate-200 align-middle">
+                    <div>{formatRupiah(item.hargaAset)}</div>
+                    <div className="text-[10px] font-normal text-slate-400">
+                      {item.tipeHarga === "Per Paket" ? "Per Paket" : "Per Unit"}
+                    </div>
+                  </td>
                   <td className="w-[140px] px-3 py-3 text-center border-r border-slate-200 align-middle">
                     <div className="flex flex-col gap-1 items-center">
                       <span
@@ -1433,6 +1466,7 @@ export default function DaftarAsetPage() {
                                 <th className="px-3 py-2">Model</th>
                                 <th className="px-3 py-2 text-center">Jumlah</th>
                                 <th className="px-3 py-2 text-right">Harga</th>
+                                <th className="px-3 py-2 text-center">Tipe</th>
                                 <th className="px-3 py-2">Kondisi</th>
                                 <th className="px-3 py-2">Lokasi</th>
                                 <th className="px-3 py-2">Pengelola</th>
@@ -1450,6 +1484,11 @@ export default function DaftarAsetPage() {
                                   <td className="px-3 py-2 text-slate-600">{row.model || "-"}</td>
                                   <td className="px-3 py-2 text-center font-bold text-slate-700">{row.jumlah}</td>
                                   <td className="px-3 py-2 text-right text-slate-700 font-mono">{formatRupiah(row.hargaAset)}</td>
+                                  <td className="px-3 py-2 text-center text-xs">
+                                    <span className={`px-2 py-0.5 rounded-full font-medium ${row.tipeHarga === "Per Paket" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}>
+                                      {row.tipeHarga}
+                                    </span>
+                                  </td>
                                   <td className="px-3 py-2 text-slate-600">{row.kondisi}</td>
                                   <td className="px-3 py-2 text-slate-600">{row.lokasiAset || "-"}</td>
                                   <td className="px-3 py-2 text-slate-600">{row.pengguna || "-"}</td>
@@ -1543,7 +1582,7 @@ export default function DaftarAsetPage() {
                         ["Model", showDetail.model],
                         ["Jenis Brand", showDetail.jenisAset],
                         ["Jumlah", `${showDetail.jumlah ?? "-"} Tersisa dari Total ${showDetail.jumlahTotal ?? showDetail.jumlah ?? "-"}`],
-                        ["Harga Aset", formatRupiah(showDetail.hargaAset)],
+                        ["Harga Aset", `${formatRupiah(showDetail.hargaAset)} (${showDetail.tipeHarga || "Per Unit"}${showDetail.tipeHarga === "Per Paket" && (showDetail.jumlahTotal || showDetail.jumlah) > 0 ? ` ~ ${formatRupiah(Math.round(showDetail.hargaAset / (showDetail.jumlahTotal || showDetail.jumlah)))} / unit` : ""})`],
                         ["Tanggal Pembelian", showDetail.tanggalPembelian ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(showDetail.tanggalPembelian)) : "-"],
                         ["Serial Number", showDetail.noSN],
                         ["Spesifikasi", showDetail.spesifikasi]

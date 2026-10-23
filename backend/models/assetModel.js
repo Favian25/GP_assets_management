@@ -63,13 +63,14 @@ const Asset = {
       keterangan,
       jumlah,
       harga_aset,
+      tipe_harga,
       tanggal_pembelian,
     } = data;
 
     const [result] = await db.query(
       `INSERT INTO assets
-        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, jenis_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian, user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, jenis_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, tipe_harga, jumlah_total, tanggal_pembelian, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         kode_aset,
         nama_aset,
@@ -87,6 +88,7 @@ const Asset = {
         keterangan || null,
         jumlah || null,
         harga_aset || null,
+        tipe_harga || "Per Unit",
         jumlah || null,
         tanggal_pembelian || null,
         data.user_id || null,
@@ -115,6 +117,7 @@ const Asset = {
       keterangan,
       jumlah,
       harga_aset,
+      tipe_harga,
       tanggal_pembelian,
     } = data;
 
@@ -123,7 +126,7 @@ const Asset = {
         kode_aset = ?, nama_aset = ?, pengguna = ?, kategori = ?,
         merek = ?, model = ?, no_sn = ?, spesifikasi = ?,
         lokasi_aset = ?, jenis_aset = ?, kondisi = ?, unit = ?, gambar = ?, keterangan = ?,
-        jumlah = ?, jumlah_total = ?, harga_aset = ?, tanggal_pembelian = ?
+        jumlah = ?, jumlah_total = ?, harga_aset = ?, tipe_harga = ?, tanggal_pembelian = ?
        WHERE id = ?`,
       [
         kode_aset,
@@ -143,6 +146,7 @@ const Asset = {
         jumlah || null,
         data.jumlah_total || jumlah || null,
         harga_aset || null,
+        tipe_harga || "Per Unit",
         tanggal_pembelian || null,
         id,
       ]

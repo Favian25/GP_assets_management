@@ -483,8 +483,22 @@ const Peminjaman = {
       `SELECT pi.*,
               COALESCE(a.nama_aset, ak.nama_aksesoris) AS nama_aset,
               COALESCE(a.kode_aset, ak.kode_aksesoris) AS kode_aset,
-              COALESCE(a.harga_aset, ak.harga_aset) AS harga_unit,
-              COALESCE(a.harga_aset, ak.harga_aset) * pi.jumlah AS harga_total,
+              COALESCE(a.tipe_harga, ak.tipe_harga, 'Per Unit') AS tipe_harga,
+              COALESCE(a.jumlah_total, ak.jumlah_total, 1) AS jumlah_total,
+              ROUND(
+                CASE 
+                  WHEN a.tipe_harga = 'Per Paket' AND COALESCE(a.jumlah_total, 0) > 0 THEN a.harga_aset / a.jumlah_total
+                  WHEN ak.tipe_harga = 'Per Paket' AND COALESCE(ak.jumlah_total, 0) > 0 THEN ak.harga_aset / ak.jumlah_total
+                  ELSE COALESCE(a.harga_aset, ak.harga_aset)
+                END
+              ) AS harga_unit,
+              ROUND(
+                (CASE 
+                  WHEN a.tipe_harga = 'Per Paket' AND COALESCE(a.jumlah_total, 0) > 0 THEN a.harga_aset / a.jumlah_total
+                  WHEN ak.tipe_harga = 'Per Paket' AND COALESCE(ak.jumlah_total, 0) > 0 THEN ak.harga_aset / ak.jumlah_total
+                  ELSE COALESCE(a.harga_aset, ak.harga_aset)
+                END) * pi.jumlah
+              ) AS harga_total,
               COALESCE(a.kategori, ak.kategori) AS kategori,
               COALESCE(a.merek, ak.merek) AS merek
        FROM peminjaman_items pi

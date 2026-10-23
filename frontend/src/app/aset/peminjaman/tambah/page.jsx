@@ -91,34 +91,56 @@ export default function TambahPeminjamanPage() {
       const combined = [
         ...assets
           .filter((a) => a.kondisi !== "Dijual")
-          .map((a) => ({
-            id: a.id,
-            nama: a.namaAset,
-            kode: a.kodeAset,
-            kategori: a.kategori,
-            merek: a.merek,
-            harga: a.hargaAset || 0,
-            stok: a.jumlah,
-            kondisi: a.kondisi,
-            gambar: a.gambar,
-            jenisAset: a.jenisAset,
-            tipe: "asset",
-          })),
+          .map((a) => {
+            const tipeHarga = a.tipeHarga || "Per Unit";
+            const jumlahTotal = Number(a.jumlahTotal || a.jumlah || 1);
+            const hargaUnit = tipeHarga === "Per Paket" && jumlahTotal > 0
+              ? Math.round((Number(a.hargaAset) || 0) / jumlahTotal)
+              : (Number(a.hargaAset) || 0);
+
+            return {
+              id: a.id,
+              nama: a.namaAset,
+              kode: a.kodeAset,
+              kategori: a.kategori,
+              merek: a.merek,
+              harga: hargaUnit,
+              hargaAsetOriginal: a.hargaAset || 0,
+              tipeHarga,
+              jumlahTotal,
+              stok: a.jumlah,
+              kondisi: a.kondisi,
+              gambar: a.gambar,
+              jenisAset: a.jenisAset,
+              tipe: "asset",
+            };
+          }),
         ...aksesoris
           .filter((ak) => ak.kondisi !== "Dijual")
-          .map((ak) => ({
-            id: ak.id,
-            nama: ak.namaAksesoris,
-            kode: ak.kodeAksesoris,
-            kategori: ak.kategori,
-            merek: ak.merek,
-            harga: ak.hargaAset || 0,
-            stok: ak.jumlahUnit,
-            kondisi: ak.kondisi,
-            gambar: ak.gambar,
-            jenisAset: ak.jenisAset,
-            tipe: "aksesoris",
-          })),
+          .map((ak) => {
+            const tipeHarga = ak.tipeHarga || "Per Unit";
+            const jumlahTotal = Number(ak.jumlahTotal || ak.jumlahUnit || 1);
+            const hargaUnit = tipeHarga === "Per Paket" && jumlahTotal > 0
+              ? Math.round((Number(ak.hargaAset) || 0) / jumlahTotal)
+              : (Number(ak.hargaAset) || 0);
+
+            return {
+              id: ak.id,
+              nama: ak.namaAksesoris,
+              kode: ak.kodeAksesoris,
+              kategori: ak.kategori,
+              merek: ak.merek,
+              harga: hargaUnit,
+              hargaAsetOriginal: ak.hargaAset || 0,
+              tipeHarga,
+              jumlahTotal,
+              stok: ak.jumlahUnit,
+              kondisi: ak.kondisi,
+              gambar: ak.gambar,
+              jenisAset: ak.jenisAset,
+              tipe: "aksesoris",
+            };
+          }),
       ];
       setAllItems(combined);
     } catch (err) {
@@ -249,6 +271,9 @@ export default function TambahPeminjamanPage() {
         kode: item.kode,
         tipe: item.tipe,
         harga: item.harga,
+        tipeHarga: item.tipeHarga,
+        hargaAsetOriginal: item.hargaAsetOriginal,
+        jumlahTotal: item.jumlahTotal,
         stok: item.stok,
         jumlah: 1,
         kategori: item.kategori,
@@ -646,7 +671,12 @@ export default function TambahPeminjamanPage() {
                     <div className="mt-2 pt-2 border-t border-slate-200 text-xs">
                       <p className="text-slate-600">Stok: <span className="font-semibold">{item.stok}</span></p>
                       {item.harga > 0 && (
-                        <p className="text-slate-600">Harga: <span className="font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span></p>
+                        <div>
+                          <p className="text-slate-600">Harga: <span className="font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}/unit</span></p>
+                          {item.tipeHarga === "Per Paket" && (
+                            <p className="text-[10px] text-purple-600 font-medium">(Paket: Rp {Number(item.hargaAsetOriginal).toLocaleString('id-ID')})</p>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -693,7 +723,12 @@ export default function TambahPeminjamanPage() {
                       <div className="flex items-center gap-3 sm:gap-2">
                         <span className="text-xs font-semibold text-slate-600">Stok: {item.stok}</span>
                         {item.harga > 0 && (
-                          <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span>
+                          <div className="flex flex-col text-right">
+                            <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span>
+                            {item.tipeHarga === "Per Paket" && (
+                              <span className="text-[10px] text-purple-600 font-medium">Paket</span>
+                            )}
+                          </div>
                         )}
                       </div>
                       <span className={`text-center inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>

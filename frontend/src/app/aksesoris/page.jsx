@@ -29,10 +29,11 @@ const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 const emptyForm = {
   kodeAksesoris: "", namaAksesoris: "", kategori: "", merek: "", model: "",
   lokasi: "", kondisi: "", keterangan: "",
-  jumlahUnit: "", hargaAset: "", tanggalPembelian: "", jenisAset: "",
+  jumlahUnit: "", hargaAset: "", tipeHarga: "Per Unit", tanggalPembelian: "", jenisAset: "",
 };
 
 const jenisAsetOptions = ["Galeria Studio", "Galeria Production"];
+const tipeHargaOptions = ["Per Unit", "Per Paket"];
 
 // =====================================================
 // Helper components (outside to prevent re-mount)
@@ -569,12 +570,17 @@ export default function AksesorisPage() {
       { header: "Model", dataKey: "model" },
       { header: "Jumlah Unit", dataKey: "jumlahUnit" },
       { header: "Harga Aset", dataKey: "hargaAset" },
+      { header: "Tipe Perhitungan Harga", dataKey: "tipeHarga" },
       { header: "Kondisi", dataKey: "kondisi" },
       { header: "Lokasi", dataKey: "lokasi" },
       { header: "Tanggal Pembelian", dataKey: "tanggalPembelian" },
       { header: "Keterangan", dataKey: "keterangan" },
     ];
-    const dataToExport = filteredData.length > 0 ? filteredData : assets;
+    const rawData = filteredData.length > 0 ? filteredData : assets;
+    const dataToExport = rawData.map(item => ({
+      ...item,
+      tipeHarga: item.tipeHarga || "Per Unit"
+    }));
     try {
       await exportToExcel(columns, dataToExport, `Data_Aksesoris_Galeria_${new Date().toISOString().split("T")[0]}.xlsx`, "Data_Aksesoris");
       showToast(`Berhasil mengekspor ${dataToExport.length} data aksesoris`);
@@ -611,6 +617,9 @@ export default function AksesorisPage() {
         let jenisAset = "Galeria Production";
         if (jenisRaw.toLowerCase().includes("studio")) jenisAset = "Galeria Studio";
 
+        const tipeHargaRaw = (r["Tipe Perhitungan Harga"] || r["Tipe Harga"] || r["tipe_harga"] || r["Tipe"] || "").toString().trim().toLowerCase();
+        const tipeHarga = (tipeHargaRaw.includes("paket") || tipeHargaRaw.includes("box") || tipeHargaRaw.includes("set")) ? "Per Paket" : "Per Unit";
+
         return {
           idx: idx + 1,
           namaAksesoris: toUpperCaseText(namaAksesoris),
@@ -620,6 +629,7 @@ export default function AksesorisPage() {
           model: (r["Model"] || r["model"] || "").toString().trim(),
           jumlahUnit: parseInt(r["Jumlah Unit"] || r["Jumlah"] || r["jumlah_unit"] || 1, 10) || 1,
           hargaAset: parseFloat(r["Harga Aset"] || r["Harga"] || r["harga_aset"] || 0) || 0,
+          tipeHarga,
           tanggalPembelian: (r["Tanggal Pembelian"] || r["tanggal_pembelian"] || "").toString().trim(),
           lokasi: toUpperCaseText((r["Lokasi"] || r["lokasi"] || "").toString().trim()),
           kondisi: (r["Kondisi"] || r["kondisi"] || "Siap Digunakan").toString().trim(),
@@ -680,6 +690,7 @@ export default function AksesorisPage() {
       kategori: item.kategori || "", merek: item.merek || "", model: item.model || "",
       lokasi: item.lokasi || "", kondisi: item.kondisi || "", keterangan: item.keterangan || "",
       jumlahUnit: item.jumlahUnit || "", hargaAset: item.hargaAset || "",
+      tipeHarga: item.tipeHarga || "Per Unit",
       tanggalPembelian: item.tanggalPembelian ? item.tanggalPembelian.split('T')[0] : "",
       jenisAset: item.jenisAset || "",
     });
@@ -763,17 +774,31 @@ export default function AksesorisPage() {
           </div>
 
           <InputField label="Jumlah Unit" placeholder="Jumlah unit" type="number" value={data.jumlahUnit} onChange={(e) => setData(d => ({...d, jumlahUnit: e.target.value}))} hint="Jumlah unit yang tersedia" />
-          <InputField 
-            label="Harga (Rp)" 
-            placeholder="Harga aksesoris" 
-            type="text" 
-            value={data.hargaAset ? Number(data.hargaAset).toLocaleString("id-ID") : ""} 
-            onChange={(e) => {
-              const rawValue = e.target.value.replace(/\D/g, "");
-              setData(d => ({ ...d, hargaAset: rawValue }));
-            }} 
-            hint="Harga pembelian per unit"
-          />
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <InputField 
+              label="Harga Aksesoris (Rp)" 
+              placeholder="Harga aksesoris" 
+              type="text" 
+              value={data.hargaAset ? Number(data.hargaAset).toLocaleString("id-ID") : ""} 
+              onChange={(e) => {
+                const rawValue = e.target.value.replace(/\D/g, "");
+                setData(d => ({ ...d, hargaAset: rawValue }));
+              }} 
+              hint={data.tipeHarga === "Per Paket" ? "Harga total 1 paket keseluruhan (isi semua unit)" : "Harga pembelian untuk setiap 1 unit"}
+            />
+            <SelectField 
+              label="Tipe Perhitungan Harga" 
+              value={data.tipeHarga || "Per Unit"} 
+              onChange={(e) => setData(d => ({ ...d, tipeHarga: e.target.value }))} 
+              options={tipeHargaOptions} 
+              placeholder="Pilih Tipe Harga" 
+              hint={
+                data.tipeHarga === "Per Paket" 
+                  ? `Paket: Total aset = Rp ${Number(data.hargaAset || 0).toLocaleString("id-ID")}. Saat dipinjam dihitung ~ Rp ${Math.round((Number(data.hargaAset) || 0) / (Number(data.jumlahUnit) || 1)).toLocaleString("id-ID")}/unit.`
+                  : `Unit: Total nilai aksesoris = Rp ${((Number(data.hargaAset) || 0) * (Number(data.jumlahUnit) || 1)).toLocaleString("id-ID")}.`
+              }
+            />
+          </div>
           <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aksesoris" />
           <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aksesoris" />
         </div>
@@ -875,7 +900,13 @@ export default function AksesorisPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-xs text-slate-600 font-medium">Total Harga Aksesoris</p>
-              <p className="text-2xl font-bold text-slate-800">{formatRupiah(filteredData.reduce((sum, item) => sum + (parseInt(item.hargaAset) || 0), 0))}</p>
+              <p className="text-2xl font-bold text-slate-800">
+                {formatRupiah(filteredData.reduce((sum, item) => {
+                  const harga = parseInt(item.hargaAset) || 0;
+                  const total = parseInt(item.jumlahTotal ?? item.jumlahUnit) || 1;
+                  return sum + (item.tipeHarga === "Per Paket" ? harga : harga * total);
+                }, 0))}
+              </p>
             </div>
             <div className="text-xs text-slate-500">
               {brandFilter ? `Filter: ${brandFilter === "Galeria studio" ? "Galeria Studio" : "Galeria Production"}` : "Semua Brand"} • {filteredData.length} aksesoris
@@ -1175,6 +1206,7 @@ export default function AksesorisPage() {
                                 <th className="px-3 py-2">Model</th>
                                 <th className="px-3 py-2 text-center">Jumlah</th>
                                 <th className="px-3 py-2 text-right">Harga</th>
+                                <th className="px-3 py-2 text-center">Tipe</th>
                                 <th className="px-3 py-2">Kondisi</th>
                                 <th className="px-3 py-2">Lokasi</th>
                                 <th className="px-3 py-2 text-center">Status</th>
@@ -1191,6 +1223,11 @@ export default function AksesorisPage() {
                                   <td className="px-3 py-2 text-slate-600">{row.model || "-"}</td>
                                   <td className="px-3 py-2 text-center font-bold text-slate-700">{row.jumlahUnit}</td>
                                   <td className="px-3 py-2 text-right text-slate-700 font-mono">{formatRupiah(row.hargaAset)}</td>
+                                  <td className="px-3 py-2 text-center text-xs">
+                                    <span className={`px-2 py-0.5 rounded-full font-medium ${row.tipeHarga === "Per Paket" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}>
+                                      {row.tipeHarga}
+                                    </span>
+                                  </td>
                                   <td className="px-3 py-2 text-slate-600">{row.kondisi}</td>
                                   <td className="px-3 py-2 text-slate-600">{row.lokasi || "-"}</td>
                                   <td className="px-3 py-2 text-center">
@@ -1282,7 +1319,7 @@ export default function AksesorisPage() {
                         ["Merek", showDetail.merek],
                         ["Jenis Brand", showDetail.jenisAset],
                         ["Jumlah", `${showDetail.jumlahUnit ?? "-"} Tersisa dari Total ${showDetail.jumlahTotal ?? showDetail.jumlahUnit ?? "-"}`],
-                        ["Harga Aksesoris", formatRupiah(showDetail.hargaAset)],
+                        ["Harga Aksesoris", `${formatRupiah(showDetail.hargaAset)} (${showDetail.tipeHarga || "Per Unit"}${showDetail.tipeHarga === "Per Paket" && (showDetail.jumlahTotal || showDetail.jumlahUnit) > 0 ? ` ~ ${formatRupiah(Math.round(showDetail.hargaAset / (showDetail.jumlahTotal || showDetail.jumlahUnit)))} / unit` : ""})`],
                         ["Tanggal Pembelian", showDetail.tanggalPembelian ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(showDetail.tanggalPembelian)) : "-"],
                       ].map(([l, v]) => (
                         <div key={l} className="flex flex-col gap-1.5">

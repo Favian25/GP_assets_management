@@ -141,9 +141,9 @@ const fieldMapToBackend = {
   jumlah: "jumlah",
   jumlahTotal: "jumlah_total",
   hargaAset: "harga_aset",
+  tipeHarga: "tipe_harga",
   tanggalPembelian: "tanggal_pembelian",
   userId: "user_id",
-  jenisAset: "jenis_aset",
 };
 
 // Mapping: Backend key → Frontend key (reverse)
@@ -302,6 +302,7 @@ const aksesorisFieldMapToBackend = {
   jumlahUnit: "jumlah_unit",
   jumlahTotal: "jumlah_total",
   hargaAset: "harga_aset",
+  tipeHarga: "tipe_harga",
   tanggalPembelian: "tanggal_pembelian",
   jenisAset: "jenis_aset",
   kondisi: "kondisi",
@@ -309,7 +310,6 @@ const aksesorisFieldMapToBackend = {
   gambar: "gambar",
   keterangan: "keterangan",
   userId: "user_id",
-  jenisAset: "jenis_aset",
 };
 
 const aksesorisFieldMapToFrontend = Object.fromEntries(

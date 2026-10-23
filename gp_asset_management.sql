@@ -37,6 +37,7 @@ CREATE TABLE `aksesoris` (
   `jumlah_unit` int(11) DEFAULT NULL,
   `jumlah_total` int(11) DEFAULT NULL,
   `harga_aset` bigint(20) DEFAULT NULL,
+  `tipe_harga` enum('Per Unit','Per Paket') NOT NULL DEFAULT 'Per Unit',
   `tanggal_pembelian` date DEFAULT NULL,
   `kondisi` enum('Siap Digunakan','Rusak','Rusak Berat','Maintenance','Dijual') DEFAULT 'Siap Digunakan',
   `lokasi` varchar(255) DEFAULT NULL,
@@ -74,6 +75,7 @@ CREATE TABLE `assets` (
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `jumlah` int(11) DEFAULT NULL,
   `harga_aset` decimal(15,2) DEFAULT NULL,
+  `tipe_harga` enum('Per Unit','Per Paket') NOT NULL DEFAULT 'Per Unit',
   `jumlah_total` int(11) DEFAULT NULL,
   `tanggal_pembelian` date DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL

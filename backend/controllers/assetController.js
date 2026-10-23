@@ -747,11 +747,17 @@ const assetController = {
         const spesifikasi = (item.spesifikasi || "").trim() || null;
         const keterangan = (item.keterangan || "").trim() || null;
         const tanggalPembelian = (item.tanggalPembelian || item.tanggal_pembelian || "").trim() || null;
+        let tipeHarga = (item.tipeHarga || item.tipe_harga || item["Tipe Perhitungan Harga"] || item["Tipe Harga"] || "").trim();
+        if (tipeHarga.toLowerCase().includes("paket") || tipeHarga.toLowerCase().includes("set") || tipeHarga.toLowerCase().includes("box")) {
+          tipeHarga = "Per Paket";
+        } else {
+          tipeHarga = "Per Unit";
+        }
 
         const [insertRes] = await connection.query(
           `INSERT INTO assets
-            (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, jenis_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian, user_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, jenis_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, tipe_harga, jumlah_total, tanggal_pembelian, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             kodeAset,
             namaAset,
@@ -769,6 +775,7 @@ const assetController = {
             keterangan,
             jumlah,
             hargaAset,
+            tipeHarga,
             jumlah,
             tanggalPembelian,
             req.user?.userId || req.user?.id || null,

@@ -206,15 +206,23 @@ export async function getDashboardStats() {
       .reduce((sum, a) => sum + (parseInt(a.jumlahUnit) || 0), 0) - dipinjamAksesoris
   );
 
-  // ── Total Nilai Aset: harga sebenarnya dari semua aset (hargaAset × jumlahTotal) ──
+  // ── Total Nilai Aset: periksa tipeHarga ('Per Paket' = hargaAset, 'Per Unit' = hargaAset × jumlahTotal) ──
   const totalNilaiAset = assets
     .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => sum + ((parseInt(a.hargaAset) || 0) * (parseInt(a.jumlahTotal) || 0)), 0);
+    .reduce((sum, a) => {
+      const harga = parseInt(a.hargaAset) || 0;
+      const total = parseInt(a.jumlahTotal) || 0;
+      return sum + (a.tipeHarga === "Per Paket" ? harga : harga * total);
+    }, 0);
 
-  // ── Total Nilai Aksesoris: harga sebenarnya dari semua aksesoris (hargaAset × jumlahTotal) ──
+  // ── Total Nilai Aksesoris: periksa tipeHarga ('Per Paket' = hargaAset, 'Per Unit' = hargaAset × jumlahTotal) ──
   const totalNilaiAksesoris = aksesoris
     .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => sum + ((parseInt(a.hargaAset) || 0) * (parseInt(a.jumlahTotal) || 0)), 0);
+    .reduce((sum, a) => {
+      const harga = parseInt(a.hargaAset) || 0;
+      const total = parseInt(a.jumlahTotal) || 0;
+      return sum + (a.tipeHarga === "Per Paket" ? harga : harga * total);
+    }, 0);
 
   // Peringatan Stok Rendah (jumlah <= 3)
   const lowStockAssets = [

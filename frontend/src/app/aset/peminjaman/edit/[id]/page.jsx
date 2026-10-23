@@ -475,9 +475,20 @@ export default function EditPeminjamanPage() {
                         </div>
                       </div>
                       
-                      {/* Quantity */}
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-sm font-semibold text-slate-900">
+                      {/* Quantity & Price */}
+                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-4 shrink-0">
+                        {(item.hargaUnit || item.harga_unit) > 0 && (
+                          <div className="text-right">
+                            <span className="text-xs font-semibold text-emerald-600 block">
+                              Rp {((item.hargaUnit || item.harga_unit) * item.jumlah).toLocaleString("id-ID")}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              (@ Rp {Number(item.hargaUnit || item.harga_unit).toLocaleString("id-ID")})
+                              {item.tipe_harga === "Per Paket" && " [Paket]"}
+                            </span>
+                          </div>
+                        )}
+                        <span className="text-sm font-semibold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md">
                           Jumlah: {item.jumlah}
                         </span>
                       </div>
