@@ -330,7 +330,7 @@ const aksesorisController = {
   updateKondisi: async (req, res) => {
     try {
       const { id } = req.params;
-      const { kondisi } = req.body;
+      const { kondisi, is_split, jumlah_ubah, keterangan } = req.body;
 
       if (!kondisi) {
         return res.status(400).json({ success: false, message: "Kondisi wajib diisi" });
@@ -341,9 +341,99 @@ const aksesorisController = {
         return res.status(404).json({ success: false, message: "Aksesoris tidak ditemukan" });
       }
 
+      const currentQty = parseInt(existing.jumlah_unit, 10) || 1;
+      const qtyToSplit = parseInt(jumlah_ubah, 10);
+
+      // Jika user memilih split dan jumlah yang diubah valid (< total unit)
+      if (is_split && qtyToSplit > 0 && qtyToSplit < currentQty) {
+        const conn = await db.getConnection();
+        try {
+          await conn.beginTransaction();
+
+          // Generate kode aksesoris turunan unik
+          const baseKode = existing.kode_aksesoris;
+          let counter = 1;
+          let newKodeAksesoris = `${baseKode}-P${counter}`;
+          while (true) {
+            const [check] = await conn.query("SELECT id FROM aksesoris WHERE kode_aksesoris = ?", [newKodeAksesoris]);
+            if (check.length === 0) break;
+            counter++;
+            newKodeAksesoris = `${baseKode}-P${counter}`;
+          }
+
+          const splitNote = keterangan?.trim()
+            ? `${keterangan.trim()} (Pecahan dari ${existing.kode_aksesoris})`
+            : `Pecahan ${qtyToSplit} unit dari ${existing.kode_aksesoris}`;
+
+          // Insert baris baru untuk unit yang kondisinya berbeda
+          const [insertRes] = await conn.query(
+            `INSERT INTO aksesoris 
+              (kode_aksesoris, nama_aksesoris, kategori, merek, model, jumlah_unit, jumlah_total, harga_aset, tanggal_pembelian, kondisi, lokasi, jenis_aset, gambar, keterangan, user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              newKodeAksesoris,
+              existing.nama_aksesoris,
+              existing.kategori || null,
+              existing.merek || null,
+              existing.model || null,
+              qtyToSplit,
+              qtyToSplit,
+              existing.harga_aset || null,
+              existing.tanggal_pembelian || null,
+              kondisi,
+              existing.lokasi || null,
+              existing.jenis_aset || null,
+              existing.gambar || null,
+              splitNote,
+              req.user?.userId || existing.user_id || null,
+            ]
+          );
+
+          // Kurangi stok pada aksesoris asal
+          const remainingJumlah = currentQty - qtyToSplit;
+          const remainingTotal = Math.max(0, (parseInt(existing.jumlah_total, 10) || currentQty) - qtyToSplit);
+          await conn.query(
+            "UPDATE aksesoris SET jumlah_unit = ?, jumlah_total = ? WHERE id = ?",
+            [remainingJumlah, remainingTotal, id]
+          );
+
+          await conn.commit();
+
+          await AuditLog.create({
+            userId: req.user?.userId,
+            userName: req.user?.nama,
+            action: 'UPDATE',
+            entityType: 'Aksesoris',
+            entityId: id,
+            details: `Pemisahan (Split) aksesoris ${existing.kode_aksesoris}: ${qtyToSplit} unit dipindah ke kondisi "${kondisi}" (Kode baru: ${newKodeAksesoris}), sisa ${remainingJumlah} unit.`
+          });
+
+          return res.json({
+            success: true,
+            message: `Berhasil memisahkan ${qtyToSplit} unit ke kondisi "${kondisi}" dengan kode ${newKodeAksesoris}`,
+            data: {
+              newKodeAksesoris,
+              newAksId: insertRes.insertId,
+              remainingJumlah,
+              splitJumlah: qtyToSplit
+            }
+          });
+        } catch (splitErr) {
+          await conn.rollback();
+          throw splitErr;
+        } finally {
+          conn.release();
+        }
+      }
+
+      // Update seluruh unit seperti biasa
       const affectedRows = await Aksesoris.updateKondisi(id, kondisi);
       if (affectedRows === 0) {
         return res.status(400).json({ success: false, message: "Kondisi gagal diperbarui" });
+      }
+
+      if (keterangan && keterangan.trim()) {
+        await db.query("UPDATE aksesoris SET keterangan = ? WHERE id = ?", [keterangan.trim(), id]);
       }
 
       await AuditLog.create({

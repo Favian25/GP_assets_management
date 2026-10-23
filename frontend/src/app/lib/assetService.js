@@ -103,8 +103,9 @@ export async function deleteAsset(id) {
  * @param {string} kondisi
  * @returns {Promise<Object>} response message
  */
-export async function updateAssetKondisi(id, kondisi) {
-  const response = await api.patch(`/assets/${id}/kondisi`, { kondisi });
+export async function updateAssetKondisi(id, dataOrKondisi) {
+  const payload = typeof dataOrKondisi === "string" ? { kondisi: dataOrKondisi } : dataOrKondisi;
+  const response = await api.patch(`/assets/${id}/kondisi`, payload);
   return response.data;
 }
 
@@ -130,71 +131,80 @@ export async function getDashboardStats() {
   const aksesoris = await getAllAksesoris();
   const peminjaman = await getAllPeminjaman();
   
-  // ── Total Aset: jumlah keseluruhan aset KECUALI yang kondisinya "Dijual" atau "Rusak Berat" ──
+  // ── Peminjaman Aktif (Sedang Dipinjam / Menunggu Verifikasi) ──
+  const activeLoans = peminjaman
+    .filter(p => p.status === 'Sedang Dipinjam' || p.status === 'Menunggu Verifikasi')
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // ── Total Aset: jumlah keseluruhan unit aset KECUALI yang kondisinya "Dijual" atau "Rusak Berat" ──
   const totalAset = assets
     .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+    .reduce((sum, a) => sum + (a.totalUnitsCount !== undefined ? Number(a.totalUnitsCount) : (parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0)), 0);
 
-  // ── Aksesoris: jumlah unit aksesoris yang TERSEDIA (jumlahUnit) KECUALI "Dijual" atau "Rusak Berat" ──
+  // ── Aksesoris: jumlah unit aksesoris KECUALI "Dijual" atau "Rusak Berat" ──
   const totalAksesoris = aksesoris
     .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahUnit) || 0), 0);
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0), 0);
 
-  // ── Siap Digunakan: ASET SAJA yang kondisinya "Siap Digunakan", ambil stok tersedia (jumlah) ──
+  // ── Siap Digunakan: unit aset yang siap digunakan dan tersedia ──
   const tersedia = assets
-    .filter(a => a.kondisi === "Siap Digunakan")
-    .reduce((sum, a) => sum + (parseInt(a.jumlah) || 0), 0);
+    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
+    .reduce((sum, a) => {
+      if (a.readyUnitsCount !== undefined) {
+        return sum + Number(a.readyUnitsCount);
+      }
+      return a.kondisi === "Siap Digunakan" ? sum + (parseInt(a.jumlah) || 0) : sum;
+    }, 0);
 
-  // ── Rusak: jumlah unit ASET SAJA yang kondisinya "Rusak" (yang masih bisa diperbaiki) ──
+  // ── Rusak: jumlah unit fisik yang berkondisi "Rusak" ──
   const rusak = assets
-    .filter(a => a.kondisi === "Rusak")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+    .filter(a => a.kondisi !== "Dijual")
+    .reduce((sum, a) => {
+      if (a.rusakUnitsCount !== undefined) {
+        return sum + Number(a.rusakUnitsCount) + Number(a.rusakBeratUnitsCount || 0);
+      }
+      return (a.kondisi === "Rusak" || a.kondisi === "Rusak Berat") ? sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0) : sum;
+    }, 0);
 
-  // ── Maintenance: jumlah unit ASET SAJA yang kondisinya "Maintenance" ──
+  // ── Maintenance: jumlah unit fisik yang berkondisi "Maintenance" ──
   const maintenance = assets
-    .filter(a => a.kondisi === "Maintenance")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
-
-  // ── Dipinjam Aset: hitung dari selisih jumlahTotal dan jumlah (tersedia) ──
-  const dipinjamAset = assets
     .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
     .reduce((sum, a) => {
-      if (a.kondisi === "Siap Digunakan") {
-        return sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlah) || 0));
+      if (a.maintenanceUnitsCount !== undefined) {
+        return sum + Number(a.maintenanceUnitsCount);
       }
-      if (a.kondisi === "Sedang Dipinjam") {
-        return sum + (parseInt(a.jumlahTotal) || 0);
-      }
-      return sum;
+      return a.kondisi === "Maintenance" ? sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0) : sum;
     }, 0);
 
-  // ── Dipinjam Aksesoris: hitung dari selisih jumlahTotal dan jumlahUnit (tersedia) ──
-  const dipinjamAksesoris = aksesoris
-    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => {
-      if (a.kondisi === "Siap Digunakan") {
-        return sum + ((parseInt(a.jumlahTotal) || 0) - (parseInt(a.jumlahUnit) || 0));
-      }
-      if (a.kondisi === "Sedang Dipinjam") {
-        return sum + (parseInt(a.jumlahTotal) || 0);
-      }
-      return sum;
-    }, 0);
+  // ── Dipinjam Aset: HANYA jika ada peminjaman aktif riil (status 'Sedang Dipinjam' / 'Menunggu Verifikasi') ──
+  const dipinjamAsetFromLoans = activeLoans.reduce((sum, p) => sum + (parseInt(p.totalAsetPinjam) || 0), 0);
+  const dipinjamUnitsFromAssets = assets.reduce((sum, a) => sum + (parseInt(a.dipinjamUnitsCount) || 0), 0);
+  const dipinjamAset = activeLoans.length > 0
+    ? Math.max(dipinjamAsetFromLoans, dipinjamUnitsFromAssets)
+    : 0;
+
+  // ── Dipinjam Aksesoris: HANYA jika ada peminjaman aktif riil ──
+  const dipinjamAksesoris = activeLoans.length > 0
+    ? activeLoans.reduce((sum, p) => sum + (parseInt(p.totalAksesorisPinjam) || 0), 0)
+    : 0;
 
   const aksesorisRusak = aksesoris
-    .filter(a => a.kondisi === "Rusak")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+    .filter(a => a.kondisi === "Rusak" || a.kondisi === "Rusak Berat")
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0), 0);
 
   const aksesorisMaintenance = aksesoris
     .filter(a => a.kondisi === "Maintenance")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || 0), 0);
+    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0), 0);
 
   const dipinjam = dipinjamAset + dipinjamAksesoris;
 
-  // ── Aksesoris Tersedia (pie chart): hanya yang kondisi "Siap Digunakan" ──
-  const aksesorisTersediaCount = aksesoris
-    .filter(a => a.kondisi === "Siap Digunakan")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahUnit) || 0), 0);
+  // ── Aksesoris Tersedia (pie chart): hanya yang kondisi "Siap Digunakan" dikurangi yang dipinjam ──
+  const aksesorisTersediaCount = Math.max(
+    0,
+    aksesoris
+      .filter(a => a.kondisi === "Siap Digunakan")
+      .reduce((sum, a) => sum + (parseInt(a.jumlahUnit) || 0), 0) - dipinjamAksesoris
+  );
 
   // ── Total Nilai Aset: harga sebenarnya dari semua aset (hargaAset × jumlahTotal) ──
   const totalNilaiAset = assets
@@ -211,11 +221,6 @@ export async function getDashboardStats() {
     ...assets.filter(a => (parseInt(a.jumlah) || 0) <= 3),
     ...aksesoris.filter(a => (parseInt(a.jumlahUnit) || 0) <= 3)
   ];
-
-  // Peminjaman Aktif (belum selesai)
-  const activeLoans = peminjaman
-    .filter(p => p.status !== 'Peminjaman Selesai')
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   // Aktivitas Terbaru (Gabungan Asset, Aksesoris & Peminjaman)
   const activities = [
@@ -281,3 +286,59 @@ export async function importAssets(items) {
   const response = await api.post("/assets/import", { items });
   return response.data;
 }
+
+/**
+ * DELETE seluruh aset dan/atau aksesoris (Khusus Super Admin)
+ * @param {"both"|"assets"|"accessories"} target
+ * @returns {Promise<Object>} hasil penghapusan
+ */
+export async function deleteAllInventory(target = "both") {
+  const response = await api.delete("/assets/bulk/delete-all", {
+    data: { target }
+  });
+  return response.data;
+}
+
+/**
+ * GET semua unit fisik dari sebuah aset
+ * @param {number} assetId
+ * @returns {Promise<Array>} list unit
+ */
+export async function getAssetUnits(assetId) {
+  const response = await api.get(`/assets/${assetId}/units`);
+  return response.data.data;
+}
+
+/**
+ * POST tambah unit fisik baru pada aset
+ * @param {number} assetId
+ * @param {Object} unitData
+ * @returns {Promise<Object>} unit yang dibuat
+ */
+export async function addAssetUnit(assetId, unitData) {
+  const response = await api.post(`/assets/${assetId}/units`, unitData);
+  return response.data;
+}
+
+/**
+ * PUT update unit fisik tertentu (kondisi, no_sn, nama_unit, lokasi, dll)
+ * @param {number} unitId
+ * @param {Object} unitData
+ * @returns {Promise<Object>} hasil update
+ */
+export async function updateAssetUnit(unitId, unitData) {
+  const response = await api.put(`/assets/units/${unitId}`, unitData);
+  return response.data;
+}
+
+/**
+ * DELETE hapus unit fisik tertentu
+ * @param {number} unitId
+ * @returns {Promise<Object>} hasil delete
+ */
+export async function deleteAssetUnit(unitId) {
+  const response = await api.delete(`/assets/units/${unitId}`);
+  return response.data;
+}
+
+

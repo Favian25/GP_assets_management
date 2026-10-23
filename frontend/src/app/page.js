@@ -509,16 +509,17 @@ export default function DashboardPage() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-white/10 pt-4">
+                      <div className="mt-4 flex flex-wrap justify-center gap-2 border-t border-white/10 pt-4">
                         {[
-                          { color: "#10b981", label: "Siap Digunakan" },
-                          { color: "#3b82f6", label: "Sedang Dipinjam" },
-                          { color: "#f59e0b", label: "Maintenance" },
-                          { color: "#ef4444", label: "Rusak" }
+                          { color: "#10b981", label: "Siap", count: (chartSlide === 0 ? stats?.tersedia : stats?.aksesorisTersedia) || 0 },
+                          { color: "#3b82f6", label: "Dipinjam", count: (chartSlide === 0 ? stats?.asetDipinjam : stats?.aksesorisDipinjam) || 0 },
+                          { color: "#f59e0b", label: "Maintenance", count: (chartSlide === 0 ? stats?.maintenance : stats?.aksesorisMaintenance) || 0 },
+                          { color: "#ef4444", label: "Rusak", count: (chartSlide === 0 ? stats?.rusak : stats?.aksesorisRusak) || 0 }
                         ].map((item) => (
-                          <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
-                            <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-slate-300 text-xs font-medium">{item.label}</span>
+                          <div key={item.label} className="flex items-center gap-1.5 whitespace-nowrap bg-white/5 px-2 py-1 rounded-lg border border-white/10">
+                            <div className="flex-shrink-0 w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="text-slate-300 text-xs font-medium">{item.label}:</span>
+                            <span className="text-white text-xs font-bold font-mono">{item.count}</span>
                           </div>
                         ))}
                       </div>
@@ -607,16 +608,21 @@ export default function DashboardPage() {
 
                       <div className="w-full sm:w-1/3 flex flex-col justify-center items-center sm:items-start pl-0 sm:pl-6 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0">
                         <h3 className="text-sm font-semibold text-white mb-4">Keterangan Kondisi</h3>
-                        <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-4 sm:gap-3 text-sm">
+                        <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-4 sm:gap-3 text-sm w-full">
                           {[
-                            { color: "#10b981", label: "Siap Digunakan" },
-                            { color: "#3b82f6", label: "Sedang Dipinjam" },
-                            { color: "#f59e0b", label: "Maintenance" },
-                            { color: "#ef4444", label: "Rusak" }
+                            { color: "#10b981", label: "Siap Digunakan", count: (stats?.tersedia || 0) + (stats?.aksesorisTersedia || 0) },
+                            { color: "#3b82f6", label: "Sedang Dipinjam", count: (stats?.asetDipinjam || 0) + (stats?.aksesorisDipinjam || 0) },
+                            { color: "#f59e0b", label: "Maintenance", count: (stats?.maintenance || 0) + (stats?.aksesorisMaintenance || 0) },
+                            { color: "#ef4444", label: "Rusak", count: (stats?.rusak || 0) + (stats?.aksesorisRusak || 0) }
                           ].map((item) => (
-                            <div key={item.label} className="flex items-center gap-3 whitespace-nowrap">
-                              <div className="flex-shrink-0 w-3 h-3 rounded-full shadow-md" style={{ backgroundColor: item.color }} />
-                              <span className="text-slate-200 font-medium">{item.label}</span>
+                            <div key={item.label} className="flex items-center justify-between gap-3 w-full">
+                              <div className="flex items-center gap-2.5">
+                                <div className="flex-shrink-0 w-3 h-3 rounded-full shadow-md" style={{ backgroundColor: item.color }} />
+                                <span className="text-slate-200 font-medium">{item.label}</span>
+                              </div>
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-mono">
+                                {item.count} unit
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -730,16 +736,17 @@ export default function DashboardPage() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-4 flex flex-wrap justify-center gap-3 border-t border-white/10 pt-4">
+                      <div className="mt-4 flex flex-wrap justify-center gap-2 border-t border-white/10 pt-4">
                         {[
-                          { color: "#10b981", label: "Siap Digunakan" },
-                          { color: "#3b82f6", label: "Sedang Dipinjam" },
-                          { color: "#f59e0b", label: "Maintenance" },
-                          { color: "#ef4444", label: "Rusak" }
+                          { color: "#10b981", label: "Siap", count: (chartSlide === 0 ? stats?.tersedia : stats?.aksesorisTersedia) || 0 },
+                          { color: "#3b82f6", label: "Dipinjam", count: (chartSlide === 0 ? stats?.asetDipinjam : stats?.aksesorisDipinjam) || 0 },
+                          { color: "#f59e0b", label: "Maintenance", count: (chartSlide === 0 ? stats?.maintenance : stats?.aksesorisMaintenance) || 0 },
+                          { color: "#ef4444", label: "Rusak", count: (chartSlide === 0 ? stats?.rusak : stats?.aksesorisRusak) || 0 }
                         ].map((item) => (
-                          <div key={item.label} className="flex items-center gap-2 whitespace-nowrap">
-                            <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-slate-300 text-xs font-medium">{item.label}</span>
+                          <div key={item.label} className="flex items-center gap-1.5 whitespace-nowrap bg-white/5 px-2 py-1 rounded-lg border border-white/10">
+                            <div className="flex-shrink-0 w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="text-slate-300 text-xs font-medium">{item.label}:</span>
+                            <span className="text-white text-xs font-bold font-mono">{item.count}</span>
                           </div>
                         ))}
                       </div>
@@ -828,16 +835,21 @@ export default function DashboardPage() {
 
                       <div className="w-full sm:w-1/3 flex flex-col justify-center items-center sm:items-start pl-0 sm:pl-6 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0">
                         <h3 className="text-sm font-semibold text-white mb-4">Keterangan Kondisi</h3>
-                        <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-4 sm:gap-3 text-sm">
+                        <div className="flex flex-row sm:flex-col flex-wrap justify-center sm:justify-start gap-4 sm:gap-3 text-sm w-full">
                           {[
-                            { color: "#10b981", label: "Siap Digunakan" },
-                            { color: "#3b82f6", label: "Sedang Dipinjam" },
-                            { color: "#f59e0b", label: "Maintenance" },
-                            { color: "#ef4444", label: "Rusak" }
+                            { color: "#10b981", label: "Siap Digunakan", count: (stats?.tersedia || 0) + (stats?.aksesorisTersedia || 0) },
+                            { color: "#3b82f6", label: "Sedang Dipinjam", count: (stats?.asetDipinjam || 0) + (stats?.aksesorisDipinjam || 0) },
+                            { color: "#f59e0b", label: "Maintenance", count: (stats?.maintenance || 0) + (stats?.aksesorisMaintenance || 0) },
+                            { color: "#ef4444", label: "Rusak", count: (stats?.rusak || 0) + (stats?.aksesorisRusak || 0) }
                           ].map((item) => (
-                            <div key={item.label} className="flex items-center gap-3 whitespace-nowrap">
-                              <div className="flex-shrink-0 w-3 h-3 rounded-full shadow-md" style={{ backgroundColor: item.color }} />
-                              <span className="text-slate-200 font-medium">{item.label}</span>
+                            <div key={item.label} className="flex items-center justify-between gap-3 w-full">
+                              <div className="flex items-center gap-2.5">
+                                <div className="flex-shrink-0 w-3 h-3 rounded-full shadow-md" style={{ backgroundColor: item.color }} />
+                                <span className="text-slate-200 font-medium">{item.label}</span>
+                              </div>
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-mono">
+                                {item.count} unit
+                              </span>
                             </div>
                           ))}
                         </div>

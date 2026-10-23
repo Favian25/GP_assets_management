@@ -171,6 +171,12 @@ export function mapAssetToFrontend(backendAsset) {
   if (backendAsset.created_at) mapped.createdAt = backendAsset.created_at;
   if (backendAsset.updated_at) mapped.updatedAt = backendAsset.updated_at;
   if (backendAsset.created_by_name) mapped.createdByName = backendAsset.created_by_name;
+  if (backendAsset.total_units_count !== undefined) mapped.totalUnitsCount = backendAsset.total_units_count;
+  if (backendAsset.ready_units_count !== undefined) mapped.readyUnitsCount = backendAsset.ready_units_count;
+  if (backendAsset.rusak_units_count !== undefined) mapped.rusakUnitsCount = backendAsset.rusak_units_count;
+  if (backendAsset.rusak_berat_units_count !== undefined) mapped.rusakBeratUnitsCount = backendAsset.rusak_berat_units_count;
+  if (backendAsset.maintenance_units_count !== undefined) mapped.maintenanceUnitsCount = backendAsset.maintenance_units_count;
+  if (backendAsset.dipinjam_units_count !== undefined) mapped.dipinjamUnitsCount = Number(backendAsset.dipinjam_units_count);
 
   return mapped;
 }
@@ -219,6 +225,8 @@ export function mapPeminjamanToFrontend(backendData) {
     approvedBy: backendData.approved_by,
     returnApprovedBy: backendData.return_approved_by,
     totalItems: backendData.total_items,
+    totalAsetPinjam: Number(backendData.total_aset_pinjam || 0),
+    totalAksesorisPinjam: Number(backendData.total_aksesoris_pinjam || 0),
     daftarAset: backendData.daftar_aset,
     buktiPeminjaman: backendData.bukti_peminjaman,
     buktiPengembalian: backendData.bukti_pengembalian,

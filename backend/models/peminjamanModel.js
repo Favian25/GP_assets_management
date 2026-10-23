@@ -19,6 +19,8 @@ const Peminjaman = {
     const [headers] = await db.query(
       `SELECT p.*, u.nama_lengkap as created_by_name,
         (SELECT COUNT(*) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id) AS total_items,
+        (SELECT COALESCE(SUM(pi.jumlah), 0) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id AND pi.asset_id IS NOT NULL) AS total_aset_pinjam,
+        (SELECT COALESCE(SUM(pi.jumlah), 0) FROM peminjaman_items pi WHERE pi.peminjaman_id = p.id AND pi.aksesoris_id IS NOT NULL) AS total_aksesoris_pinjam,
         (SELECT GROUP_CONCAT(COALESCE(a.nama_aset, ak.nama_aksesoris) SEPARATOR ', ') 
          FROM peminjaman_items pi 
          LEFT JOIN assets a ON pi.asset_id = a.id 

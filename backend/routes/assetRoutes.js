@@ -41,6 +41,13 @@ router.post("/import", verifyToken, requireRole("admin", "super admin"), assetCo
 router.post("/", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), assetController.create);    // POST /api/assets
 router.put("/:id", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), assetController.update);  // PUT  /api/assets/:id
 router.patch("/:id/kondisi", verifyToken, requireRole("admin", "super admin"), assetController.updateKondisi);      // PATCH /api/assets/:id/kondisi
+// Unit Management Routes (Option 3 - Master & Unit Fisik)
+router.get("/:id/units", verifyToken, assetController.getUnits);
+router.post("/:id/units", verifyToken, requireRole("admin", "super admin"), assetController.addUnit);
+router.put("/units/:unitId", verifyToken, requireRole("admin", "super admin"), assetController.updateUnit);
+router.delete("/units/:unitId", verifyToken, requireRole("admin", "super admin"), assetController.deleteUnit);
+
+router.delete("/bulk/delete-all", verifyToken, requireRole("super admin"), assetController.deleteAll);                     // DELETE /api/assets/bulk/delete-all (Super Admin only)
 router.delete("/:id", verifyToken, requireRole("admin", "super admin"), assetController.delete);     // DELETE /api/assets/:id
 
 module.exports = router;

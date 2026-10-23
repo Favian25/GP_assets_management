@@ -5,12 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { getAllAksesoris, createAksesoris, updateAksesoris, deleteAksesoris, searchAksesoris, updateAksesorisKondisi, importAksesoris } from "../lib/aksesorisService";
+import { deleteAllInventory } from "../lib/assetService";
 import { getAllCategories, createCategory } from "../lib/categoryService";
 import { getAllBrands, createBrand } from "../lib/brandService";
 import { getUserContext } from "../lib/authService";
 import { toSentenceCase, toUpperCaseText } from "../lib/stringUtils";
 import { exportToExcel, downloadAksesorisTemplate, parseExcelFile } from "../lib/exportUtils";
-import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu, Camera, Download, Upload, FileSpreadsheet } from "lucide-react";
+import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu, Camera, Download, Upload, FileSpreadsheet, Split } from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -211,6 +212,9 @@ export default function AksesorisPage() {
   const [newKatData, setNewKatData] = useState({ nama: "", kode_singkat: "" });
   const [newMerekData, setNewMerekData] = useState({ nama: "" });
   const [newKondisi, setNewKondisi] = useState("");
+  const [isSplitKondisi, setIsSplitKondisi] = useState(false);
+  const [jumlahSplit, setJumlahSplit] = useState(1);
+  const [keteranganKondisi, setKeteranganKondisi] = useState("");
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -222,6 +226,12 @@ export default function AksesorisPage() {
   const [importLoading, setImportLoading] = useState(false);
   const [importDragging, setImportDragging] = useState(false);
   const importFileInputRef = useRef(null);
+
+  // Super Admin Delete All States
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [deleteAllTarget, setDeleteAllTarget] = useState("both"); // "both", "assets", "accessories"
+  const [deleteAllConfirmation, setDeleteAllConfirmation] = useState("");
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   useEffect(() => { 
     setMounted(true);
@@ -481,9 +491,36 @@ export default function AksesorisPage() {
   };
   const handleUpdateKondisi = async () => {
     if (!showKondisiModal || !newKondisi) return;
-    try { setSubmitting(true); await updateAksesorisKondisi(showKondisiModal.id, newKondisi); showToast("Kondisi berhasil diperbarui!"); setShowKondisiModal(null); await fetchData(); }
-    catch (err) { showToast(err.response?.data?.message || "Gagal memperbarui kondisi", "error"); }
-    finally { setSubmitting(false); }
+    const currentQty = parseInt(showKondisiModal.jumlahUnit || showKondisiModal.jumlah_unit, 10) || 1;
+    if (isSplitKondisi) {
+      const splitQty = parseInt(jumlahSplit, 10);
+      if (isNaN(splitQty) || splitQty <= 0) {
+        showToast("Jumlah unit yang diubah harus lebih dari 0", "error");
+        return;
+      }
+      if (splitQty >= currentQty) {
+        showToast(`Jumlah split harus kurang dari total unit (${currentQty})`, "error");
+        return;
+      }
+    }
+
+    try {
+      setSubmitting(true);
+      const payload = {
+        kondisi: newKondisi,
+        is_split: isSplitKondisi,
+        jumlah_ubah: isSplitKondisi ? parseInt(jumlahSplit, 10) : currentQty,
+        keterangan: keteranganKondisi,
+      };
+      const res = await updateAksesorisKondisi(showKondisiModal.id, payload);
+      showToast(res.message || "Kondisi berhasil diperbarui!");
+      setShowKondisiModal(null);
+      await fetchData();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal memperbarui kondisi", "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
   const handleDelete = async () => {
     if (!showDeleteConfirm) return;
@@ -499,6 +536,26 @@ export default function AksesorisPage() {
       setShowDeleteConfirm(null);
       setDeleteBlockedAlert({ message: data?.message || "Gagal menghapus aksesoris", item, activePeminjaman: data?.activePeminjaman || [] });
     } finally { setSubmitting(false); }
+  };
+
+  const handleDeleteAll = async () => {
+    if (deleteAllConfirmation.trim() !== "HAPUS SEMUA") {
+      showToast("Ketik 'HAPUS SEMUA' dengan huruf besar untuk konfirmasi", "error");
+      return;
+    }
+    try {
+      setDeleteAllLoading(true);
+      const res = await deleteAllInventory(deleteAllTarget);
+      showToast(res.message || "Data berhasil dihapus seluruhnya!", "success");
+      setShowDeleteAllModal(false);
+      setDeleteAllConfirmation("");
+      await fetchData();
+    } catch (err) {
+      const msg = err.response?.data?.message || "Gagal menghapus seluruh data";
+      showToast(msg, "error");
+    } finally {
+      setDeleteAllLoading(false);
+    }
   };
 
   // Export Excel
@@ -887,6 +944,23 @@ export default function AksesorisPage() {
                 Tambah Aksesoris
               </button>
             )}
+
+            {/* Hapus Seluruh Data - Khusus Super Admin */}
+            {userRole === "super admin" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteAllTarget("both");
+                  setDeleteAllConfirmation("");
+                  setShowDeleteAllModal(true);
+                }}
+                title="Khusus Super Admin: Hapus seluruh aset dan/atau aksesoris"
+                className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95 whitespace-nowrap"
+              >
+                <Trash2 className="h-4 w-4" />
+                Hapus Seluruh Data
+              </button>
+            )}
           </div>
         </div>
 
@@ -932,7 +1006,13 @@ export default function AksesorisPage() {
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.kategori}</td>
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.merek}</td>
                   <td className="w-[140px] px-3 py-3 text-center border-r border-slate-200 align-middle">
-                    <span onClick={() => {setShowKondisiModal(item); setNewKondisi(item.kondisi)}} className={`cursor-pointer block w-full rounded-full border py-0.5 text-[10px] sm:text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span>
+                    <span onClick={() => {
+                      setShowKondisiModal(item);
+                      setNewKondisi(item.kondisi);
+                      setIsSplitKondisi(false);
+                      setJumlahSplit(1);
+                      setKeteranganKondisi("");
+                    }} className={`cursor-pointer block w-full rounded-full border py-0.5 text-[10px] sm:text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span>
                   </td>
                   <td className="w-[100px] px-3 py-3 align-middle text-center">
                     <div className="flex items-center justify-center gap-1">
@@ -1426,17 +1506,269 @@ export default function AksesorisPage() {
           })()}
 
           {/* Modal Update Kondisi */}
-          {showKondisiModal && (
-            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKondisiModal(null)}>
-              <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                  <h3 className="text-lg font-bold text-slate-800 mb-1">Ubah Kondisi Aksesoris</h3>
-                  <p className="text-sm text-slate-500 mb-4 truncate">{showKondisiModal.namaAksesoris}</p>
-                  <SelectField label="" value={newKondisi} onChange={(e) => setNewKondisi(e.target.value)} options={kondisiOptions} placeholder="Pilih Kondisi" />
+          {showKondisiModal && (() => {
+            const currentQty = parseInt(showKondisiModal.jumlahUnit || showKondisiModal.jumlah_unit, 10) || 1;
+            const canSplit = currentQty > 1;
+
+            return (
+              <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKondisiModal(null)}>
+                <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-800">Ubah Kondisi Aksesoris</h3>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">{showKondisiModal.kodeAksesoris || showKondisiModal.kode_aksesoris}</p>
+                      </div>
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold">
+                        {currentQty} Unit
+                      </span>
+                    </div>
+
+                    <div className="p-3 mb-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{showKondisiModal.namaAksesoris || showKondisiModal.nama_aksesoris}</p>
+                      <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500">
+                        <span>Kondisi saat ini:</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase ${getKondisiBadge(showKondisiModal.kondisi)}`}>
+                          {showKondisiModal.kondisi}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Kondisi Baru <span className="text-rose-500">*</span>
+                        </label>
+                        <SelectField
+                          label=""
+                          value={newKondisi}
+                          onChange={(e) => setNewKondisi(e.target.value)}
+                          options={kondisiOptions}
+                          placeholder="Pilih Kondisi Baru"
+                        />
+                      </div>
+
+                      {canSplit && (
+                        <div className="pt-2 border-t border-slate-100">
+                          <label className="block text-xs font-semibold text-slate-700 mb-2">Cakupan Unit</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsSplitKondisi(false)}
+                              className={`cursor-pointer px-3 py-2.5 rounded-xl border text-left transition-all ${
+                                !isSplitKondisi
+                                  ? "border-blue-500 bg-blue-50/50 text-blue-700 font-semibold shadow-xs"
+                                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                              }`}
+                            >
+                              <div className="text-xs font-bold">Semua Unit</div>
+                              <div className="text-[11px] opacity-75 mt-0.5">Ubah ke-{currentQty} unit</div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsSplitKondisi(true);
+                                if (!jumlahSplit || jumlahSplit >= currentQty) setJumlahSplit(1);
+                              }}
+                              className={`cursor-pointer px-3 py-2.5 rounded-xl border text-left transition-all ${
+                                isSplitKondisi
+                                  ? "border-blue-500 bg-blue-50/50 text-blue-700 font-semibold shadow-xs"
+                                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 text-xs font-bold">
+                                <Split className="h-3.5 w-3.5" />
+                                Sebagian (Split)
+                              </div>
+                              <div className="text-[11px] opacity-75 mt-0.5">Pecah unit rusak/servis</div>
+                            </button>
+                          </div>
+
+                          {isSplitKondisi && (
+                            <div className="mt-3.5 p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-3 animate-in fade-in">
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="text-xs font-semibold text-amber-950">
+                                    Jumlah Unit Yang Diubah:
+                                  </label>
+                                  <span className="text-[11px] text-amber-800 font-bold">
+                                    Maks {currentQty - 1} unit
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max={currentQty - 1}
+                                    value={jumlahSplit}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value, 10);
+                                      if (isNaN(val)) setJumlahSplit("");
+                                      else setJumlahSplit(Math.max(1, Math.min(val, currentQty - 1)));
+                                    }}
+                                    className="w-24 px-3 py-1.5 text-sm font-bold text-center bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800"
+                                  />
+                                  <span className="text-xs text-amber-900 font-medium">
+                                    unit menjadi <strong>{newKondisi || "..."}</strong>
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-amber-800 mt-1.5">
+                                  ℹ️ Sisa <strong>{currentQty - (parseInt(jumlahSplit, 10) || 1)} unit</strong> tetap berkondisi <strong>{showKondisiModal.kondisi}</strong>.
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-amber-950 mb-1">
+                                  Catatan Unit / Kerusakan (Opsional):
+                                </label>
+                                <input
+                                  type="text"
+                                  value={keteranganKondisi}
+                                  onChange={(e) => setKeteranganKondisi(e.target.value)}
+                                  placeholder="Contoh: Kabel putus / port connector aus..."
+                                  className="w-full px-3 py-1.5 text-xs bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowKondisiModal(null)}
+                      className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUpdateKondisi}
+                      disabled={submitting || !newKondisi}
+                      className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? "Memproses..." : isSplitKondisi ? "Pisahkan & Simpan" : "Update Kondisi"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
-                  <button onClick={() => setShowKondisiModal(null)} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
-                  <button onClick={handleUpdateKondisi} disabled={submitting} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-600">Update Kondisi</button>
+              </div>
+            );
+          })()}
+          {/* Modal Hapus Seluruh Data (Khusus Super Admin) */}
+          {showDeleteAllModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteAllModal(false)}>
+              <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border-t-4 border-t-rose-600 animate-modal-in overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="p-2.5 rounded-full bg-rose-100 text-rose-600">
+                      <AlertTriangle className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-slate-800">Hapus Seluruh Data</h3>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-100 text-rose-700">
+                          Super Admin
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">Tindakan pembersihan massal (Wipe Data)</p>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs leading-relaxed space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-rose-700">
+                      ⚠️ PERINGATAN KERAS: TINDAKAN INI PERMANEN!
+                    </p>
+                    <p>
+                      Semua data inventaris yang dipilih beserta berkas foto yang tersimpan di server akan <strong>dihapus secara permanen</strong> dan <strong>tidak dapat dipulihkan</strong>.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">Pilih Data yang Ingin Dihapus:</label>
+                      <div className="grid grid-cols-1 gap-2">
+                        <label className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border transition-all ${deleteAllTarget === "both" ? "border-rose-500 bg-rose-50/50 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                          <input
+                            type="radio"
+                            name="deleteTargetAks"
+                            value="both"
+                            checked={deleteAllTarget === "both"}
+                            onChange={(e) => setDeleteAllTarget(e.target.value)}
+                            className="text-rose-600 focus:ring-rose-500"
+                          />
+                          <div>
+                            <div className="text-xs font-bold">Seluruh Aset & Aksesoris</div>
+                            <div className="text-[11px] opacity-75">Kosongkan semua data inventaris aset dan aksesoris</div>
+                          </div>
+                        </label>
+
+                        <label className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border transition-all ${deleteAllTarget === "assets" ? "border-rose-500 bg-rose-50/50 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                          <input
+                            type="radio"
+                            name="deleteTargetAks"
+                            value="assets"
+                            checked={deleteAllTarget === "assets"}
+                            onChange={(e) => setDeleteAllTarget(e.target.value)}
+                            className="text-rose-600 focus:ring-rose-500"
+                          />
+                          <div>
+                            <div className="text-xs font-bold">Hanya Seluruh Aset</div>
+                            <div className="text-[11px] opacity-75">Hanya menghapus data pada tabel Daftar Aset</div>
+                          </div>
+                        </label>
+
+                        <label className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border transition-all ${deleteAllTarget === "accessories" ? "border-rose-500 bg-rose-50/50 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                          <input
+                            type="radio"
+                            name="deleteTargetAks"
+                            value="accessories"
+                            checked={deleteAllTarget === "accessories"}
+                            onChange={(e) => setDeleteAllTarget(e.target.value)}
+                            className="text-rose-600 focus:ring-rose-500"
+                          />
+                          <div>
+                            <div className="text-xs font-bold">Hanya Seluruh Aksesoris</div>
+                            <div className="text-[11px] opacity-75">Hanya menghapus data pada tabel Aksesoris</div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Ketik <span className="font-mono text-rose-600 font-bold bg-rose-50 px-1 py-0.5 rounded border border-rose-200">HAPUS SEMUA</span> untuk konfirmasi:
+                      </label>
+                      <input
+                        type="text"
+                        value={deleteAllConfirmation}
+                        onChange={(e) => setDeleteAllConfirmation(e.target.value)}
+                        placeholder="Ketik HAPUS SEMUA di sini..."
+                        className="w-full px-3.5 py-2 text-sm border-2 border-slate-200 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-mono tracking-wide text-slate-800"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteAllModal(false)}
+                    disabled={deleteAllLoading}
+                    className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAll}
+                    disabled={deleteAllLoading || deleteAllConfirmation.trim() !== "HAPUS SEMUA"}
+                    className="cursor-pointer rounded-lg bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {deleteAllLoading ? "Menghapus..." : "Konfirmasi Hapus Permanen"}
+                  </button>
                 </div>
               </div>
             </div>

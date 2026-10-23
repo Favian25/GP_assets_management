@@ -100,8 +100,9 @@ export async function deleteAksesoris(id) {
  * @param {string} kondisi
  * @returns {Promise<Object>} response message
  */
-export async function updateAksesorisKondisi(id, kondisi) {
-  const response = await api.patch(`/aksesoris/${id}/kondisi`, { kondisi });
+export async function updateAksesorisKondisi(id, dataOrKondisi) {
+  const payload = typeof dataOrKondisi === "string" ? { kondisi: dataOrKondisi } : dataOrKondisi;
+  const response = await api.patch(`/aksesoris/${id}/kondisi`, payload);
   return response.data;
 }
 

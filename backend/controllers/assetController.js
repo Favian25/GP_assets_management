@@ -6,6 +6,46 @@ const { optimizeImage } = require("../utils/imageOptimizer");
 const AuditLog = require("../models/auditModel");
 const db = require("../config/db");
 
+// Helper: Sinkronisasi jumlah unit, stok siap, dan kondisi master di tabel assets
+async function syncAssetTotals(assetId, conn = db) {
+  try {
+    const [counts] = await conn.query(`
+      SELECT 
+        COUNT(*) as total_units,
+        SUM(CASE WHEN kondisi = 'Siap Digunakan' AND status_pinjam = 'Tersedia' THEN 1 ELSE 0 END) as ready_units,
+        SUM(CASE WHEN kondisi = 'Rusak' THEN 1 ELSE 0 END) as rusak_units,
+        SUM(CASE WHEN kondisi = 'Rusak Berat' THEN 1 ELSE 0 END) as rusak_berat_units,
+        SUM(CASE WHEN kondisi = 'Maintenance' THEN 1 ELSE 0 END) as maintenance_units
+      FROM asset_units 
+      WHERE asset_id = ?
+    `, [assetId]);
+
+    const row = counts[0] || {};
+    const totalUnits = parseInt(row.total_units, 10) || 0;
+    const readyUnits = parseInt(row.ready_units, 10) || 0;
+
+    let masterKondisi = "Siap Digunakan";
+    if (totalUnits > 0) {
+      if (readyUnits === totalUnits) masterKondisi = "Siap Digunakan";
+      else if (readyUnits === 0 && (row.rusak_units > 0 || row.rusak_berat_units > 0)) masterKondisi = "Rusak";
+      else if (readyUnits === 0 && row.maintenance_units > 0) masterKondisi = "Maintenance";
+      else masterKondisi = "Siap Digunakan";
+    }
+
+    if (totalUnits > 0) {
+      await conn.query(`
+        UPDATE assets 
+        SET jumlah = ?, jumlah_total = ?, kondisi = ?
+        WHERE id = ?
+      `, [readyUnits, totalUnits, masterKondisi, assetId]);
+    }
+
+    return { totalUnits, readyUnits, masterKondisi };
+  } catch (err) {
+    console.error("Error syncAssetTotals:", err);
+  }
+}
+
 const assetController = {
   // GET /api/assets
   getAll: async (req, res) => {
@@ -87,14 +127,38 @@ const assetController = {
       }
 
       const newAsset = await Asset.create(data);
+      const assetId = newAsset.id || newAsset.insertId;
+      const qty = parseInt(data.jumlah, 10) || 1;
+
+      for (let i = 1; i <= qty; i++) {
+        const numStr = String(i).padStart(2, "0");
+        const kodeUnit = `${data.kode_aset}-${numStr}`;
+        const unitSn = qty === 1 ? (data.no_sn || null) : null;
+        const unitNama = qty > 1 ? `${data.nama_aset} (Unit ${i})` : data.nama_aset;
+
+        await db.query(
+          `INSERT INTO asset_units (asset_id, kode_unit, nama_unit, no_sn, kondisi, status_pinjam, lokasi_unit, keterangan)
+           VALUES (?, ?, ?, ?, ?, 'Tersedia', ?, ?)`,
+          [
+            assetId,
+            kodeUnit,
+            unitNama,
+            unitSn,
+            data.kondisi || "Siap Digunakan",
+            data.lokasi_aset || null,
+            data.keterangan || null,
+          ]
+        );
+      }
+      await syncAssetTotals(assetId);
 
       await AuditLog.create({
         userId: req.user?.userId,
         userName: req.user?.nama,
         action: 'CREATE',
         entityType: 'Aset',
-        entityId: newAsset.insertId,
-        details: `Menambahkan aset: ${data.nama_aset} (${data.kode_aset})`
+        entityId: assetId,
+        details: `Menambahkan aset: ${data.nama_aset} (${data.kode_aset}) dengan ${qty} unit fisik`
       });
 
       res.status(201).json({
@@ -333,11 +397,121 @@ const assetController = {
     }
   },
 
+  // DELETE /api/assets/bulk/delete-all
+  // Khusus Super Admin: Hapus seluruh aset dan/atau aksesoris
+  deleteAll: async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const { target = "both" } = req.body || {}; // "both", "assets", "accessories"
+
+      // 1. Cek apakah ada peminjaman aktif yang belum selesai
+      if (target === "assets" || target === "both") {
+        const [activeAssetLoans] = await connection.query(
+          `SELECT p.kode_pinjam, p.status, p.nama_peminjam
+           FROM peminjaman_items pi
+           JOIN peminjaman p ON pi.peminjaman_id = p.id
+           WHERE pi.asset_id IS NOT NULL 
+             AND p.status IN ('Menunggu Persetujuan', 'Sedang Dipinjam', 'Menunggu Verifikasi')`
+        );
+        if (activeAssetLoans.length > 0) {
+          await connection.rollback();
+          return res.status(409).json({
+            success: false,
+            message: "Tidak dapat menghapus seluruh aset karena masih terdapat peminjaman aktif yang belum selesai.",
+            activeLoans: activeAssetLoans
+          });
+        }
+      }
+
+      if (target === "accessories" || target === "both") {
+        const [activeAksLoans] = await connection.query(
+          `SELECT p.kode_pinjam, p.status, p.nama_peminjam
+           FROM peminjaman_items pi
+           JOIN peminjaman p ON pi.peminjaman_id = p.id
+           WHERE pi.aksesoris_id IS NOT NULL 
+             AND p.status IN ('Menunggu Persetujuan', 'Sedang Dipinjam', 'Menunggu Verifikasi')`
+        );
+        if (activeAksLoans.length > 0) {
+          await connection.rollback();
+          return res.status(409).json({
+            success: false,
+            message: "Tidak dapat menghapus seluruh aksesoris karena masih terdapat peminjaman aktif yang belum selesai.",
+            activeLoans: activeAksLoans
+          });
+        }
+      }
+
+      // Ambil file gambar sebelum data dihapus dari database
+      let assetImages = [];
+      let aksImages = [];
+
+      if (target === "assets" || target === "both") {
+        const [assets] = await connection.query("SELECT gambar FROM assets WHERE gambar IS NOT NULL");
+        assetImages = assets.map(a => a.gambar);
+
+        // Hapus relasi peminjaman_items yang mereferensikan aset
+        await connection.query("DELETE FROM peminjaman_items WHERE asset_id IS NOT NULL");
+        // Hapus seluruh aset
+        await connection.query("DELETE FROM assets");
+      }
+
+      if (target === "accessories" || target === "both") {
+        const [aksesoris] = await connection.query("SELECT gambar FROM aksesoris WHERE gambar IS NOT NULL");
+        aksImages = aksesoris.map(a => a.gambar);
+
+        // Hapus relasi peminjaman_items yang mereferensikan aksesoris
+        await connection.query("DELETE FROM peminjaman_items WHERE aksesoris_id IS NOT NULL");
+        // Hapus seluruh aksesoris
+        await connection.query("DELETE FROM aksesoris");
+      }
+
+      await connection.commit();
+
+      // Bersihkan file gambar di folder public/uploads
+      const allImages = [...assetImages, ...aksImages];
+      allImages.forEach(img => {
+        if (img) {
+          const fullPath = path.join(__dirname, "..", "public", img);
+          if (fs.existsSync(fullPath)) {
+            try { fs.unlinkSync(fullPath); } catch (e) { console.error("Error unlinking image:", fullPath, e); }
+          }
+        }
+      });
+
+      // Audit Log
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'DELETE',
+        entityType: 'System',
+        entityId: 'ALL',
+        details: `SUPER ADMIN menghapus seluruh data: ${target === 'both' ? 'Aset & Aksesoris' : target === 'assets' ? 'Seluruh Aset' : 'Seluruh Aksesoris'}`
+      });
+
+      res.json({
+        success: true,
+        message: `Seluruh data ${target === 'both' ? 'Aset & Aksesoris' : target === 'assets' ? 'Aset' : 'Aksesoris'} berhasil dihapus permanen oleh Super Admin.`
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error deleteAll inventory:", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal menghapus seluruh data",
+        error: error.message
+      });
+    } finally {
+      connection.release();
+    }
+  },
+
   // PATCH /api/assets/:id/kondisi
   updateKondisi: async (req, res) => {
     try {
       const { id } = req.params;
-      const { kondisi } = req.body;
+      const { kondisi, is_split, jumlah_ubah, keterangan } = req.body;
 
       if (!kondisi) {
         return res.status(400).json({ success: false, message: "Kondisi wajib diisi" });
@@ -348,9 +522,108 @@ const assetController = {
         return res.status(404).json({ success: false, message: "Aset tidak ditemukan" });
       }
 
+      const currentQty = parseInt(existing.jumlah, 10) || 1;
+      const qtyToSplit = parseInt(jumlah_ubah, 10);
+
+      // Jika user memilih split dan jumlah yang diubah valid (< total unit)
+      if (is_split && qtyToSplit > 0 && qtyToSplit < currentQty) {
+        const conn = await db.getConnection();
+        try {
+          await conn.beginTransaction();
+
+          // Generate kode aset turunan unik
+          const baseKode = existing.kode_aset;
+          let counter = 1;
+          let newKodeAset = `${baseKode}-P${counter}`;
+          while (true) {
+            const [check] = await conn.query("SELECT id FROM assets WHERE kode_aset = ?", [newKodeAset]);
+            if (check.length === 0) break;
+            counter++;
+            newKodeAset = `${baseKode}-P${counter}`;
+          }
+
+          let newNoSn = null;
+          if (existing.no_sn) {
+            newNoSn = `${existing.no_sn}-P${counter}`;
+          }
+
+          const splitNote = keterangan?.trim()
+            ? `${keterangan.trim()} (Pecahan dari ${existing.kode_aset})`
+            : `Pecahan ${qtyToSplit} unit dari ${existing.kode_aset}`;
+
+          // Insert baris baru untuk unit yang kondisinya berbeda
+          const [insertRes] = await conn.query(
+            `INSERT INTO assets 
+              (kode_aset, nama_aset, pengguna, kategori, merek, model, no_sn, spesifikasi, lokasi_aset, jenis_aset, kondisi, unit, gambar, keterangan, jumlah, harga_aset, jumlah_total, tanggal_pembelian, user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              newKodeAset,
+              existing.nama_aset,
+              existing.pengguna || null,
+              existing.kategori || null,
+              existing.merek || null,
+              existing.model || null,
+              newNoSn,
+              existing.spesifikasi || null,
+              existing.lokasi_aset || null,
+              existing.jenis_aset || null,
+              kondisi,
+              existing.unit || null,
+              existing.gambar || null,
+              splitNote,
+              qtyToSplit,
+              existing.harga_aset || null,
+              qtyToSplit,
+              existing.tanggal_pembelian || null,
+              req.user?.userId || existing.user_id || null,
+            ]
+          );
+
+          // Kurangi stok pada aset asal
+          const remainingJumlah = currentQty - qtyToSplit;
+          const remainingTotal = Math.max(0, (parseInt(existing.jumlah_total, 10) || currentQty) - qtyToSplit);
+          await conn.query(
+            "UPDATE assets SET jumlah = ?, jumlah_total = ? WHERE id = ?",
+            [remainingJumlah, remainingTotal, id]
+          );
+
+          await conn.commit();
+
+          await AuditLog.create({
+            userId: req.user?.userId,
+            userName: req.user?.nama,
+            action: 'UPDATE',
+            entityType: 'Aset',
+            entityId: id,
+            details: `Pemisahan (Split) aset ${existing.kode_aset}: ${qtyToSplit} unit dipindah ke kondisi "${kondisi}" (Kode baru: ${newKodeAset}), sisa ${remainingJumlah} unit.`
+          });
+
+          return res.json({
+            success: true,
+            message: `Berhasil memisahkan ${qtyToSplit} unit ke kondisi "${kondisi}" dengan kode ${newKodeAset}`,
+            data: {
+              newKodeAset,
+              newAssetId: insertRes.insertId,
+              remainingJumlah,
+              splitJumlah: qtyToSplit
+            }
+          });
+        } catch (splitErr) {
+          await conn.rollback();
+          throw splitErr;
+        } finally {
+          conn.release();
+        }
+      }
+
+      // Update seluruh unit seperti biasa
       const affectedRows = await Asset.updateKondisi(id, kondisi);
       if (affectedRows === 0) {
         return res.status(400).json({ success: false, message: "Kondisi gagal diperbarui" });
+      }
+
+      if (keterangan && keterangan.trim()) {
+        await db.query("UPDATE assets SET keterangan = ? WHERE id = ?", [keterangan.trim(), id]);
       }
 
       await AuditLog.create({
@@ -502,7 +775,31 @@ const assetController = {
           ]
         );
 
-        inserted.push({ id: insertRes.insertId, kodeAset, namaAset });
+        const assetId = insertRes.insertId;
+
+        for (let u = 1; u <= jumlah; u++) {
+          const numStr = String(u).padStart(2, "0");
+          const kodeUnit = `${kodeAset}-${numStr}`;
+          const unitSn = jumlah === 1 ? noSn : (noSn ? `${noSn}-${numStr}` : null);
+          const unitNama = jumlah > 1 ? `${namaAset} #${numStr}` : namaAset;
+
+          await connection.query(
+            `INSERT INTO asset_units (asset_id, kode_unit, nama_unit, no_sn, kondisi, status_pinjam, lokasi_unit, keterangan)
+             VALUES (?, ?, ?, ?, ?, 'Tersedia', ?, ?)`,
+            [
+              assetId,
+              kodeUnit,
+              unitNama,
+              unitSn,
+              kondisi,
+              lokasiAset,
+              keterangan,
+            ]
+          );
+        }
+        await syncAssetTotals(assetId, connection);
+
+        inserted.push({ id: assetId, kodeAset, namaAset });
       }
 
       await connection.commit();
@@ -534,6 +831,177 @@ const assetController = {
       });
     } finally {
       connection.release();
+    }
+  },
+
+  // GET /api/assets/:id/units
+  getUnits: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [units] = await db.query(
+        "SELECT * FROM asset_units WHERE asset_id = ? ORDER BY id ASC",
+        [id]
+      );
+      res.json({
+        success: true,
+        data: units,
+      });
+    } catch (error) {
+      console.error("Error getUnits:", error);
+      res.status(500).json({ success: false, message: "Gagal mengambil unit aset", error: error.message });
+    }
+  },
+
+  // POST /api/assets/:id/units
+  addUnit: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const asset = await Asset.getById(id);
+      if (!asset) {
+        return res.status(404).json({ success: false, message: "Aset tidak ditemukan" });
+      }
+
+      const { kode_unit, nama_unit, no_sn, kondisi = "Siap Digunakan", lokasi_unit, keterangan } = req.body;
+
+      let finalKodeUnit = kode_unit;
+      if (!finalKodeUnit) {
+        const [existingUnits] = await db.query(
+          "SELECT kode_unit FROM asset_units WHERE asset_id = ? ORDER BY id DESC LIMIT 1",
+          [id]
+        );
+        let nextUnitNum = 1;
+        if (existingUnits[0]) {
+          const match = existingUnits[0].kode_unit.match(/-(\d+)$/);
+          if (match) nextUnitNum = parseInt(match[1], 10) + 1;
+        }
+        finalKodeUnit = `${asset.kode_aset}-${String(nextUnitNum).padStart(2, "0")}`;
+      }
+
+      const [insertRes] = await db.query(
+        `INSERT INTO asset_units (asset_id, kode_unit, nama_unit, no_sn, kondisi, status_pinjam, lokasi_unit, keterangan)
+         VALUES (?, ?, ?, ?, ?, 'Tersedia', ?, ?)`,
+        [
+          id,
+          finalKodeUnit,
+          nama_unit || `${asset.nama_aset} (Tambahan)`,
+          no_sn || null,
+          kondisi,
+          lokasi_unit || asset.lokasi_aset || null,
+          keterangan || null,
+        ]
+      );
+
+      await syncAssetTotals(id);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: "CREATE",
+        entityType: "Aset Unit",
+        entityId: insertRes.insertId,
+        details: `Menambahkan unit fisik ${finalKodeUnit} untuk ${asset.nama_aset}`,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Unit fisik berhasil ditambahkan",
+        data: { id: insertRes.insertId, kode_unit: finalKodeUnit },
+      });
+    } catch (error) {
+      console.error("Error addUnit:", error);
+      res.status(500).json({ success: false, message: "Gagal menambahkan unit", error: error.message });
+    }
+  },
+
+  // PUT /api/assets/units/:unitId
+  updateUnit: async (req, res) => {
+    try {
+      const { unitId } = req.params;
+      const [unitRows] = await db.query("SELECT * FROM asset_units WHERE id = ?", [unitId]);
+      if (unitRows.length === 0) {
+        return res.status(404).json({ success: false, message: "Unit aset tidak ditemukan" });
+      }
+      const unit = unitRows[0];
+      const { kode_unit, nama_unit, no_sn, kondisi, status_pinjam, lokasi_unit, keterangan } = req.body;
+
+      await db.query(
+        `UPDATE asset_units 
+         SET kode_unit = COALESCE(?, kode_unit),
+             nama_unit = ?,
+             no_sn = ?,
+             kondisi = COALESCE(?, kondisi),
+             status_pinjam = COALESCE(?, status_pinjam),
+             lokasi_unit = ?,
+             keterangan = ?
+         WHERE id = ?`,
+        [
+          kode_unit || unit.kode_unit,
+          nama_unit !== undefined ? nama_unit : unit.nama_unit,
+          no_sn !== undefined ? no_sn : unit.no_sn,
+          kondisi || unit.kondisi,
+          status_pinjam || unit.status_pinjam,
+          lokasi_unit !== undefined ? lokasi_unit : unit.lokasi_unit,
+          keterangan !== undefined ? keterangan : unit.keterangan,
+          unitId,
+        ]
+      );
+
+      await syncAssetTotals(unit.asset_id);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: "UPDATE",
+        entityType: "Aset Unit",
+        entityId: unitId,
+        details: `Mengubah unit ${unit.kode_unit}: kondisi menjadi ${kondisi || unit.kondisi}`,
+      });
+
+      const [updated] = await db.query("SELECT * FROM asset_units WHERE id = ?", [unitId]);
+      res.json({
+        success: true,
+        message: "Unit fisik berhasil diperbarui",
+        data: updated[0],
+      });
+    } catch (error) {
+      console.error("Error updateUnit:", error);
+      res.status(500).json({ success: false, message: "Gagal memperbarui unit", error: error.message });
+    }
+  },
+
+  // DELETE /api/assets/units/:unitId
+  deleteUnit: async (req, res) => {
+    try {
+      const { unitId } = req.params;
+      const [unitRows] = await db.query("SELECT * FROM asset_units WHERE id = ?", [unitId]);
+      if (unitRows.length === 0) {
+        return res.status(404).json({ success: false, message: "Unit aset tidak ditemukan" });
+      }
+      const unit = unitRows[0];
+
+      if (unit.status_pinjam === "Dipinjam") {
+        return res.status(400).json({ success: false, message: "Unit sedang dipinjam dan tidak dapat dihapus" });
+      }
+
+      await db.query("DELETE FROM asset_units WHERE id = ?", [unitId]);
+      await syncAssetTotals(unit.asset_id);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: "DELETE",
+        entityType: "Aset Unit",
+        entityId: unitId,
+        details: `Menghapus unit fisik ${unit.kode_unit}`,
+      });
+
+      res.json({
+        success: true,
+        message: `Unit ${unit.kode_unit} berhasil dihapus`,
+      });
+    } catch (error) {
+      console.error("Error deleteUnit:", error);
+      res.status(500).json({ success: false, message: "Gagal menghapus unit", error: error.message });
     }
   },
 };
