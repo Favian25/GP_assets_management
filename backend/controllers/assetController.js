@@ -51,10 +51,23 @@ const assetController = {
   getAll: async (req, res) => {
     try {
       const assets = await Asset.getAll();
+      const [units] = await db.query(
+        "SELECT id, asset_id, kode_unit, nama_unit, kondisi, status_pinjam FROM asset_units ORDER BY id ASC"
+      );
+      const unitsByAsset = {};
+      for (const u of units) {
+        if (!unitsByAsset[u.asset_id]) unitsByAsset[u.asset_id] = [];
+        unitsByAsset[u.asset_id].push(u);
+      }
+      const data = assets.map((a) => ({
+        ...a,
+        units: unitsByAsset[a.id] || [],
+      }));
+
       res.json({
         success: true,
         message: "Data aset berhasil diambil",
-        data: assets,
+        data,
       });
     } catch (error) {
       console.error("Error getAll assets:", error);

@@ -106,10 +106,32 @@ const Peminjaman = {
             throw new Error(`Stok "${stokRows[0].nama_aset}" tidak mencukupi. Tersedia: ${stokSekarang}, Diminta: ${item.jumlah}`);
           }
 
-          await connection.query(
-            "INSERT INTO peminjaman_items (peminjaman_id, asset_id, jumlah) VALUES (?, ?, ?)",
-            [peminjamanId, item.asset_id, item.jumlah]
-          );
+          if (Array.isArray(item.unit_ids) && item.unit_ids.length > 0) {
+            for (const uId of item.unit_ids) {
+              await connection.query(
+                "INSERT INTO peminjaman_items (peminjaman_id, asset_id, unit_id, jumlah) VALUES (?, ?, ?, 1)",
+                [peminjamanId, item.asset_id, uId]
+              );
+              await connection.query(
+                "UPDATE asset_units SET status_pinjam = 'Dipinjam' WHERE id = ?",
+                [uId]
+              );
+            }
+          } else if (item.unit_id) {
+            await connection.query(
+              "INSERT INTO peminjaman_items (peminjaman_id, asset_id, unit_id, jumlah) VALUES (?, ?, ?, ?)",
+              [peminjamanId, item.asset_id, item.unit_id, item.jumlah || 1]
+            );
+            await connection.query(
+              "UPDATE asset_units SET status_pinjam = 'Dipinjam' WHERE id = ?",
+              [item.unit_id]
+            );
+          } else {
+            await connection.query(
+              "INSERT INTO peminjaman_items (peminjaman_id, asset_id, unit_id, jumlah) VALUES (?, ?, NULL, ?)",
+              [peminjamanId, item.asset_id, item.jumlah]
+            );
+          }
 
           await connection.query(
             "UPDATE assets SET jumlah = jumlah - ? WHERE id = ?",
@@ -218,11 +240,17 @@ const Peminjaman = {
 
         // Ambil items dan kembalikan stok
         const [items] = await connection.query(
-          "SELECT asset_id, aksesoris_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
+          "SELECT asset_id, aksesoris_id, unit_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
           [id]
         );
 
         for (const item of items) {
+          if (item.unit_id) {
+            await connection.query(
+              "UPDATE asset_units SET status_pinjam = 'Tersedia' WHERE id = ?",
+              [item.unit_id]
+            );
+          }
           if (item.asset_id) {
             await connection.query(
               "UPDATE assets SET jumlah = jumlah + ? WHERE id = ?",
@@ -262,10 +290,16 @@ const Peminjaman = {
       // Jika belum selesai, berarti stok masih ditahan, maka kembalikan stok
       if (headers[0].status !== "Peminjaman Selesai") {
         const [items] = await connection.query(
-          "SELECT asset_id, aksesoris_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
+          "SELECT asset_id, aksesoris_id, unit_id, jumlah FROM peminjaman_items WHERE peminjaman_id = ?",
           [id]
         );
         for (const item of items) {
+          if (item.unit_id) {
+            await connection.query(
+              "UPDATE asset_units SET status_pinjam = 'Tersedia' WHERE id = ?",
+              [item.unit_id]
+            );
+          }
           if (item.asset_id) {
             await connection.query(
               "UPDATE assets SET jumlah = jumlah + ? WHERE id = ?",
@@ -483,6 +517,8 @@ const Peminjaman = {
       `SELECT pi.*,
               COALESCE(a.nama_aset, ak.nama_aksesoris) AS nama_aset,
               COALESCE(a.kode_aset, ak.kode_aksesoris) AS kode_aset,
+              au.nama_unit,
+              au.kode_unit AS kode_unit_fisik,
               COALESCE(a.tipe_harga, ak.tipe_harga, 'Per Unit') AS tipe_harga,
               COALESCE(a.jumlah_total, ak.jumlah_total, 1) AS jumlah_total,
               ROUND(
@@ -503,6 +539,7 @@ const Peminjaman = {
               COALESCE(a.merek, ak.merek) AS merek
        FROM peminjaman_items pi
        LEFT JOIN assets a ON pi.asset_id = a.id
+       LEFT JOIN asset_units au ON pi.unit_id = au.id
        LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
        WHERE pi.peminjaman_id = ?`,
       [peminjamanId]

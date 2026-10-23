@@ -470,7 +470,14 @@ export default function EditPeminjamanPage() {
                           {item.tipe === "asset" ? "Alat" : "Aksesoris"}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 truncate">{item.namaAset || item.nama_aset}</p>
+                          <p className="font-semibold text-slate-900 truncate">
+                            {item.namaAset || item.nama_aset}
+                            {(item.namaUnit || item.nama_unit) && (
+                              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                Kabinet {item.namaUnit || item.nama_unit}
+                              </span>
+                            )}
+                          </p>
                           <p className="text-xs text-slate-500 truncate">{(item.kodeAset || item.kode_aset || "-")} • {(item.kategori || "-")} • {(item.merek || "-")}</p>
                         </div>
                       </div>

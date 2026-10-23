@@ -44,6 +44,8 @@ export default function TambahPeminjamanPage() {
   const [itemSearch, setItemSearch] = useState("");
   const [itemFilter, setItemFilter] = useState("semua"); // "semua" | "asset" | "aksesoris"
   const [brandFilter, setBrandFilter] = useState("semua"); // "semua" | "Galeria Studio" | "Galeria Production"
+  const [cabinetModalItem, setCabinetModalItem] = useState(null);
+  const [selectedCabinetIds, setSelectedCabinetIds] = useState([]);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
@@ -113,6 +115,7 @@ export default function TambahPeminjamanPage() {
               gambar: a.gambar,
               jenisAset: a.jenisAset,
               tipe: "asset",
+              units: a.units || [],
             };
           }),
         ...aksesoris
@@ -139,6 +142,7 @@ export default function TambahPeminjamanPage() {
               gambar: ak.gambar,
               jenisAset: ak.jenisAset,
               tipe: "aksesoris",
+              units: [],
             };
           }),
       ];
@@ -243,8 +247,81 @@ export default function TambahPeminjamanPage() {
     setKeperluanList(updated);
   };
 
+  // Cabinet modal management
+  const openCabinetModal = (item) => {
+    const existing = items.find((it) => it.id === item.id && it.tipe === item.tipe);
+    setCabinetModalItem(item);
+    if (existing && existing.unitIds) {
+      setSelectedCabinetIds([...existing.unitIds]);
+    } else {
+      const availableIds = (item.units || [])
+        .filter((u) => u.status_pinjam === "Tersedia" && u.kondisi !== "Rusak" && u.kondisi !== "Rusak Berat")
+        .map((u) => u.id);
+      setSelectedCabinetIds(availableIds);
+    }
+  };
+
+  const toggleCabinet = (unitId, isDisabled) => {
+    if (isDisabled) return;
+    if (selectedCabinetIds.includes(unitId)) {
+      setSelectedCabinetIds(selectedCabinetIds.filter((id) => id !== unitId));
+    } else {
+      setSelectedCabinetIds([...selectedCabinetIds, unitId]);
+    }
+  };
+
+  const handleSaveCabinetSelection = () => {
+    if (!cabinetModalItem) return;
+    if (selectedCabinetIds.length === 0) {
+      showToast("Pilih minimal 1 kabinet", "error");
+      return;
+    }
+
+    const selectedUnits = (cabinetModalItem.units || []).filter((u) => selectedCabinetIds.includes(u.id));
+    const unitNames = selectedUnits.map((u) => u.nama_unit || u.kode_unit).join(", ");
+
+    const existingIndex = items.findIndex((it) => it.id === cabinetModalItem.id && it.tipe === cabinetModalItem.tipe);
+    const newItem = {
+      id: cabinetModalItem.id,
+      nama: cabinetModalItem.nama,
+      kode: cabinetModalItem.kode,
+      tipe: cabinetModalItem.tipe,
+      harga: cabinetModalItem.harga,
+      tipeHarga: cabinetModalItem.tipeHarga,
+      hargaAsetOriginal: cabinetModalItem.hargaAsetOriginal,
+      jumlahTotal: cabinetModalItem.jumlahTotal,
+      stok: cabinetModalItem.stok,
+      jumlah: selectedCabinetIds.length,
+      kategori: cabinetModalItem.kategori,
+      merek: cabinetModalItem.merek,
+      jenisAset: cabinetModalItem.jenisAset,
+      hasUnits: true,
+      units: cabinetModalItem.units,
+      unitIds: selectedCabinetIds,
+      unitNames: unitNames,
+    };
+
+    if (existingIndex >= 0) {
+      const updated = [...items];
+      updated[existingIndex] = newItem;
+      setItems(updated);
+      showToast(`Pilihan kabinet ${cabinetModalItem.nama} diperbarui (${selectedCabinetIds.length} kabinet)`, "success");
+    } else {
+      setItems([...items, newItem]);
+      showToast(`${cabinetModalItem.nama} ditambahkan (${selectedCabinetIds.length} kabinet)`, "success");
+    }
+
+    setCabinetModalItem(null);
+    setSelectedCabinetIds([]);
+  };
+
   // Item management
   const addItemToList = (item) => {
+    if (item.units && item.units.length > 0) {
+      openCabinetModal(item);
+      return;
+    }
+
     const alreadySelected = items.some(
       (it) => it.id === item.id && it.tipe === item.tipe
     );
@@ -355,6 +432,7 @@ export default function TambahPeminjamanPage() {
           items: items.map((item) => ({
             [item.tipe === "asset" ? "assetId" : "aksesorisId"]: item.id,
             jumlah: parseInt(item.jumlah) || 0,
+            unitIds: item.unitIds || undefined,
           })),
         },
         buktiFiles
@@ -680,9 +758,47 @@ export default function TambahPeminjamanPage() {
                       )}
                     </div>
 
+                    {/* Preview Kabinet Videotron/Unit */}
+                    {item.units && item.units.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-slate-100">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                          <span className="font-medium">Kabinet:</span>
+                          <span className="text-[10px] font-semibold text-primary">
+                            {item.units.filter(u => u.status_pinjam === 'Tersedia').length}/{item.units.length} Siap
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {item.units.map((u) => {
+                            const isDipinjam = u.status_pinjam === "Dipinjam";
+                            const isRusak = u.kondisi === "Rusak" || u.kondisi === "Rusak Berat";
+                            const isUnavailable = isDipinjam || isRusak;
+                            const isSel = items.find(it => it.id === item.id && it.tipe === item.tipe)?.unitIds?.includes(u.id);
+                            return (
+                              <span
+                                key={u.id}
+                                className={`text-[10px] px-1 py-0.5 rounded font-bold ${
+                                  isSel
+                                    ? "bg-blue-600 text-white"
+                                    : isUnavailable
+                                    ? "bg-slate-200 text-slate-400 line-through"
+                                    : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                }`}
+                                title={`${u.nama_unit} (${isDipinjam ? "Dipinjam" : isRusak ? "Rusak" : "Tersedia"})`}
+                              >
+                                {u.nama_unit}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {items.some((it) => it.id === item.id && it.tipe === item.tipe) && (
-                      <div className="mt-2 flex items-center justify-center text-primary">
-                        <Check className="w-4 h-4 mr-1" /> Terpilih
+                      <div className="mt-2 flex items-center justify-center text-primary text-xs font-semibold">
+                        <Check className="w-4 h-4 mr-1" />
+                        {items.find(it => it.id === item.id && it.tipe === item.tipe)?.unitIds?.length
+                          ? `${items.find(it => it.id === item.id && it.tipe === item.tipe).unitIds.length} Kabinet Terpilih`
+                          : "Terpilih"}
                       </div>
                     )}
                   </div>
@@ -717,6 +833,32 @@ export default function TambahPeminjamanPage() {
                       <div className="flex-1 min-w-0 mt-1 sm:mt-0">
                         <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
                         <p className="text-xs text-slate-500 truncate">{item.kode} • {item.kategori} • {item.merek}</p>
+                        {item.units && item.units.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <span className="text-[10px] text-slate-400 font-medium">Kabinet:</span>
+                            {item.units.map((u) => {
+                              const isDipinjam = u.status_pinjam === "Dipinjam";
+                              const isRusak = u.kondisi === "Rusak" || u.kondisi === "Rusak Berat";
+                              const isUnavailable = isDipinjam || isRusak;
+                              const isSel = items.find(it => it.id === item.id && it.tipe === item.tipe)?.unitIds?.includes(u.id);
+                              return (
+                                <span
+                                  key={u.id}
+                                  className={`text-[10px] px-1 py-0.5 rounded font-bold ${
+                                    isSel
+                                      ? "bg-blue-600 text-white"
+                                      : isUnavailable
+                                      ? "bg-slate-200 text-slate-400 line-through"
+                                      : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                  }`}
+                                  title={`${u.nama_unit} (${isDipinjam ? "Dipinjam" : isRusak ? "Rusak" : "Tersedia"})`}
+                                >
+                                  {u.nama_unit}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 shrink-0 border-t sm:border-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto">
@@ -772,6 +914,28 @@ export default function TambahPeminjamanPage() {
                       <div className="flex-1 min-w-0 mt-1 sm:mt-0">
                         <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
                         <p className="text-xs text-slate-500 truncate">{item.kode} • Stok: {item.stok}</p>
+                        {item.hasUnits && (
+                          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                            <span className="text-[11px] text-slate-500 font-semibold">Kabinet:</span>
+                            {(item.units || [])
+                              .filter((u) => item.unitIds?.includes(u.id))
+                              .map((u) => (
+                                <span key={u.id} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 font-bold rounded border border-blue-200">
+                                  {u.nama_unit || u.kode_unit}
+                                </span>
+                              ))}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
+                                openCabinetModal(orig);
+                              }}
+                              className="cursor-pointer text-xs text-primary hover:underline font-semibold ml-2"
+                            >
+                              Ubah Kabinet
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -785,17 +949,23 @@ export default function TambahPeminjamanPage() {
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                        <label className="text-xs text-slate-600 font-medium ml-1">Jml:</label>
-                        <input
-                          type="number"
-                          min="1"
-                          max={item.stok}
-                          value={item.jumlah}
-                          onChange={(e) => updateItemJumlah(idx, parseInt(e.target.value))}
-                          className="w-14 rounded bg-white border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                        />
-                      </div>
+                      {item.hasUnits ? (
+                        <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                          <span className="text-xs font-bold text-blue-800">{item.jumlah} Kabinet</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                          <label className="text-xs text-slate-600 font-medium ml-1">Jml:</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max={item.stok}
+                            value={item.jumlah}
+                            onChange={(e) => updateItemJumlah(idx, parseInt(e.target.value))}
+                            className="w-14 rounded bg-white border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                          />
+                        </div>
+                      )}
 
                       <button
                         type="button"
@@ -921,6 +1091,160 @@ export default function TambahPeminjamanPage() {
             </button>
           </div>
         </form>
+
+      {/* Modal Pemilihan Kabinet / Unit */}
+      {cabinetModalItem && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-primary">
+                  <Package className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Pilih Kabinet {cabinetModalItem.nama}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {cabinetModalItem.kode} • Total {cabinetModalItem.units?.length || 0} kabinet terdaftar
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCabinetModalItem(null)}
+                className="cursor-pointer p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {/* Quick actions & stats */}
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <span className="text-xs font-medium text-slate-600">
+                  Kabinet Terpilih: <strong className="text-primary font-bold">{selectedCabinetIds.length}</strong> dari {cabinetModalItem.units?.filter(u => u.status_pinjam === 'Tersedia').length || 0} tersedia
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const avail = (cabinetModalItem.units || [])
+                        .filter((u) => u.status_pinjam === "Tersedia" && u.kondisi !== "Rusak" && u.kondisi !== "Rusak Berat")
+                        .map((u) => u.id);
+                      setSelectedCabinetIds(avail);
+                    }}
+                    className="cursor-pointer text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition"
+                  >
+                    Pilih Semua Tersedia
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCabinetIds([])}
+                    className="cursor-pointer text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-600 font-semibold hover:bg-slate-200 transition"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              {/* Cabinet Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {(cabinetModalItem.units || []).map((u) => {
+                  const isDipinjam = u.status_pinjam === "Dipinjam";
+                  const isRusak = u.kondisi === "Rusak" || u.kondisi === "Rusak Berat";
+                  const isUnavailable = isDipinjam || isRusak;
+                  const isSelected = selectedCabinetIds.includes(u.id);
+
+                  return (
+                    <div
+                      key={u.id}
+                      onClick={() => !isUnavailable && toggleCabinet(u.id, isUnavailable)}
+                      className={`relative p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between select-none ${
+                        isUnavailable
+                          ? "bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed"
+                          : isSelected
+                          ? "bg-blue-50 border-primary shadow-sm cursor-pointer ring-1 ring-primary"
+                          : "bg-white border-slate-200 hover:border-primary/50 hover:bg-slate-50 cursor-pointer"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-base font-bold ${
+                          isSelected ? "text-primary" : isUnavailable ? "text-slate-400" : "text-slate-800"
+                        }`}>
+                          {u.nama_unit || u.kode_unit}
+                        </span>
+                        {isSelected ? (
+                          <div className="w-5 h-5 rounded-md bg-primary text-white flex items-center justify-center">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </div>
+                        ) : (
+                          <div className={`w-5 h-5 rounded-md border ${
+                            isUnavailable ? "border-slate-300 bg-slate-200" : "border-slate-300 bg-white"
+                          }`} />
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                        <span className="text-slate-500 font-mono text-[10px] truncate max-w-[70px]">
+                          {u.kode_unit}
+                        </span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                          isDipinjam
+                            ? "bg-amber-100 text-amber-800"
+                            : isRusak
+                            ? "bg-red-100 text-red-800"
+                            : "bg-emerald-100 text-emerald-800"
+                        }`}>
+                          {isDipinjam ? "Dipinjam" : isRusak ? "Rusak" : "Tersedia"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Price Calculation Box */}
+              {cabinetModalItem.harga > 0 && (
+                <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-slate-500 block">Estimasi Nilai ({selectedCabinetIds.length} kabinet):</span>
+                    <span className="text-[11px] text-slate-400">
+                      @ Rp {cabinetModalItem.harga.toLocaleString("id-ID")} / kabinet
+                    </span>
+                  </div>
+                  <span className="text-base font-bold text-emerald-600">
+                    Rp {(cabinetModalItem.harga * selectedCabinetIds.length).toLocaleString("id-ID")}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setCabinetModalItem(null)}
+                className="cursor-pointer px-4 py-2 text-sm rounded-lg border border-slate-300 font-semibold text-slate-700 hover:bg-slate-200 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={selectedCabinetIds.length === 0}
+                onClick={handleSaveCabinetSelection}
+                className="cursor-pointer px-5 py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                Simpan ({selectedCabinetIds.length} Kabinet)
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Toast */}
       {toast && createPortal(

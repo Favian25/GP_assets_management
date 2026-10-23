@@ -177,6 +177,7 @@ export function mapAssetToFrontend(backendAsset) {
   if (backendAsset.rusak_berat_units_count !== undefined) mapped.rusakBeratUnitsCount = backendAsset.rusak_berat_units_count;
   if (backendAsset.maintenance_units_count !== undefined) mapped.maintenanceUnitsCount = backendAsset.maintenance_units_count;
   if (backendAsset.dipinjam_units_count !== undefined) mapped.dipinjamUnitsCount = Number(backendAsset.dipinjam_units_count);
+  if (backendAsset.units) mapped.units = backendAsset.units;
 
   return mapped;
 }
@@ -249,6 +250,9 @@ export function mapPeminjamanToFrontend(backendData) {
           id: item.id,
           assetId: item.asset_id,
           aksesorisId: item.aksesoris_id,
+          unitId: item.unit_id,
+          namaUnit: item.nama_unit,
+          kodeUnitFisik: item.kode_unit_fisik,
           namaAset: item.nama_aset,
           kodeAset: item.kode_aset,
           jumlah: item.jumlah,
@@ -279,6 +283,7 @@ export function mapPeminjamanToBackend(frontendData) {
       asset_id: item.assetId || null,
       aksesoris_id: item.aksesorisId || null,
       jumlah: item.jumlah,
+      unit_ids: item.unitIds || item.unit_ids || undefined,
     }));
   }
   return mapped;

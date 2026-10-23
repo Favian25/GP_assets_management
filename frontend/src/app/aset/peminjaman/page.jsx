@@ -801,7 +801,14 @@ export default function PeminjamanAsetPage() {
                                 <tr key={it.id || i} className="border-b border-slate-100 last:border-0">
                                   <td className="px-3 py-2 text-slate-500">{i + 1}</td>
                                   <td className="px-3 py-2 text-slate-600 font-mono text-xs">{it.kodeAset || "-"}</td>
-                                  <td className="px-3 py-2 text-slate-700 font-medium">{it.namaAset || it.namaAksesoris || it.namaItem || "-"}</td>
+                                  <td className="px-3 py-2 text-slate-700 font-medium">
+                                    {it.namaAset || it.namaAksesoris || it.namaItem || "-"}
+                                    {it.namaUnit && (
+                                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                        Kabinet {it.namaUnit}
+                                      </span>
+                                    )}
+                                  </td>
                                   <td className="px-3 py-2 text-center font-semibold text-slate-700">{it.jumlah}</td>
                                 </tr>
                               ))}
