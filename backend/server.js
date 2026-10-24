@@ -86,7 +86,68 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// Inisialisasi tabel aksesoris_units jika belum ada
+const db = require("./config/db");
+async function initAksesorisUnitsTable() {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS \`aksesoris_units\` (
+        \`id\` int(11) NOT NULL AUTO_INCREMENT,
+        \`aksesoris_id\` int(11) NOT NULL,
+        \`kode_unit\` varchar(60) NOT NULL,
+        \`nama_unit\` varchar(255) DEFAULT NULL,
+        \`no_sn\` varchar(100) DEFAULT NULL,
+        \`kondisi\` enum('Siap Digunakan','Rusak','Rusak Berat','Maintenance','Dijual') DEFAULT 'Siap Digunakan',
+        \`status_pinjam\` enum('Tersedia','Dipinjam') DEFAULT 'Tersedia',
+        \`lokasi_unit\` varchar(255) DEFAULT NULL,
+        \`keterangan\` text DEFAULT NULL,
+        \`created_at\` timestamp NULL DEFAULT current_timestamp(),
+        \`updated_at\` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+        PRIMARY KEY (\`id\`),
+        UNIQUE KEY \`kode_unit\` (\`kode_unit\`),
+        KEY \`aksesoris_id\` (\`aksesoris_id\`),
+        KEY \`idx_kondisi\` (\`kondisi\`),
+        KEY \`idx_status_pinjam\` (\`status_pinjam\`),
+        CONSTRAINT \`fk_aksesoris_units_aksesoris\` FOREIGN KEY (\`aksesoris_id\`) REFERENCES \`aksesoris\` (\`id\`) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    const [aksRows] = await db.query(`
+      SELECT a.* FROM aksesoris a
+      LEFT JOIN aksesoris_units au ON a.id = au.aksesoris_id
+      WHERE au.id IS NULL
+    `);
+
+    if (aksRows.length > 0) {
+      for (const aks of aksRows) {
+        const qty = parseInt(aks.jumlah_total || aks.jumlah_unit, 10) || 1;
+        for (let i = 1; i <= qty; i++) {
+          const numStr = String(i).padStart(2, "0");
+          const kodeUnit = `${aks.kode_aksesoris}-${numStr}`;
+          const namaUnit = qty > 1 ? `${aks.nama_aksesoris} (Unit ${i})` : aks.nama_aksesoris;
+          await db.query(`
+            INSERT INTO aksesoris_units (aksesoris_id, kode_unit, nama_unit, kondisi, status_pinjam, lokasi_unit, keterangan)
+            VALUES (?, ?, ?, ?, 'Tersedia', ?, ?)
+          `, [
+            aks.id,
+            kodeUnit,
+            namaUnit,
+            aks.kondisi || "Siap Digunakan",
+            aks.lokasi || null,
+            aks.keterangan || null,
+          ]);
+        }
+      }
+      console.log(`[Database Init] Berhasil melakukan backfill unit fisik untuk ${aksRows.length} aksesoris.`);
+    }
+  } catch (err) {
+    console.error("[Database Init Error] aksesoris_units:", err.message);
+  }
+}
+
 // Start server
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
+  await initAksesorisUnitsTable();
 });
+

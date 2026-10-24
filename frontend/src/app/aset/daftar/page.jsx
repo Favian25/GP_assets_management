@@ -432,8 +432,12 @@ export default function DaftarAsetPage() {
 
   // Filtering, Sorting & Pagination
   const filteredData = assets.filter(item => {
-    // Kondisi filter
-    if (kondisiFilter && item.kondisi !== kondisiFilter) return false;
+    // Kondisi filter (mendukung filter kondisi master maupun unit spesifik)
+    if (kondisiFilter) {
+      const matchMaster = item.kondisi === kondisiFilter;
+      const matchUnit = Array.isArray(item.units) && item.units.some(u => u.kondisi === kondisiFilter);
+      if (!matchMaster && !matchUnit) return false;
+    }
     // Brand/Jenis Aset filter
     if (brandFilter === "Galeria studio" && item.jenisAset !== "Galeria Studio") return false;
     if (brandFilter === "Galeria production" && item.jenisAset !== "Galeria Production") return false;
@@ -946,6 +950,117 @@ export default function DaftarAsetPage() {
     return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600";
   };
 
+  const getKondisiBadgeStatic = (kondisi) => {
+    const s = {
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500",
+      "Rusak": "bg-red-50 text-red-700 border-red-500",
+      "Rusak Berat": "bg-rose-900 text-white border-rose-950",
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500",
+      "Dijual": "bg-slate-100 text-slate-600 border-slate-500"
+    };
+    return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200";
+  };
+
+  const getDetailConditionBreakdown = (item) => {
+    if (!item) return [];
+    if (Array.isArray(item.units) && item.units.length > 0) {
+      const counts = {};
+      item.units.forEach((u) => {
+        const k = u.kondisi || "Siap Digunakan";
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      const order = ["Siap Digunakan", "Maintenance", "Rusak", "Rusak Berat", "Dijual"];
+      const result = [];
+      order.forEach((k) => {
+        if (counts[k]) {
+          result.push({ kondisi: k, count: counts[k] });
+          delete counts[k];
+        }
+      });
+      Object.keys(counts).forEach((k) => {
+        result.push({ kondisi: k, count: counts[k] });
+      });
+      return result;
+    }
+    const result = [];
+    const ready = Number(item.readyUnitsCount ?? item.jumlah ?? 0);
+    const rusak = Number(item.rusakUnitsCount || 0);
+    const rusakBerat = Number(item.rusakBeratUnitsCount || 0);
+    const maint = Number(item.maintenanceUnitsCount || 0);
+    const total = Number(item.totalUnitsCount ?? item.jumlahTotal ?? item.jumlah ?? 1);
+
+    if (ready > 0) result.push({ kondisi: "Siap Digunakan", count: ready });
+    if (maint > 0) result.push({ kondisi: "Maintenance", count: maint });
+    if (rusak > 0) result.push({ kondisi: "Rusak", count: rusak });
+    if (rusakBerat > 0) result.push({ kondisi: "Rusak Berat", count: rusakBerat });
+
+    if (result.length === 0) {
+      result.push({ kondisi: item.kondisi || "Siap Digunakan", count: total });
+    }
+    return result;
+  };
+
+  const getTableKondisiInfo = (item) => {
+    if (!item) {
+      return {
+        isMixed: false,
+        text: "Siap Digunakan",
+        lines: ["Siap Digunakan"],
+        badgeClass: getKondisiBadge("Siap Digunakan"),
+        title: "Klik untuk melihat & mengelola unit fisik",
+      };
+    }
+
+    const breakdown = getDetailConditionBreakdown(item) || [];
+
+    if (breakdown.length <= 1) {
+      const k = breakdown[0]?.kondisi || item.kondisi || "Siap Digunakan";
+      return {
+        isMixed: false,
+        text: k,
+        lines: [k],
+        badgeClass: getKondisiBadge(k),
+        title: "Klik untuk melihat & mengelola unit fisik",
+      };
+    }
+
+    const shortNames = {
+      "Siap Digunakan": "SIAP",
+      "Maintenance": "MAINT",
+      "Rusak": "RUSAK",
+      "Rusak Berat": "R.BERAT",
+      "Dijual": "DIJUAL"
+    };
+
+    const getShort = (b) => {
+      const name = b?.kondisi || "";
+      return `${b?.count || 1} ${shortNames[name] || name.toUpperCase() || "UNIT"}`;
+    };
+
+    // Format maksimal 2 baris agar tidak pernah sampai 3 baris
+    let lines = [];
+    if (breakdown.length === 2) {
+      lines = [getShort(breakdown[0]), getShort(breakdown[1])];
+    } else {
+      const firstLine = getShort(breakdown[0]);
+      const secondLine = breakdown.slice(1).map(getShort).join(" • ");
+      lines = [firstLine, secondLine];
+    }
+
+    const fullSummary = breakdown
+      .map((b) => `${b?.count || 1} ${b?.kondisi || "Unit"}`)
+      .join(", ");
+
+    return {
+      isMixed: true,
+      text: lines.join(" • "),
+      lines,
+      badgeClass: "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600",
+      title: `${fullSummary} (Klik untuk kelola unit)`,
+    };
+  };
+
+
   const getPageNumbers = () => {
     const p = [];
     if (totalPages <= 4) { for (let i = 1; i <= totalPages; i++) p.push(i); }
@@ -1008,6 +1123,7 @@ export default function DaftarAsetPage() {
           <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: toUpperCaseText(e.target.value)}))} hint="Tipe/model spesifik dari aset" />
           <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aset" />
           <InputField label="Jumlah" placeholder="Jumlah unit" type="number" value={data.jumlah} onChange={(e) => setData(d => ({...d, jumlah: e.target.value}))} hint="Jumlah unit aset yang tersedia" />
+          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aset" />
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
             <InputField 
               label="Harga Aset (Rp)" 
@@ -1033,7 +1149,6 @@ export default function DaftarAsetPage() {
               }
             />
           </div>
-          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aset" />
           <InputField label="Serial Number" placeholder="Serial number" value={data.noSN} onChange={(e) => setData(d => ({...d, noSN: toUpperCaseText(e.target.value)}))} className="sm:col-span-2" hint="Nomor seri unik di badan aset" />
           <TextAreaField label="Spesifikasi" placeholder="Detail spesifikasi aset" value={data.spesifikasi} onChange={(e) => setData(d => ({...d, spesifikasi: toSentenceCase(e.target.value)}))} rows={3} className="sm:col-span-2" hint="Detail teknis seperti resolusi, kapasitas, dll" />
 
@@ -1237,7 +1352,7 @@ export default function DaftarAsetPage() {
           <table className="w-full text-left text-sm table-fixed">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="w-[140px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
+                <th className="w-[125px] px-2 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kodeAset")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kode Aset <SortIcon columnKey="kodeAset" sortConfig={sortConfig} /></button></th>
                 <th className="w-[100px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">Gambar</th>
                 <th className="w-[150px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("namaAset")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Nama Aset <SortIcon columnKey="namaAset" sortConfig={sortConfig} /></button></th>
                 <th className="w-[140px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("noSN")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Serial Number <SortIcon columnKey="noSN" sortConfig={sortConfig} /></button></th>
@@ -1245,7 +1360,7 @@ export default function DaftarAsetPage() {
                 <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
                 <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
                 <th className="w-[130px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("hargaAset")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Harga <SortIcon columnKey="hargaAset" sortConfig={sortConfig} /></button></th>
-                <th className="w-[140px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">Kondisi</th>
+                <th className="w-[150px] px-2 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">Kondisi</th>
                 {!["user", "guest"].includes(userRole) && (
                   <th className="w-[100px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider">Aksi</th>
                 )}
@@ -1254,7 +1369,7 @@ export default function DaftarAsetPage() {
             <tbody>
               {paginatedData.map((item, index) => (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="w-[140px] px-4 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => setShowDetail(item)}>{item.kodeAset}</td>
+                  <td className="w-[125px] px-2 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => setShowDetail(item)} title={item.kodeAset}>{item.kodeAset}</td>
                   <td className="w-[100px] px-3 py-3 text-center border-r border-slate-200" style={{verticalAlign: 'middle'}}>
                     {item.gambar ? (
                       <div className="inline-block h-12 w-12 relative cursor-pointer hover:ring-2 hover:ring-primary transition-all rounded-md overflow-hidden" onClick={() => setLightboxImg(getImageUrl(item.gambar))}>
@@ -1282,14 +1397,33 @@ export default function DaftarAsetPage() {
                       {item.tipeHarga === "Per Paket" ? "Per Paket" : "Per Unit"}
                     </div>
                   </td>
-                  <td className="w-[140px] px-3 py-3 text-center border-r border-slate-200 align-middle">
-                    <span
-                      onClick={() => openUnitsModal(item)}
-                      className={`cursor-pointer block w-full rounded-full border py-0.5 text-[10px] sm:text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}
-                      title="Klik untuk melihat & mengelola unit fisik"
-                    >
-                      {item.kondisi}
-                    </span>
+                  <td className="w-[150px] px-2 py-2 text-center border-r border-slate-200 align-middle">
+                    {(() => {
+                      const info = getTableKondisiInfo(item);
+                      if (!info.isMixed) {
+                        return (
+                          <span
+                            onClick={() => openUnitsModal(item)}
+                            className={`cursor-pointer block w-full rounded-full border py-1 px-1.5 text-[11px] sm:text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-xs whitespace-nowrap ${info.badgeClass}`}
+                            title={info.title}
+                          >
+                            {info.text || info.lines?.[0] || item.kondisi || "Siap Digunakan"}
+                          </span>
+                        );
+                      }
+                      return (
+                        <div
+                          onClick={() => openUnitsModal(item)}
+                          className={`cursor-pointer flex flex-col items-center justify-center w-full rounded-xl border py-1 px-1.5 text-[10px] sm:text-[11px] text-center font-semibold tracking-wide uppercase transition-all shadow-xs leading-snug gap-0.5 ${info.badgeClass}`}
+                          title={info.title}
+                        >
+                          <span className="whitespace-nowrap">{info.lines?.[0] || ""}</span>
+                          {info.lines?.[1] && (
+                            <span className="whitespace-nowrap text-[10px] opacity-90">{info.lines[1]}</span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   {!["user", "guest"].includes(userRole) && (
                     <td className="w-[100px] px-3 py-3 align-middle">
@@ -1597,10 +1731,15 @@ export default function DaftarAsetPage() {
 
                       <div className="flex flex-col gap-1.5">
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Kondisi</span>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase ${getKondisiBadge(showDetail.kondisi)}`}>
-                            {showDetail.kondisi}
-                          </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {getDetailConditionBreakdown(showDetail).map((b, idx) => (
+                            <span
+                              key={idx}
+                              className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-semibold tracking-wide uppercase shadow-xs ${getKondisiBadgeStatic(b.kondisi)}`}
+                            >
+                              {b.count} {b.kondisi}
+                            </span>
+                          ))}
                           <button
                             type="button"
                             onClick={() => {
@@ -1608,30 +1747,12 @@ export default function DaftarAsetPage() {
                               setShowDetail(null);
                               openUnitsModal(target);
                             }}
-                            className="cursor-pointer inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                            className="cursor-pointer inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline ml-1"
                           >
                             <Layers className="h-3.5 w-3.5" />
                             Kelola Unit Fisik ({showDetail.totalUnitsCount ?? showDetail.jumlah ?? 1} unit)
                           </button>
                         </div>
-                        {(Number(showDetail.rusakUnitsCount || 0) + Number(showDetail.rusakBeratUnitsCount || 0) > 0 || Number(showDetail.maintenanceUnitsCount || 0) > 0) && (
-                          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
-                            <span className="text-slate-500 font-medium">Rincian:</span>
-                            <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium border border-emerald-200">
-                              {showDetail.readyUnitsCount || 0} Siap
-                            </span>
-                            {Number(showDetail.rusakUnitsCount || 0) + Number(showDetail.rusakBeratUnitsCount || 0) > 0 && (
-                              <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-medium border border-rose-200">
-                                {Number(showDetail.rusakUnitsCount || 0) + Number(showDetail.rusakBeratUnitsCount || 0)} Rusak
-                              </span>
-                            )}
-                            {Number(showDetail.maintenanceUnitsCount || 0) > 0 && (
-                              <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-medium border border-amber-200">
-                                {showDetail.maintenanceUnitsCount} Maintenance
-                              </span>
-                            )}
-                          </div>
-                        )}
                       </div>
 
                       <div className="flex flex-col gap-1.5">

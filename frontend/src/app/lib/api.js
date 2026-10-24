@@ -330,6 +330,13 @@ export function mapAksesorisToFrontend(backendItem) {
   if (backendItem.created_at) mapped.createdAt = backendItem.created_at;
   if (backendItem.updated_at) mapped.updatedAt = backendItem.updated_at;
   if (backendItem.created_by_name) mapped.createdByName = backendItem.created_by_name;
+  if (backendItem.total_units_count !== undefined) mapped.totalUnitsCount = backendItem.total_units_count;
+  if (backendItem.ready_units_count !== undefined) mapped.readyUnitsCount = backendItem.ready_units_count;
+  if (backendItem.rusak_units_count !== undefined) mapped.rusakUnitsCount = backendItem.rusak_units_count;
+  if (backendItem.rusak_berat_units_count !== undefined) mapped.rusakBeratUnitsCount = backendItem.rusak_berat_units_count;
+  if (backendItem.maintenance_units_count !== undefined) mapped.maintenanceUnitsCount = backendItem.maintenance_units_count;
+  if (backendItem.dipinjam_units_count !== undefined) mapped.dipinjamUnitsCount = Number(backendItem.dipinjam_units_count);
+  if (backendItem.units) mapped.units = backendItem.units;
   return mapped;
 }
 

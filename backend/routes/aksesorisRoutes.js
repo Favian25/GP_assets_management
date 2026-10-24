@@ -41,6 +41,13 @@ router.post("/import", verifyToken, requireRole("admin", "super admin"), aksesor
 router.post("/", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), aksesorisController.create);     // POST /api/aksesoris
 router.put("/:id", verifyToken, requireRole("admin", "super admin"), upload.single("gambar"), aksesorisController.update);   // PUT  /api/aksesoris/:id
 router.patch("/:id/kondisi", verifyToken, requireRole("admin", "super admin"), aksesorisController.updateKondisi);           // PATCH /api/aksesoris/:id/kondisi
+
+// Unit Management Routes (Aksesoris Units Fisik)
+router.get("/:id/units", verifyToken, aksesorisController.getUnits);
+router.post("/:id/units", verifyToken, requireRole("admin", "super admin"), aksesorisController.addUnit);
+router.put("/units/:unitId", verifyToken, requireRole("admin", "super admin"), aksesorisController.updateUnit);
+router.delete("/units/:unitId", verifyToken, requireRole("admin", "super admin"), aksesorisController.deleteUnit);
+
 router.delete("/:id", verifyToken, requireRole("admin", "super admin"), aksesorisController.delete);                         // DELETE /api/aksesoris/:id
 
 module.exports = router;

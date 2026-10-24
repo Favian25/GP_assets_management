@@ -127,3 +127,46 @@ export async function importAksesoris(items) {
   const response = await api.post("/aksesoris/import", { items });
   return response.data;
 }
+
+/**
+ * GET semua unit fisik dari sebuah aksesoris
+ * @param {number} aksesorisId
+ * @returns {Promise<Array>} list unit
+ */
+export async function getAksesorisUnits(aksesorisId) {
+  const response = await api.get(`/aksesoris/${aksesorisId}/units`);
+  return response.data.data;
+}
+
+/**
+ * POST tambah unit fisik baru pada aksesoris
+ * @param {number} aksesorisId
+ * @param {Object} unitData
+ * @returns {Promise<Object>} unit yang dibuat
+ */
+export async function addAksesorisUnit(aksesorisId, unitData) {
+  const response = await api.post(`/aksesoris/${aksesorisId}/units`, unitData);
+  return response.data;
+}
+
+/**
+ * PUT update unit fisik tertentu (kondisi, no_sn, nama_unit, lokasi, dll)
+ * @param {number} unitId
+ * @param {Object} unitData
+ * @returns {Promise<Object>} hasil update
+ */
+export async function updateAksesorisUnit(unitId, unitData) {
+  const response = await api.put(`/aksesoris/units/${unitId}`, unitData);
+  return response.data;
+}
+
+/**
+ * DELETE hapus unit fisik tertentu
+ * @param {number} unitId
+ * @returns {Promise<Object>} hasil delete
+ */
+export async function deleteAksesorisUnit(unitId) {
+  const response = await api.delete(`/aksesoris/units/${unitId}`);
+  return response.data;
+}
+

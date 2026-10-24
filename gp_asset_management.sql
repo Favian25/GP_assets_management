@@ -52,6 +52,26 @@ CREATE TABLE `aksesoris` (
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `aksesoris_units`
+--
+
+CREATE TABLE `aksesoris_units` (
+  `id` int(11) NOT NULL,
+  `aksesoris_id` int(11) NOT NULL,
+  `kode_unit` varchar(60) NOT NULL,
+  `nama_unit` varchar(255) DEFAULT NULL,
+  `no_sn` varchar(100) DEFAULT NULL,
+  `kondisi` enum('Siap Digunakan','Rusak','Rusak Berat','Maintenance','Dijual') DEFAULT 'Siap Digunakan',
+  `status_pinjam` enum('Tersedia','Dipinjam') DEFAULT 'Tersedia',
+  `lokasi_unit` varchar(255) DEFAULT NULL,
+  `keterangan` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `assets`
 --
 
@@ -655,6 +675,16 @@ ALTER TABLE `aksesoris`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Indeks untuk tabel `aksesoris_units`
+--
+ALTER TABLE `aksesoris_units`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kode_unit` (`kode_unit`),
+  ADD KEY `aksesoris_id` (`aksesoris_id`),
+  ADD KEY `idx_kondisi` (`kondisi`),
+  ADD KEY `idx_status_pinjam` (`status_pinjam`);
+
+--
 -- Indeks untuk tabel `assets`
 --
 ALTER TABLE `assets`
@@ -734,6 +764,12 @@ ALTER TABLE `aksesoris`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
+-- AUTO_INCREMENT untuk tabel `aksesoris_units`
+--
+ALTER TABLE `aksesoris_units`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT untuk tabel `assets`
 --
 ALTER TABLE `assets`
@@ -790,6 +826,12 @@ ALTER TABLE `users`
 --
 ALTER TABLE `aksesoris`
   ADD CONSTRAINT `aksesoris_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Ketidakleluasaan untuk tabel `aksesoris_units`
+--
+ALTER TABLE `aksesoris_units`
+  ADD CONSTRAINT `fk_aksesoris_units_aksesoris` FOREIGN KEY (`aksesoris_id`) REFERENCES `aksesoris` (`id`) ON DELETE CASCADE;
 
 --
 -- Ketidakleluasaan untuk tabel `assets`

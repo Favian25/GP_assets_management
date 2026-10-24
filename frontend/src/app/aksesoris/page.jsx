@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { getAllAksesoris, createAksesoris, updateAksesoris, deleteAksesoris, searchAksesoris, updateAksesorisKondisi, importAksesoris } from "../lib/aksesorisService";
+import { getAllAksesoris, createAksesoris, updateAksesoris, deleteAksesoris, searchAksesoris, updateAksesorisKondisi, importAksesoris, getAksesorisUnits, addAksesorisUnit, updateAksesorisUnit, deleteAksesorisUnit } from "../lib/aksesorisService";
 import { deleteAllInventory } from "../lib/assetService";
 import { getAllCategories, createCategory } from "../lib/categoryService";
 import { getAllBrands, createBrand } from "../lib/brandService";
 import { getUserContext } from "../lib/authService";
 import { toSentenceCase, toUpperCaseText } from "../lib/stringUtils";
 import { exportToExcel, downloadAksesorisTemplate, parseExcelFile } from "../lib/exportUtils";
-import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu, Camera, Download, Upload, FileSpreadsheet, Split } from "lucide-react";
+import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Cpu, Camera, Download, Upload, FileSpreadsheet, Split, Layers } from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -209,15 +209,21 @@ export default function AksesorisPage() {
 
   const [showKatModal, setShowKatModal] = useState(false);
   const [showMerekModal, setShowMerekModal] = useState(false);
-  const [showKondisiModal, setShowKondisiModal] = useState(null);
   const [newKatData, setNewKatData] = useState({ nama: "", kode_singkat: "" });
   const [newMerekData, setNewMerekData] = useState({ nama: "" });
-  const [newKondisi, setNewKondisi] = useState("");
-  const [isSplitKondisi, setIsSplitKondisi] = useState(false);
-  const [jumlahSplit, setJumlahSplit] = useState(1);
-  const [keteranganKondisi, setKeteranganKondisi] = useState("");
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Unit Management Modal States (Identik dengan Daftar Aset)
+  const [showUnitsModal, setShowUnitsModal] = useState(null);
+  const [aksesorisUnitsList, setAksesorisUnitsList] = useState([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const [editingUnitId, setEditingUnitId] = useState(null);
+  const [unitForm, setUnitForm] = useState({ nama_unit: "", no_sn: "", kondisi: "Siap Digunakan", lokasi_unit: "", keterangan: "" });
+  const [showAddUnitForm, setShowAddUnitForm] = useState(false);
+  const [newUnitData, setNewUnitData] = useState({ nama_unit: "", no_sn: "", kondisi: "Siap Digunakan", lokasi_unit: "", keterangan: "" });
+  const [unitDeleteConfirm, setUnitDeleteConfirm] = useState(null);
+  const [deletingUnit, setDeletingUnit] = useState(false);
 
   // Import Excel States
   const [showImportModal, setShowImportModal] = useState(false);
@@ -308,7 +314,11 @@ export default function AksesorisPage() {
 
   // Filtering, Sorting & Pagination
   const filteredData = assets.filter(item => {
-    if (kondisiFilter && item.kondisi !== kondisiFilter) return false;
+    if (kondisiFilter) {
+      const matchMaster = item.kondisi === kondisiFilter;
+      const matchUnit = Array.isArray(item.units) && item.units.some(u => u.kondisi === kondisiFilter);
+      if (!matchMaster && !matchUnit) return false;
+    }
     // Brand/Jenis Aset filter
     if (brandFilter === "Galeria studio" && item.jenisAset !== "Galeria Studio") return false;
     if (brandFilter === "Galeria production" && item.jenisAset !== "Galeria Production") return false;
@@ -490,37 +500,70 @@ export default function AksesorisPage() {
       setSubmitting(false);
     }
   };
-  const handleUpdateKondisi = async () => {
-    if (!showKondisiModal || !newKondisi) return;
-    const currentQty = parseInt(showKondisiModal.jumlahUnit || showKondisiModal.jumlah_unit, 10) || 1;
-    if (isSplitKondisi) {
-      const splitQty = parseInt(jumlahSplit, 10);
-      if (isNaN(splitQty) || splitQty <= 0) {
-        showToast("Jumlah unit yang diubah harus lebih dari 0", "error");
-        return;
-      }
-      if (splitQty >= currentQty) {
-        showToast(`Jumlah split harus kurang dari total unit (${currentQty})`, "error");
-        return;
-      }
-    }
-
+  // Unit Management Modal Handlers
+  const openUnitsModal = async (aks) => {
+    setShowUnitsModal(aks);
+    setLoadingUnits(true);
+    setShowAddUnitForm(false);
+    setEditingUnitId(null);
     try {
-      setSubmitting(true);
-      const payload = {
-        kondisi: newKondisi,
-        is_split: isSplitKondisi,
-        jumlah_ubah: isSplitKondisi ? parseInt(jumlahSplit, 10) : currentQty,
-        keterangan: keteranganKondisi,
-      };
-      const res = await updateAksesorisKondisi(showKondisiModal.id, payload);
-      showToast(res.message || "Kondisi berhasil diperbarui!");
-      setShowKondisiModal(null);
+      const units = await getAksesorisUnits(aks.id);
+      setAksesorisUnitsList(units || []);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal memuat rincian unit aksesoris", "error");
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
+
+  const handleUnitKondisiChange = async (unitId, newKondisiVal) => {
+    try {
+      await updateAksesorisUnit(unitId, { kondisi: newKondisiVal });
+      setAksesorisUnitsList((prev) =>
+        prev.map((u) => (u.id === unitId ? { ...u, kondisi: newKondisiVal } : u))
+      );
+      showToast("Kondisi unit berhasil diperbarui!");
       await fetchData();
     } catch (err) {
-      showToast(err.response?.data?.message || "Gagal memperbarui kondisi", "error");
+      showToast(err.response?.data?.message || "Gagal mengubah kondisi unit", "error");
+    }
+  };
+
+  const handleCreateNewUnit = async () => {
+    if (!showUnitsModal) return;
+    try {
+      setSubmitting(true);
+      await addAksesorisUnit(showUnitsModal.id, newUnitData);
+      showToast("Unit baru berhasil ditambahkan!");
+      setShowAddUnitForm(false);
+      setNewUnitData({ nama_unit: "", no_sn: "", kondisi: "Siap Digunakan", lokasi_unit: "", keterangan: "" });
+      const units = await getAksesorisUnits(showUnitsModal.id);
+      setAksesorisUnitsList(units || []);
+      await fetchData();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal menambahkan unit", "error");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteUnit = (unit) => {
+    setUnitDeleteConfirm(unit);
+  };
+
+  const handleConfirmDeleteUnit = async () => {
+    if (!unitDeleteConfirm) return;
+    try {
+      setDeletingUnit(true);
+      await deleteAksesorisUnit(unitDeleteConfirm.id);
+      setAksesorisUnitsList((prev) => prev.filter((u) => u.id !== unitDeleteConfirm.id));
+      showToast("Unit fisik berhasil dihapus!");
+      setUnitDeleteConfirm(null);
+      await fetchData();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Gagal menghapus unit fisik", "error");
+    } finally {
+      setDeletingUnit(false);
     }
   };
   const handleDelete = async () => {
@@ -713,6 +756,115 @@ export default function AksesorisPage() {
     return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600";
   };
 
+  const getKondisiBadgeStatic = (kondisi) => {
+    const s = { 
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500", 
+      "Rusak": "bg-red-50 text-red-700 border-red-500", 
+      "Rusak Berat": "bg-rose-900 text-white border-rose-950",
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500", 
+      "Dijual": "bg-slate-100 text-slate-600 border-slate-500" 
+    };
+    return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200";
+  };
+
+  const getDetailConditionBreakdown = (item) => {
+    if (!item) return [];
+    if (Array.isArray(item.units) && item.units.length > 0) {
+      const counts = {};
+      item.units.forEach((u) => {
+        const k = u.kondisi || "Siap Digunakan";
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      const order = ["Siap Digunakan", "Maintenance", "Rusak", "Rusak Berat", "Dijual"];
+      const result = [];
+      order.forEach((k) => {
+        if (counts[k]) {
+          result.push({ kondisi: k, count: counts[k] });
+          delete counts[k];
+        }
+      });
+      Object.keys(counts).forEach((k) => {
+        result.push({ kondisi: k, count: counts[k] });
+      });
+      return result;
+    }
+    const result = [];
+    const ready = Number(item.readyUnitsCount ?? item.jumlahUnit ?? 0);
+    const rusak = Number(item.rusakUnitsCount || 0);
+    const rusakBerat = Number(item.rusakBeratUnitsCount || 0);
+    const maint = Number(item.maintenanceUnitsCount || 0);
+    const total = Number(item.totalUnitsCount ?? item.jumlahTotal ?? item.jumlahUnit ?? 1);
+
+    if (ready > 0) result.push({ kondisi: "Siap Digunakan", count: ready });
+    if (maint > 0) result.push({ kondisi: "Maintenance", count: maint });
+    if (rusak > 0) result.push({ kondisi: "Rusak", count: rusak });
+    if (rusakBerat > 0) result.push({ kondisi: "Rusak Berat", count: rusakBerat });
+
+    if (result.length === 0) {
+      result.push({ kondisi: item.kondisi || "Siap Digunakan", count: total });
+    }
+    return result;
+  };
+
+  const getTableKondisiInfo = (item) => {
+    if (!item) {
+      return {
+        isMixed: false,
+        text: "Siap Digunakan",
+        lines: ["Siap Digunakan"],
+        badgeClass: getKondisiBadge("Siap Digunakan"),
+        title: "Klik untuk melihat & mengelola unit fisik",
+      };
+    }
+
+    const breakdown = getDetailConditionBreakdown(item) || [];
+
+    if (breakdown.length <= 1) {
+      const k = breakdown[0]?.kondisi || item.kondisi || "Siap Digunakan";
+      return {
+        isMixed: false,
+        text: k,
+        lines: [k],
+        badgeClass: getKondisiBadge(k),
+        title: "Klik untuk melihat & mengelola unit fisik",
+      };
+    }
+
+    const shortNames = {
+      "Siap Digunakan": "SIAP",
+      "Maintenance": "MAINT",
+      "Rusak": "RUSAK",
+      "Rusak Berat": "R.BERAT",
+      "Dijual": "DIJUAL"
+    };
+
+    const getShort = (b) => {
+      const name = b?.kondisi || "";
+      return `${b?.count || 1} ${shortNames[name] || name.toUpperCase() || "UNIT"}`;
+    };
+
+    let lines = [];
+    if (breakdown.length === 2) {
+      lines = [getShort(breakdown[0]), getShort(breakdown[1])];
+    } else {
+      const firstLine = getShort(breakdown[0]);
+      const secondLine = breakdown.slice(1).map(getShort).join(" • ");
+      lines = [firstLine, secondLine];
+    }
+
+    const fullSummary = breakdown
+      .map((b) => `${b?.count || 1} ${b?.kondisi || "Unit"}`)
+      .join(", ");
+
+    return {
+      isMixed: true,
+      text: lines.join(" • "),
+      lines,
+      badgeClass: "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600",
+      title: `${fullSummary} (Klik untuk kelola unit)`,
+    };
+  };
+
   const getPageNumbers = () => {
     const p = [];
     if (totalPages <= 4) { for (let i = 1; i <= totalPages; i++) p.push(i); }
@@ -759,9 +911,7 @@ export default function AksesorisPage() {
               <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm font-mono font-semibold text-slate-700">{data.kodeAksesoris}</div>
             </div>
           )}
-          <InputField label="Nama Aksesoris" required placeholder="Masukkan nama aksesoris" value={data.namaAksesoris} onChange={(e) => setData(d => ({...d, namaAksesoris: toUpperCaseText(e.target.value)}))} hint="Nama lengkap aksesoris, contoh: &quot;Battery NP-FZ100&quot;" />
-          
-          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: toUpperCaseText(e.target.value)}))} hint="Tipe/model spesifik aksesoris" />
+          <InputField label="Nama Aksesoris" required placeholder="Masukkan nama aksesoris" value={data.namaAksesoris} onChange={(e) => setData(d => ({...d, namaAksesoris: toUpperCaseText(e.target.value)}))} className={isEdit ? "" : "sm:col-span-2"} hint="Nama lengkap aksesoris, contoh: &quot;Battery NP-FZ100&quot;" />
           
           <div className="flex gap-1.5 items-end">
              <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriList} placeholder="Pilih Kategori" className="flex-1" hint="Jenis/klasifikasi aksesoris" />
@@ -773,7 +923,12 @@ export default function AksesorisPage() {
              <button type="button" onClick={() => setShowMerekModal(true)} title="Tambah Merek Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><Plus className="h-4 w-4" /></button>
           </div>
 
+          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: toUpperCaseText(e.target.value)}))} hint="Tipe/model spesifik aksesoris" />
+          <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aksesoris" />
+
           <InputField label="Jumlah Unit" placeholder="Jumlah unit" type="number" value={data.jumlahUnit} onChange={(e) => setData(d => ({...d, jumlahUnit: e.target.value}))} hint="Jumlah unit yang tersedia" />
+          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aksesoris" />
+
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
             <InputField 
               label="Harga Aksesoris (Rp)" 
@@ -799,8 +954,6 @@ export default function AksesorisPage() {
               }
             />
           </div>
-          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aksesoris" />
-          <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aksesoris" />
         </div>
       </div>
       <hr className="border-slate-200" />
@@ -1000,21 +1153,21 @@ export default function AksesorisPage() {
         <div className="overflow-x-auto border-t border-slate-100">          <table className="w-full text-left text-sm table-fixed">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
-                <th className="w-[140px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kodeAksesoris")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kode <SortIcon columnKey="kodeAksesoris" sortConfig={sortConfig} /></button></th>
+                <th className="w-[125px] px-2 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kodeAksesoris")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kode <SortIcon columnKey="kodeAksesoris" sortConfig={sortConfig} /></button></th>
                 <th className="w-[100px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">Gambar</th>
                 <th className="w-[150px] px-4 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("namaAksesoris")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Nama <SortIcon columnKey="namaAksesoris" sortConfig={sortConfig} /></button></th>
                 <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("jumlahUnit")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Jumlah <SortIcon columnKey="jumlahUnit" sortConfig={sortConfig} /></button></th>
                 <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("model")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Model <SortIcon columnKey="model" sortConfig={sortConfig} /></button></th>
                 <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kategori")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kategori <SortIcon columnKey="kategori" sortConfig={sortConfig} /></button></th>
                 <th className="w-[110px] px-3 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("merek")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Merek <SortIcon columnKey="merek" sortConfig={sortConfig} /></button></th>
-                <th className="w-[140px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">Kondisi</th>
+                <th className="w-[150px] px-2 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">Kondisi</th>
                 <th className="w-[100px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {paginatedData.map((item, index) => (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
-                  <td className="w-[140px] px-4 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => setShowDetail(item)}>{item.kodeAksesoris}</td>
+                  <td className="w-[125px] px-2 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => setShowDetail(item)} title={item.kodeAksesoris}>{item.kodeAksesoris}</td>
                   <td className="w-[100px] px-3 py-3 text-center border-r border-slate-200" style={{verticalAlign: 'middle'}}>
                     {item.gambar ? (
                       <div className="inline-block h-12 w-12 relative cursor-pointer hover:ring-2 hover:ring-primary transition-all rounded-md overflow-hidden" onClick={() => setLightboxImg(getImageUrl(item.gambar))}>
@@ -1030,20 +1183,39 @@ export default function AksesorisPage() {
                   <td className="w-[110px] px-3 py-3 text-xs border-r border-slate-200 align-middle">
                     <div className="flex flex-col gap-0.5">
                       <span className="font-semibold text-emerald-600">{item.jumlahUnit ?? "-"} Tersisa</span>
-                      <span className="text-slate-500 text-[11px]">dari {item.jumlahTotal ?? item.jumlahUnit ?? "-"}</span>
+                      <span className="text-slate-500 text-[11px]">dari {item.jumlahTotal ?? item.jumlahUnit ?? "-"} Unit</span>
                     </div>
                   </td>
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.model}</td>
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.kategori}</td>
                   <td className="w-[110px] px-3 py-3 text-xs text-slate-600 truncate border-r border-slate-200 align-middle">{item.merek}</td>
-                  <td className="w-[140px] px-3 py-3 text-center border-r border-slate-200 align-middle">
-                    <span onClick={() => {
-                      setShowKondisiModal(item);
-                      setNewKondisi(item.kondisi);
-                      setIsSplitKondisi(false);
-                      setJumlahSplit(1);
-                      setKeteranganKondisi("");
-                    }} className={`cursor-pointer block w-full rounded-full border py-0.5 text-[10px] sm:text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-sm ${getKondisiBadge(item.kondisi)}`}>{item.kondisi}</span>
+                  <td className="w-[150px] px-2 py-2 text-center border-r border-slate-200 align-middle">
+                    {(() => {
+                      const info = getTableKondisiInfo(item);
+                      if (!info.isMixed) {
+                        return (
+                          <span
+                            onClick={() => openUnitsModal(item)}
+                            className={`cursor-pointer block w-full rounded-full border py-1 px-1.5 text-[11px] sm:text-xs text-center font-semibold tracking-wide uppercase transition-all shadow-xs whitespace-nowrap ${info.badgeClass}`}
+                            title={info.title}
+                          >
+                            {info.text || info.lines?.[0] || item.kondisi || "Siap Digunakan"}
+                          </span>
+                        );
+                      }
+                      return (
+                        <div
+                          onClick={() => openUnitsModal(item)}
+                          className={`cursor-pointer flex flex-col items-center justify-center w-full rounded-xl border py-1 px-1.5 text-[10px] sm:text-[11px] text-center font-semibold tracking-wide uppercase transition-all shadow-xs leading-snug gap-0.5 ${info.badgeClass}`}
+                          title={info.title}
+                        >
+                          <span className="whitespace-nowrap">{info.lines?.[0] || ""}</span>
+                          {info.lines?.[1] && (
+                            <span className="whitespace-nowrap text-[10px] opacity-90">{info.lines[1]}</span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="w-[100px] px-3 py-3 align-middle text-center">
                     <div className="flex items-center justify-center gap-1">
@@ -1340,28 +1512,27 @@ export default function AksesorisPage() {
 
                       <div className="flex flex-col gap-1.5">
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Kondisi</span>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase ${getKondisiBadge(showDetail.kondisi)}`}>
-                            {showDetail.kondisi}
-                          </span>
-                          {["super admin", "admin"].includes(userRole) && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const target = showDetail;
-                                setShowDetail(null);
-                                setShowKondisiModal(target);
-                                setNewKondisi(target.kondisi);
-                                setIsSplitKondisi(false);
-                                setJumlahSplit(1);
-                                setKeteranganKondisi("");
-                              }}
-                              className="cursor-pointer inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                        <div className="flex flex-wrap items-center gap-2">
+                          {getDetailConditionBreakdown(showDetail).map((b, idx) => (
+                            <span
+                              key={idx}
+                              className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-semibold tracking-wide uppercase shadow-xs ${getKondisiBadgeStatic(b.kondisi)}`}
                             >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Ubah Kondisi
-                            </button>
-                          )}
+                              {b.count} {b.kondisi}
+                            </span>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const target = showDetail;
+                              setShowDetail(null);
+                              openUnitsModal(target);
+                            }}
+                            className="cursor-pointer inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline ml-1"
+                          >
+                            <Layers className="h-3.5 w-3.5" />
+                            Kelola Unit Fisik ({showDetail.totalUnitsCount ?? showDetail.jumlahTotal ?? showDetail.jumlahUnit ?? 1} unit)
+                          </button>
                         </div>
                       </div>
 
@@ -1572,158 +1743,311 @@ export default function AksesorisPage() {
             );
           })()}
 
-          {/* Modal Update Kondisi */}
-          {showKondisiModal && (() => {
-            const currentQty = parseInt(showKondisiModal.jumlahUnit || showKondisiModal.jumlah_unit, 10) || 1;
-            const canSplit = currentQty > 1;
-
-            return (
-              <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowKondisiModal(null)}>
-                <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-800">Ubah Kondisi Aksesoris</h3>
-                        <p className="text-xs text-slate-500 font-mono mt-0.5">{showKondisiModal.kodeAksesoris || showKondisiModal.kode_aksesoris}</p>
-                      </div>
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold">
-                        {currentQty} Unit
-                      </span>
+          {/* Modal Kelola Unit Fisik (Option 3 - Identik dengan Daftar Aset) */}
+          {showUnitsModal && (
+            <div
+              className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
+              onClick={() => setShowUnitsModal(null)}
+            >
+              <div
+                className="max-h-[90vh] w-full max-w-4xl flex flex-col rounded-2xl bg-white shadow-2xl border-t-4 border-t-blue-600 animate-modal-in overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50/70 px-6 py-4 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-blue-100 text-blue-700 rounded-xl">
+                      <Layers className="h-6 w-6" />
                     </div>
-
-                    <div className="p-3 mb-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{showKondisiModal.namaAksesoris || showKondisiModal.nama_aksesoris}</p>
-                      <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500">
-                        <span>Kondisi saat ini:</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase ${getKondisiBadge(showKondisiModal.kondisi)}`}>
-                          {showKondisiModal.kondisi}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-bold text-slate-900">Kelola Unit Fisik</h2>
+                        <span className="font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                          {showUnitsModal.kodeAksesoris}
                         </span>
                       </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                          Kondisi Baru <span className="text-rose-500">*</span>
-                        </label>
-                        <SelectField
-                          label=""
-                          value={newKondisi}
-                          onChange={(e) => setNewKondisi(e.target.value)}
-                          options={kondisiOptions}
-                          placeholder="Pilih Kondisi Baru"
-                        />
-                      </div>
-
-                      {canSplit && (
-                        <div className="pt-2 border-t border-slate-100">
-                          <label className="block text-xs font-semibold text-slate-700 mb-2">Cakupan Unit</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setIsSplitKondisi(false)}
-                              className={`cursor-pointer px-3 py-2.5 rounded-xl border text-left transition-all ${
-                                !isSplitKondisi
-                                  ? "border-blue-500 bg-blue-50/50 text-blue-700 font-semibold shadow-xs"
-                                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                            >
-                              <div className="text-xs font-bold">Semua Unit</div>
-                              <div className="text-[11px] opacity-75 mt-0.5">Ubah ke-{currentQty} unit</div>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsSplitKondisi(true);
-                                if (!jumlahSplit || jumlahSplit >= currentQty) setJumlahSplit(1);
-                              }}
-                              className={`cursor-pointer px-3 py-2.5 rounded-xl border text-left transition-all ${
-                                isSplitKondisi
-                                  ? "border-blue-500 bg-blue-50/50 text-blue-700 font-semibold shadow-xs"
-                                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                            >
-                              <div className="flex items-center gap-1.5 text-xs font-bold">
-                                <Split className="h-3.5 w-3.5" />
-                                Sebagian (Split)
-                              </div>
-                              <div className="text-[11px] opacity-75 mt-0.5">Pecah unit rusak/servis</div>
-                            </button>
-                          </div>
-
-                          {isSplitKondisi && (
-                            <div className="mt-3.5 p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-3 animate-in fade-in">
-                              <div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <label className="text-xs font-semibold text-amber-950">
-                                    Jumlah Unit Yang Diubah:
-                                  </label>
-                                  <span className="text-[11px] text-amber-800 font-bold">
-                                    Maks {currentQty - 1} unit
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max={currentQty - 1}
-                                    value={jumlahSplit}
-                                    onChange={(e) => {
-                                      const val = parseInt(e.target.value, 10);
-                                      if (isNaN(val)) setJumlahSplit("");
-                                      else setJumlahSplit(Math.max(1, Math.min(val, currentQty - 1)));
-                                    }}
-                                    className="w-24 px-3 py-1.5 text-sm font-bold text-center bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800"
-                                  />
-                                  <span className="text-xs text-amber-900 font-medium">
-                                    unit menjadi <strong>{newKondisi || "..."}</strong>
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-amber-800 mt-1.5">
-                                  ℹ️ Sisa <strong>{currentQty - (parseInt(jumlahSplit, 10) || 1)} unit</strong> tetap berkondisi <strong>{showKondisiModal.kondisi}</strong>.
-                                </p>
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-semibold text-amber-950 mb-1">
-                                  Catatan Unit / Kerusakan (Opsional):
-                                </label>
-                                <input
-                                  type="text"
-                                  value={keteranganKondisi}
-                                  onChange={(e) => setKeteranganKondisi(e.target.value)}
-                                  placeholder="Contoh: Kabel putus / port connector aus..."
-                                  className="w-full px-3 py-1.5 text-xs bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                        {showUnitsModal.namaAksesoris} • {showUnitsModal.kategori || "Aksesoris"}
+                      </p>
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowUnitsModal(null)}
+                    className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
 
-                  <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+                {/* Modal Subheader / Summary Stats */}
+                <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-white border border-slate-200 text-slate-700 shadow-xs">
+                      Total: {aksesorisUnitsList.length} Unit
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-xs">
+                      Siap: {aksesorisUnitsList.filter((u) => u.kondisi === "Siap Digunakan").length} Unit
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-50 border border-rose-200 text-rose-800 shadow-xs">
+                      Rusak: {aksesorisUnitsList.filter((u) => u.kondisi === "Rusak" || u.kondisi === "Rusak Berat").length} Unit
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 border border-amber-200 text-amber-800 shadow-xs">
+                      Maintenance: {aksesorisUnitsList.filter((u) => u.kondisi === "Maintenance").length} Unit
+                    </span>
+                  </div>
+
+                  {["super admin", "admin"].includes(userRole) && (
                     <button
                       type="button"
-                      onClick={() => setShowKondisiModal(null)}
-                      className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                      onClick={() => setShowAddUnitForm((v) => !v)}
+                      className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-blue-700 active:scale-95"
                     >
-                      Batal
+                      <Plus className="h-3.5 w-3.5" />
+                      {showAddUnitForm ? "Tutup Form Tambah" : "Tambah Unit Baru"}
                     </button>
+                  )}
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                  {/* Form Tambah Unit Baru (Collapsible) */}
+                  {showAddUnitForm && (
+                    <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3 animate-in fade-in">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">
+                          Form Tambah Unit Fisik Baru
+                        </h4>
+                        <span className="text-[11px] text-blue-600">Kode unit dibuat otomatis</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nama Unit (Opsional)</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Unit Tambahan 05"
+                            value={newUnitData.nama_unit}
+                            onChange={(e) => setNewUnitData((d) => ({ ...d, nama_unit: e.target.value }))}
+                            className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">Kondisi Awal</label>
+                          <select
+                            value={newUnitData.kondisi}
+                            onChange={(e) => setNewUnitData((d) => ({ ...d, kondisi: e.target.value }))}
+                            className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white font-medium"
+                          >
+                            {kondisiOptions.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">Lokasi Unit</label>
+                          <input
+                            type="text"
+                            placeholder="Lokasi spesifik"
+                            value={newUnitData.lokasi_unit}
+                            onChange={(e) => setNewUnitData((d) => ({ ...d, lokasi_unit: e.target.value }))}
+                            className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddUnitForm(false)}
+                          className="cursor-pointer px-3 py-1.5 text-xs font-medium text-slate-600 rounded-lg hover:bg-slate-100"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          disabled={submitting}
+                          onClick={handleCreateNewUnit}
+                          className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          {submitting ? "Menyimpan..." : "Simpan Unit Baru"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Unit List Table */}
+                  {loadingUnits ? (
+                    <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                      <p className="text-xs">Memuat daftar unit fisik...</p>
+                    </div>
+                  ) : aksesorisUnitsList.length === 0 ? (
+                    <div className="py-12 text-center text-slate-400 bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                      <p className="text-sm font-medium">Belum ada unit fisik yang terdaftar untuk aksesoris ini.</p>
+                      <p className="text-xs mt-1 text-slate-400">Klik "Tambah Unit Baru" di atas untuk menambahkan unit fisik.</p>
+                    </div>
+                  ) : (
+                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th className="px-3 py-2.5 w-36">Kode Unit</th>
+                            <th className="px-3 py-2.5">Nama / Label Unit</th>
+                            <th className="px-3 py-2.5 w-28">Lokasi</th>
+                            <th className="px-3 py-2.5 text-center w-28">Status Pinjam</th>
+                            <th className="px-3 py-2.5 text-center w-48">Kondisi Fisik</th>
+                            {["super admin", "admin"].includes(userRole) && (
+                              <th className="px-3 py-2.5 text-center w-16">Aksi</th>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {aksesorisUnitsList.map((unit, idx) => {
+                            return (
+                              <tr
+                                key={unit.id}
+                                className={`transition-colors ${
+                                  unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                    ? "bg-rose-50/40"
+                                    : unit.kondisi === "Maintenance"
+                                    ? "bg-amber-50/30"
+                                    : idx % 2 === 0
+                                    ? "bg-white"
+                                    : "bg-slate-50/40"
+                                }`}
+                              >
+                                <td className="px-3 py-2.5 font-mono font-bold text-slate-800">
+                                  {unit.kode_unit}
+                                </td>
+                                <td className="px-3 py-2.5 font-medium text-slate-800">
+                                  {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
+                                </td>
+                                <td className="px-3 py-2.5 text-slate-600">
+                                  {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
+                                </td>
+                                <td className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-700">
+                                  {unit.status_pinjam || "Tersedia"}
+                                </td>
+                                <td className="px-3 py-2.5 text-center">
+                                  <select
+                                    value={unit.kondisi}
+                                    disabled={!["super admin", "admin"].includes(userRole)}
+                                    onChange={(e) => handleUnitKondisiChange(unit.id, e.target.value)}
+                                    className={`w-full text-center px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border transition-all cursor-pointer focus:outline-none ${
+                                      unit.kondisi === "Siap Digunakan"
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                                        : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                        ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100"
+                                        : unit.kondisi === "Maintenance"
+                                        ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                                        : "bg-slate-100 text-slate-700 border-slate-300"
+                                    }`}
+                                    title="Ubah kondisi unit fisik ini"
+                                  >
+                                    {kondisiOptions.map((opt) => (
+                                      <option key={opt} value={opt} className="bg-white text-slate-800 normal-case">
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </td>
+                                {["super admin", "admin"].includes(userRole) && (
+                                  <td className="px-3 py-2.5 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteUnit(unit)}
+                                      className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                                      title="Hapus Unit"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </td>
+                                )}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 px-6 py-4 bg-slate-50/70 gap-3 shrink-0">
+                  <span className="text-[11px] text-slate-500">
+                    💡 Perubahan kondisi unit fisik langsung memperbarui jumlah stok siap pakai pada daftar aksesoris utama.
+                  </span>
+                  <div className="flex items-center gap-3">
+                    {["super admin", "admin"].includes(userRole) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = showUnitsModal;
+                          setShowUnitsModal(null);
+                          openEdit(target);
+                        }}
+                        className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 shadow-sm"
+                      >
+                        Edit Aksesoris
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={handleUpdateKondisi}
-                      disabled={submitting || !newKondisi}
-                      className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setShowUnitsModal(null)}
+                      className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm"
                     >
-                      {submitting ? "Memproses..." : isSplitKondisi ? "Pisahkan & Simpan" : "Update Kondisi"}
+                      Tutup
                     </button>
                   </div>
                 </div>
               </div>
-            );
-          })()}
+            </div>
+          )}
+
+          {/* Modal Konfirmasi Hapus Unit Fisik (UI Alert) */}
+          {unitDeleteConfirm && (
+            <div
+              className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
+              onClick={() => !deletingUnit && setUnitDeleteConfirm(null)}
+            >
+              <div
+                className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border-t-4 border-t-rose-600 animate-modal-in"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 text-center text-lg font-bold text-slate-800">Hapus Unit Fisik?</h3>
+                <p className="mb-4 text-center text-sm text-slate-500">
+                  Apakah Anda yakin ingin menghapus unit <strong className="text-slate-800 font-mono">{unitDeleteConfirm.kode_unit}</strong>
+                  {unitDeleteConfirm.nama_unit ? ` (${unitDeleteConfirm.nama_unit})` : ""}?
+                </p>
+                <div className="mb-5 rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700 text-center">
+                  ⚠️ Penghapusan unit fisik ini akan otomatis mengurangi total jumlah unit dan stok aksesoris ini.
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    disabled={deletingUnit}
+                    onClick={() => setUnitDeleteConfirm(null)}
+                    className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deletingUnit}
+                    onClick={handleConfirmDeleteUnit}
+                    className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60"
+                  >
+                    {deletingUnit ? "Menghapus..." : "Hapus Unit"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Modal Hapus Seluruh Data (Khusus Super Admin) */}
           {showDeleteAllModal && (
             <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteAllModal(false)}>

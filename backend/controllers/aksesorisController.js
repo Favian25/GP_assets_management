@@ -6,6 +6,46 @@ const { optimizeImage } = require("../utils/imageOptimizer");
 const AuditLog = require("../models/auditModel");
 const db = require("../config/db");
 
+// Helper: Sinkronisasi jumlah unit, stok siap, dan kondisi master di tabel aksesoris
+async function syncAksesorisTotals(aksesorisId, conn = db) {
+  try {
+    const [counts] = await conn.query(`
+      SELECT 
+        COUNT(*) as total_units,
+        SUM(CASE WHEN kondisi = 'Siap Digunakan' AND status_pinjam = 'Tersedia' THEN 1 ELSE 0 END) as ready_units,
+        SUM(CASE WHEN kondisi = 'Rusak' THEN 1 ELSE 0 END) as rusak_units,
+        SUM(CASE WHEN kondisi = 'Rusak Berat' THEN 1 ELSE 0 END) as rusak_berat_units,
+        SUM(CASE WHEN kondisi = 'Maintenance' THEN 1 ELSE 0 END) as maintenance_units
+      FROM aksesoris_units 
+      WHERE aksesoris_id = ?
+    `, [aksesorisId]);
+
+    const row = counts[0] || {};
+    const totalUnits = parseInt(row.total_units, 10) || 0;
+    const readyUnits = parseInt(row.ready_units, 10) || 0;
+
+    let masterKondisi = "Siap Digunakan";
+    if (totalUnits > 0) {
+      if (readyUnits === totalUnits) masterKondisi = "Siap Digunakan";
+      else if (readyUnits === 0 && (row.rusak_units > 0 || row.rusak_berat_units > 0)) masterKondisi = "Rusak";
+      else if (readyUnits === 0 && row.maintenance_units > 0) masterKondisi = "Maintenance";
+      else masterKondisi = "Siap Digunakan";
+    }
+
+    if (totalUnits > 0) {
+      await conn.query(`
+        UPDATE aksesoris 
+        SET jumlah_unit = ?, jumlah_total = ?, kondisi = ?
+        WHERE id = ?
+      `, [readyUnits, totalUnits, masterKondisi, aksesorisId]);
+    }
+
+    return { totalUnits, readyUnits, masterKondisi };
+  } catch (err) {
+    console.error("Error syncAksesorisTotals:", err);
+  }
+}
+
 const aksesorisController = {
   // GET /api/aksesoris
   getAll: async (req, res) => {
@@ -87,6 +127,28 @@ const aksesorisController = {
       }
 
       const newItem = await Aksesoris.create(data);
+      const aksId = newItem.id;
+      const qty = parseInt(data.jumlah_unit, 10) || 1;
+
+      for (let i = 1; i <= qty; i++) {
+        const numStr = String(i).padStart(2, "0");
+        const kodeUnit = `${data.kode_aksesoris}-${numStr}`;
+        const unitNama = qty > 1 ? `${data.nama_aksesoris} (Unit ${i})` : data.nama_aksesoris;
+
+        await db.query(
+          `INSERT INTO aksesoris_units (aksesoris_id, kode_unit, nama_unit, kondisi, status_pinjam, lokasi_unit, keterangan)
+           VALUES (?, ?, ?, ?, 'Tersedia', ?, ?)`,
+          [
+            aksId,
+            kodeUnit,
+            unitNama,
+            data.kondisi || "Siap Digunakan",
+            data.lokasi || null,
+            data.keterangan || null,
+          ]
+        );
+      }
+      await syncAksesorisTotals(aksId);
 
       await AuditLog.create({
         userId: req.user?.userId,
@@ -94,7 +156,7 @@ const aksesorisController = {
         action: 'CREATE',
         entityType: 'Aksesoris',
         entityId: newItem.insertId,
-        details: `Menambahkan aksesoris: ${data.nama_aksesoris} (${data.kode_aksesoris})`
+        details: `Menambahkan aksesoris: ${data.nama_aksesoris} (${data.kode_aksesoris}) dengan ${qty} unit fisik`
       });
 
       res.status(201).json({
@@ -585,7 +647,29 @@ const aksesorisController = {
           ]
         );
 
-        inserted.push({ id: insertRes.insertId, kodeAksesoris, namaAksesoris });
+        const aksesorisId = insertRes.insertId;
+
+        for (let u = 1; u <= jumlahUnit; u++) {
+          const numStr = String(u).padStart(2, "0");
+          const kodeUnit = `${kodeAksesoris}-${numStr}`;
+          const unitNama = jumlahUnit > 1 ? `${namaAksesoris} #${numStr}` : namaAksesoris;
+
+          await connection.query(
+            `INSERT INTO aksesoris_units (aksesoris_id, kode_unit, nama_unit, kondisi, status_pinjam, lokasi_unit, keterangan)
+             VALUES (?, ?, ?, ?, 'Tersedia', ?, ?)`,
+            [
+              aksesorisId,
+              kodeUnit,
+              unitNama,
+              kondisi,
+              lokasi,
+              keterangan,
+            ]
+          );
+        }
+        await syncAksesorisTotals(aksesorisId, connection);
+
+        inserted.push({ id: aksesorisId, kodeAksesoris, namaAksesoris });
       }
 
       await connection.commit();
@@ -617,6 +701,177 @@ const aksesorisController = {
       });
     } finally {
       connection.release();
+    }
+  },
+
+  // GET /api/aksesoris/:id/units
+  getUnits: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [units] = await db.query(
+        "SELECT * FROM aksesoris_units WHERE aksesoris_id = ? ORDER BY id ASC",
+        [id]
+      );
+      res.json({
+        success: true,
+        data: units,
+      });
+    } catch (error) {
+      console.error("Error getUnits aksesoris:", error);
+      res.status(500).json({ success: false, message: "Gagal mengambil unit aksesoris", error: error.message });
+    }
+  },
+
+  // POST /api/aksesoris/:id/units
+  addUnit: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const aksesoris = await Aksesoris.getById(id);
+      if (!aksesoris) {
+        return res.status(404).json({ success: false, message: "Aksesoris tidak ditemukan" });
+      }
+
+      const { kode_unit, nama_unit, no_sn, kondisi = "Siap Digunakan", lokasi_unit, keterangan } = req.body;
+
+      let finalKodeUnit = kode_unit;
+      if (!finalKodeUnit) {
+        const [existingUnits] = await db.query(
+          "SELECT kode_unit FROM aksesoris_units WHERE aksesoris_id = ? ORDER BY id DESC LIMIT 1",
+          [id]
+        );
+        let nextUnitNum = 1;
+        if (existingUnits[0]) {
+          const match = existingUnits[0].kode_unit.match(/-(\d+)$/);
+          if (match) nextUnitNum = parseInt(match[1], 10) + 1;
+        }
+        finalKodeUnit = `${aksesoris.kode_aksesoris}-${String(nextUnitNum).padStart(2, "0")}`;
+      }
+
+      const [insertRes] = await db.query(
+        `INSERT INTO aksesoris_units (aksesoris_id, kode_unit, nama_unit, no_sn, kondisi, status_pinjam, lokasi_unit, keterangan)
+         VALUES (?, ?, ?, ?, ?, 'Tersedia', ?, ?)`,
+        [
+          id,
+          finalKodeUnit,
+          nama_unit || `${aksesoris.nama_aksesoris} (Tambahan)`,
+          no_sn || null,
+          kondisi,
+          lokasi_unit || aksesoris.lokasi || null,
+          keterangan || null,
+        ]
+      );
+
+      await syncAksesorisTotals(id);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: "CREATE",
+        entityType: "Aksesoris Unit",
+        entityId: insertRes.insertId,
+        details: `Menambahkan unit fisik ${finalKodeUnit} untuk ${aksesoris.nama_aksesoris}`,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Unit fisik aksesoris berhasil ditambahkan",
+        data: { id: insertRes.insertId, kode_unit: finalKodeUnit },
+      });
+    } catch (error) {
+      console.error("Error addUnit aksesoris:", error);
+      res.status(500).json({ success: false, message: "Gagal menambahkan unit aksesoris", error: error.message });
+    }
+  },
+
+  // PUT /api/aksesoris/units/:unitId
+  updateUnit: async (req, res) => {
+    try {
+      const { unitId } = req.params;
+      const [unitRows] = await db.query("SELECT * FROM aksesoris_units WHERE id = ?", [unitId]);
+      if (unitRows.length === 0) {
+        return res.status(404).json({ success: false, message: "Unit aksesoris tidak ditemukan" });
+      }
+      const unit = unitRows[0];
+      const { kode_unit, nama_unit, no_sn, kondisi, status_pinjam, lokasi_unit, keterangan } = req.body;
+
+      await db.query(
+        `UPDATE aksesoris_units 
+         SET kode_unit = COALESCE(?, kode_unit),
+             nama_unit = ?,
+             no_sn = ?,
+             kondisi = COALESCE(?, kondisi),
+             status_pinjam = COALESCE(?, status_pinjam),
+             lokasi_unit = ?,
+             keterangan = ?
+         WHERE id = ?`,
+        [
+          kode_unit || unit.kode_unit,
+          nama_unit !== undefined ? nama_unit : unit.nama_unit,
+          no_sn !== undefined ? no_sn : unit.no_sn,
+          kondisi || unit.kondisi,
+          status_pinjam || unit.status_pinjam,
+          lokasi_unit !== undefined ? lokasi_unit : unit.lokasi_unit,
+          keterangan !== undefined ? keterangan : unit.keterangan,
+          unitId,
+        ]
+      );
+
+      await syncAksesorisTotals(unit.aksesoris_id);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: "UPDATE",
+        entityType: "Aksesoris Unit",
+        entityId: unitId,
+        details: `Mengubah unit aksesoris ${unit.kode_unit}: kondisi menjadi ${kondisi || unit.kondisi}`,
+      });
+
+      const [updated] = await db.query("SELECT * FROM aksesoris_units WHERE id = ?", [unitId]);
+      res.json({
+        success: true,
+        message: "Unit fisik aksesoris berhasil diperbarui",
+        data: updated[0],
+      });
+    } catch (error) {
+      console.error("Error updateUnit aksesoris:", error);
+      res.status(500).json({ success: false, message: "Gagal memperbarui unit aksesoris", error: error.message });
+    }
+  },
+
+  // DELETE /api/aksesoris/units/:unitId
+  deleteUnit: async (req, res) => {
+    try {
+      const { unitId } = req.params;
+      const [unitRows] = await db.query("SELECT * FROM aksesoris_units WHERE id = ?", [unitId]);
+      if (unitRows.length === 0) {
+        return res.status(404).json({ success: false, message: "Unit aksesoris tidak ditemukan" });
+      }
+      const unit = unitRows[0];
+
+      if (unit.status_pinjam === "Dipinjam") {
+        return res.status(400).json({ success: false, message: "Unit sedang dipinjam dan tidak dapat dihapus" });
+      }
+
+      await db.query("DELETE FROM aksesoris_units WHERE id = ?", [unitId]);
+      await syncAksesorisTotals(unit.aksesoris_id);
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: "DELETE",
+        entityType: "Aksesoris Unit",
+        entityId: unitId,
+        details: `Menghapus unit fisik aksesoris ${unit.kode_unit}`,
+      });
+
+      res.json({
+        success: true,
+        message: `Unit ${unit.kode_unit} berhasil dihapus`,
+      });
+    } catch (error) {
+      console.error("Error deleteUnit aksesoris:", error);
+      res.status(500).json({ success: false, message: "Gagal menghapus unit aksesoris", error: error.message });
     }
   },
 };
